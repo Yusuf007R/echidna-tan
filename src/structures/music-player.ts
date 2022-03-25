@@ -17,8 +17,10 @@ import {
   MessageSelectMenu,
   SelectMenuInteraction,
 } from 'discord.js';
+import { isNullOrUndefined } from 'util';
 
 import ytdl from 'ytdl-core';
+import ytpl from 'ytpl';
 
 import ytsr from 'ytsr';
 import createYTStream from '../utils/create-yt-stream';
@@ -27,68 +29,78 @@ import secondsToMinutes from '../utils/seconds-to-minutes';
 export default class MusicPlayer {
   private voiceConnection: VoiceConnection | null = null;
 
-  private queue: ytdl.videoInfo[] = [];
+  private queue: (ytdl.videoInfo | string)[] = [];
 
-  private audioPlayer: AudioPlayer;
+  private audioPlayer: AudioPlayer | null = null;
 
   private currentInteration: CommandInteraction<CacheType> | null = null;
 
-  constructor() {
-    this.audioPlayer = createAudioPlayer({
-      behaviors: {
-        noSubscriber: NoSubscriberBehavior.Play,
-      },
-    });
-    this.audioPlayer.on('error', (err) => console.log('Audio player error', err));
-    // @ts-ignore
-    this.audioPlayer.on('stateChange', (_old, _new) => this._audioPlayerStateListener(_old, _new));
-  }
+  private currentInfo: ytdl.videoInfo | null = null;
+
+  constructor() {}
 
   async play(interaction: CommandInteraction<CacheType>) {
     const query = interaction.options.getString('query');
     this.currentInteration = interaction;
     if (!query) return interaction.editReply('No query provided');
-
-    if (ytdl.validateURL(query)) {
+    const trimedQuery = query.trim();
+    if (ytdl.validateURL(trimedQuery) || ytdl.validateID(trimedQuery)) {
       try {
-        const video = await ytdl.getInfo(query);
+        const video = await ytdl.getInfo(trimedQuery);
         this.queue.push(video);
         interaction.editReply({ content: `${video.videoDetails.title} added to the queue.` });
         this._play();
       } catch (error) {
         this._internalErrorMessage(error);
       }
-    } else {
-      await this.youtubeSearch(interaction, query);
+      return;
     }
+
+    if (ytpl.validateID(trimedQuery)) {
+      try {
+        const playlist = await ytpl(trimedQuery, { limit: Infinity });
+        this.queue.push(...playlist.items.map((item) => item.id));
+        interaction.editReply({
+          content: `${playlist.items.length} songs have been added to the Queue.`,
+        });
+        this._play();
+      } catch (error) {
+        this._internalErrorMessage(error);
+      }
+      return;
+    }
+    await this.youtubeSearch(interaction, trimedQuery);
   }
 
   pause(interaction: CommandInteraction<CacheType>) {
+    if (!this.audioPlayer) return interaction.editReply('No music is playing.');
     if (this.audioPlayer.state.status === AudioPlayerStatus.Paused) return interaction.editReply('music is already paused.');
     interaction.editReply('Music paused.');
-    this.audioPlayer.pause();
+    this.audioPlayer?.pause();
   }
 
   resume(interaction: CommandInteraction<CacheType>) {
-    if (this.audioPlayer.state.status === AudioPlayerStatus.Playing) return interaction.editReply('Music is already playing.');
+    if (!this.audioPlayer) return interaction.editReply('No music is playing.');
+    if (this.audioPlayer?.state.status === AudioPlayerStatus.Playing) return interaction.editReply('Music is already playing.');
     interaction.editReply('Music resumed.');
-    this.audioPlayer.unpause();
+    this.audioPlayer?.unpause();
   }
 
   skip(interaction: CommandInteraction<CacheType>) {
+    if (!this.audioPlayer) return interaction.editReply('No music is playing.');
     if (this.queue.length <= 1) return interaction.editReply('No more songs in the queue.');
-    this.audioPlayer.stop();
-
     interaction.editReply('Song skipped.');
+    this.audioPlayer?.stop();
   }
 
   async stop(interaction: CommandInteraction<CacheType>) {
-    // this.audioPlayer.removeAllListeners();
-    this.audioPlayer.stop(true);
+    if (!this.audioPlayer) return interaction.editReply('No music is playing.');
+    this.audioPlayer?.removeAllListeners();
     this.queue = [];
-    // this.voiceConnection?.removeAllListeners();
-    // this.voiceConnection?.destroy();
-    // this.voiceConnection = null;
+    this.audioPlayer?.stop(true);
+    this.voiceConnection?.removeAllListeners();
+    this.voiceConnection?.destroy();
+    this.voiceConnection = null;
     await interaction.editReply('Stopping the music and disconnecting from the voice channel.');
   }
 
@@ -96,7 +108,7 @@ export default class MusicPlayer {
     try {
       const results = await ytsr(query, { limit: 5 });
       const tracks = results.items.filter((item) => item.type === 'video') as ytsr.Video[];
-
+      if (!tracks.length) return interaction.editReply('No results found');
       const row = new MessageActionRow().addComponents(
         new MessageSelectMenu()
           .setCustomId('music')
@@ -136,12 +148,15 @@ export default class MusicPlayer {
   private async _play() {
     try {
       if (!this.queue.length) return;
-      if (this.audioPlayer.state.status === AudioPlayerStatus.Playing) return;
+      if (this.audioPlayer?.state.status === AudioPlayerStatus.Playing) return;
       if (!this.voiceConnection) {
         this._connectVoiceChannel();
       }
-      const data = this.queue[0];
-
+      let data = this.queue[0];
+      if (typeof data === 'string') {
+        data = await ytdl.getInfo(data);
+      }
+      this.currentInfo = data;
       const filteredFormats = data.formats
         .filter((item) => !!item.audioBitrate)
         .sort((a, b) => {
@@ -151,15 +166,25 @@ export default class MusicPlayer {
 
       if (!filteredFormats.length) return this._internalErrorMessage('No audio formats found after filtering');
       const format = filteredFormats[0];
-      const buffer = createYTStream(data, format, {});
-      const resource = createAudioResource(buffer);
-      this.audioPlayer.play(resource);
+      const resource = createAudioResource(createYTStream(data, format, {}));
+      this.audioPlayer?.play(resource);
     } catch (error) {
       this._internalErrorMessage(error);
     }
   }
 
   private async _connectVoiceChannel() {
+    if (!this.audioPlayer) {
+      this.audioPlayer = createAudioPlayer({
+        behaviors: {
+          noSubscriber: NoSubscriberBehavior.Play,
+        },
+      });
+      this.audioPlayer.on('error', (err) => console.log('Audio player error', err));
+      // @ts-ignore
+      this.audioPlayer.on('stateChange', (_old, _new) => this._audioPlayerStateListener(_old, _new));
+    }
+
     const guildMember = this.currentInteration?.member as GuildMember;
     if (this.voiceConnection || !guildMember || !guildMember.voice.channelId) return this.currentInteration?.editReply('No voice channel found');
     this.voiceConnection = joinVoiceChannel({
@@ -191,17 +216,23 @@ export default class MusicPlayer {
       oldState.status === AudioPlayerStatus.Buffering
       && newState.status === AudioPlayerStatus.Playing
     ) {
-      const {
-        title, video_url, thumbnails, lengthSeconds,
-      } = this.queue[0].videoDetails;
-      const minutes = secondsToMinutes(Number(lengthSeconds));
-      const embed = new MessageEmbed()
-        .setTitle('Now playing: ')
-        .setDescription(`[${title}](${video_url}/ 'Click to open link.') `)
-        .setTimestamp()
-        .setFooter({ text: `Duration: ${minutes}` });
-      if (thumbnails.length) embed.setThumbnail(thumbnails[0].url);
-      this.currentInteration?.channel?.send({ embeds: [embed] });
+      try {
+        const data = this.currentInfo;
+        if (!data) return this._internalErrorMessage('No current info');
+        const {
+          title, video_url, thumbnails, lengthSeconds,
+        } = data.videoDetails;
+        const minutes = secondsToMinutes(Number(lengthSeconds));
+        const embed = new MessageEmbed()
+          .setTitle('Now playing: ')
+          .setDescription(`[${title}](${video_url}/ 'Click to open link.') `)
+          .setTimestamp()
+          .setFooter({ text: `Duration: ${minutes}` });
+        if (thumbnails.length) embed.setThumbnail(thumbnails[0].url);
+        this.currentInteration?.channel?.send({ embeds: [embed] });
+      } catch (error) {
+        this._internalErrorMessage(error);
+      }
     }
   }
 

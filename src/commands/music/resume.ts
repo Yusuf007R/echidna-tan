@@ -8,6 +8,6 @@ export default class Resume implements Command {
   description = 'Skip a song in the queue.';
 
   async run(interaction: CommandInteraction<CacheType>) {
-    player.skip(interaction);
+    player.resume(interaction);
   }
 }
