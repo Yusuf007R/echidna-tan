@@ -1,39 +1,33 @@
 import 'dotenv/config';
-import { Client, Collection, Intents } from 'discord.js';
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { Routes } from 'discord-api-types/v9';
-import { REST } from '@discordjs/rest';
+import { Client, Intents } from 'discord.js';
 
-import { Command, CommandLoader } from './utils/command';
+import CommandManager from './managers/command-manager';
 import configs from './configs';
+import MusicPlayer from './structures/music-player';
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+export const player = new MusicPlayer();
 
-client.once('ready', () => {
-  console.log('Ready!');
+export const client = new Client({
+  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES],
+  retryLimit: Infinity,
 });
 
-const commands = new Collection<string, Command>();
+client.once('ready', () => {
+  client.user?.setActivity({
+    name: '/help',
+    type: 'COMPETING',
+  });
+  console.log(`Logged in as ${client.user?.tag}`);
+});
 
-CommandLoader(commands);
+client.on('error', (error) => console.log('Client error', error));
 
-const rest = new REST().setToken(configs.token);
-const commandsJson = commands.map((command) => new SlashCommandBuilder().setName(command.name).setDescription(command.description).toJSON());
-
-rest
-  .put(Routes.applicationGuildCommands(configs.clientId, configs.guildId), {
-    body: commandsJson,
-  })
-  .then(() => console.log('Successfully registered application commands.'))
-  .catch(console.error);
+const commandManager = new CommandManager();
 
 client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isCommand()) return;
+  if (interaction.isCommand()) commandManager.executeCommand(interaction);
 
-  const { commandName } = interaction;
-
-  const command = commands.get(commandName);
-  if (command) return command.run(interaction, []);
+  if (interaction.isSelectMenu()) player.selectMusic(interaction);
 });
 
 client.login(configs.token);

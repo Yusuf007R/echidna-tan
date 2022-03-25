@@ -1,15 +1,16 @@
 {
-    "extends": "ts-node/node12/tsconfig.json",
+  "extends": "ts-node/node12/tsconfig.json",
 
-    "ts-node": {
-        "transpileOnly": true,
-        "files": true
-    },
-    "compilerOptions": {
-        "module": "commonjs",
-        "noImplicitAny": true,
-        "removeComments": true,
-        "preserveConstEnums": true,
-        "sourceMap": true
-    }
+  "ts-node": {
+    "transpileOnly": true,
+    "files": true
+  },
+  "compilerOptions": {
+    "outDir": "dist/",
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true
+  }
 }
