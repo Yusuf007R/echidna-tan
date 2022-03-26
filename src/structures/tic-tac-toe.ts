@@ -7,6 +7,7 @@ import {
   MessageEmbed,
   User,
 } from 'discord.js';
+import { tictactoeCollection } from '..';
 
 const WIN_COMBINATIONS = [
   [0, 1, 2],
@@ -19,7 +20,9 @@ const WIN_COMBINATIONS = [
   [2, 4, 6],
 ];
 
-export default class TicTacToe {
+const TIMEOUT_TIME = 3 * 1000;
+
+export default class TicTacToeInstance {
   private table: {id: number; value: 'o' | 'x' | null}[];
 
   private turn: 'x' | 'o' = 'x';
@@ -31,6 +34,10 @@ export default class TicTacToe {
   private player2: User | null = null;
 
   private isGameOver: boolean = false;
+
+  private timeOut: NodeJS.Timeout | null = null;
+
+  private gameConfirmed: boolean = false;
 
   constructor(player1: User, player2: User, interaction: CommandInteraction<CacheType>) {
     this.player1 = player1;
@@ -47,16 +54,53 @@ export default class TicTacToe {
       { id: 7, value: null },
       { id: 8, value: null },
     ];
-    this.drawTable();
+    this.resetTimeout();
+    this.sendGameRequest();
   }
 
-  static startGame(interaction: CommandInteraction<CacheType>) {
+  static initGame(interaction: CommandInteraction<CacheType>) {
     const player1 = interaction.user;
     const player2 = interaction.options.getUser('user');
     if (!player2) return interaction.editReply('You need to specify a user to play with.');
     if (player1.id === player2.id) return interaction.editReply("You can't play with yourself.");
     if (player2.bot) return interaction.editReply("You can't play with a bot.");
-    return new TicTacToe(player1, player2, interaction);
+
+    return new TicTacToeInstance(player1, player2, interaction);
+  }
+
+  async startGame(interaction: ButtonInteraction<CacheType>, value: string) {
+    if (interaction.user.id !== this.player2?.id) {
+      return interaction.reply({
+        content: `You are not ${this.player2?.toString()} `,
+        ephemeral: true,
+      });
+    }
+    this.gameConfirmed = true;
+    interaction.deferUpdate();
+    if (value === 'yes') {
+      await this.drawTable();
+      this.resetTimeout();
+      return;
+    }
+    await this.endGame();
+  }
+
+  async sendGameRequest() {
+    await this.currentInteraction?.editReply({
+      content: `${this.player1?.toString()} has challenged you to a game of Tic Tac Toe. Do you accept?`,
+      components: [
+        new MessageActionRow().addComponents(
+          new MessageButton()
+            .setCustomId('tictactoe-request-yes')
+            .setLabel('Accept')
+            .setStyle('PRIMARY'),
+          new MessageButton()
+            .setCustomId('tictactoe-request-no')
+            .setLabel('Decline')
+            .setStyle('DANGER'),
+        ),
+      ],
+    });
   }
 
   private makeMove(pos: number) {
@@ -82,7 +126,7 @@ export default class TicTacToe {
         ...colum.map((row) => {
           const button = new MessageButton()
             .setLabel(row.value || '-')
-            .setCustomId(row.id.toString())
+            .setCustomId(`tictactoe-game-${row.id}`)
             .setStyle('SECONDARY');
           if (row.value) {
             button.setDisabled(true);
@@ -124,25 +168,40 @@ export default class TicTacToe {
     return true;
   }
 
-  async handleClick(interaction: ButtonInteraction<CacheType>): Promise<boolean> {
-    if (this.currentInteraction?.id !== interaction.message.interaction?.id) return this.isGameOver;
-    if (!this.checkIfCorrectUser(interaction)) return this.isGameOver;
+  async handleClick(interaction: ButtonInteraction<CacheType>, pos: string) {
+    if (this.currentInteraction?.id !== interaction.message.interaction?.id) return;
+    if (!this.checkIfCorrectUser(interaction)) return;
     interaction.deferUpdate();
-    const pos = Number(interaction.customId);
-    this.makeMove(pos);
 
+    this.resetTimeout();
+    this.makeMove(Number(pos));
     const winner = this.getWinner();
     if (winner) {
-      this.isGameOver = true;
       const embed = new MessageEmbed()
         .setTitle(`${winner} won!`)
         .setDescription(`Match Between ${this.player1?.toString()} and ${this.player2?.toString()}`)
         .setTimestamp();
-
       await this.currentInteraction?.channel?.send({ embeds: [embed] });
+      this.switchTurn();
+      this.endGame();
+    } else {
+      this.switchTurn();
+      await this.drawTable();
     }
-    this.switchTurn();
+  }
+
+  resetTimeout() {
+    if (this.timeOut) clearTimeout(this.timeOut);
+    this.timeOut = setTimeout(() => {
+      this.endGame();
+    }, TIMEOUT_TIME);
+  }
+
+  async endGame() {
+    this.isGameOver = true;
+    if (this.timeOut) clearTimeout(this.timeOut);
+    if (this.currentInteraction?.id) tictactoeCollection.delete(this.currentInteraction.id);
+    if (!this.gameConfirmed) return this.currentInteraction?.editReply({ content: 'Game declined.', components: [] });
     await this.drawTable();
-    return this.isGameOver;
   }
 }
