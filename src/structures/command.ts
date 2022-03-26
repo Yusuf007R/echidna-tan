@@ -1,6 +1,11 @@
 import { CacheType, CommandInteraction } from 'discord.js';
 
-export type options = {type: 'string'; name: string; description: string; required?: boolean};
+export type options = {
+  type: 'string' | 'user';
+  name: string;
+  description: string;
+  required?: boolean;
+};
 
 export interface Command {
   name: string;

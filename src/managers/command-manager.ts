@@ -40,14 +40,26 @@ export default class CommandManager {
 
       if (command.options) {
         command.options.forEach((element) => {
-          if (element.type === 'string') {
-            slash.addStringOption((option) => {
-              option.setName(element.name).setDescription(element.description);
-              if (element.required) {
-                option.setRequired(true);
-              }
-              return option;
-            });
+          switch (element.type) {
+            case 'string':
+              slash.addStringOption((option) => {
+                option.setName(element.name).setDescription(element.description);
+                if (element.required) {
+                  option.setRequired(true);
+                }
+                return option;
+              });
+              break;
+            case 'user':
+              slash.addUserOption((option) => {
+                option.setName(element.name).setDescription(element.description);
+                if (element.required) {
+                  option.setRequired(true);
+                }
+                return option;
+              });
+            default:
+              break;
           }
         });
       }

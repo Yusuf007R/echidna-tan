@@ -17,7 +17,6 @@ import {
   MessageSelectMenu,
   SelectMenuInteraction,
 } from 'discord.js';
-import { isNullOrUndefined } from 'util';
 
 import ytdl from 'ytdl-core';
 import ytpl from 'ytpl';
