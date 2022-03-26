@@ -22,6 +22,7 @@ import ytdl from 'ytdl-core';
 import ytpl from 'ytpl';
 
 import ytsr from 'ytsr';
+import { musicPlayerCollection } from '..';
 import createYTStream from '../utils/create-yt-stream';
 import secondsToMinutes from '../utils/seconds-to-minutes';
 
@@ -93,6 +94,7 @@ export default class MusicPlayer {
   }
 
   async stop(interaction: CommandInteraction<CacheType>) {
+    if (!interaction.guildId) return interaction.editReply('This command can only be used in a guild.');
     if (!this.audioPlayer) return interaction.editReply('No music is playing.');
     this.audioPlayer?.removeAllListeners();
     this.queue = [];
@@ -100,6 +102,7 @@ export default class MusicPlayer {
     this.voiceConnection?.removeAllListeners();
     this.voiceConnection?.destroy();
     this.voiceConnection = null;
+    musicPlayerCollection.delete(interaction.guildId);
     await interaction.editReply('Stopping the music and disconnecting from the voice channel.');
   }
 
@@ -222,12 +225,14 @@ export default class MusicPlayer {
         const {
           title, video_url, thumbnails, lengthSeconds,
         } = data.videoDetails;
+        thumbnails.sort((a, b) => b.width + b.height - (a.width + a.height));
         const minutes = secondsToMinutes(Number(lengthSeconds));
         const embed = new MessageEmbed()
           .setTitle('Now playing: ')
           .setDescription(`[${title}](${video_url}/ 'Click to open link.') `)
           .setTimestamp()
           .setFooter({ text: `Duration: ${minutes}` });
+        console.log(thumbnails);
         if (thumbnails.length) embed.setThumbnail(thumbnails[0].url);
         this.currentInteration?.channel?.send({ embeds: [embed] });
       } catch (error) {

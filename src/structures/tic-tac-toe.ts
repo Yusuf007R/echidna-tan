@@ -38,11 +38,11 @@ export default class TicTacToe {
 
   private turn: 'x' | 'o' = 'x';
 
-  private currentInteraction: CommandInteraction<CacheType> | null = null;
+  private currentInteraction: CommandInteraction<CacheType>;
 
-  private player1: User | null = null;
+  private player1: User;
 
-  private player2: User | null = null;
+  private player2: User;
 
   private status: TicTacToeStatus = TicTacToeStatus.Waiting;
 
@@ -67,15 +67,16 @@ export default class TicTacToe {
   }
 
   async startGame(interaction: ButtonInteraction<CacheType>, value: string) {
-    if (interaction.user.id !== this.player2?.id) {
+    if (interaction.user.id !== this.player2.id) {
       return interaction.reply({
-        content: `You are not ${this.player2?.toString()} `,
+        content: `You are not ${this.player2.toString()} `,
         ephemeral: true,
       });
     }
     this.status = TicTacToeStatus.Playing;
     interaction.deferUpdate();
     if (value === 'yes') {
+      this.coinFlipFirstTurn();
       await this.drawTable();
       this.resetTimeout();
       return;
@@ -85,8 +86,8 @@ export default class TicTacToe {
   }
 
   private async sendGameRequest() {
-    await this.currentInteraction?.editReply({
-      content: `${this.player1?.toString()} has challenged you to a game of Tic Tac Toe. Do you accept?`,
+    await this.currentInteraction.editReply({
+      content: `${this.player1.toString()} has challenged you to a game of Tic Tac Toe. Do you accept?`,
       components: [
         new MessageActionRow().addComponents(
           new MessageButton()
@@ -100,6 +101,14 @@ export default class TicTacToe {
         ),
       ],
     });
+  }
+
+  private coinFlipFirstTurn() {
+    const shouldFlip = Math.random() < 0.5;
+    if (!shouldFlip) return;
+    const temp = this.player1;
+    this.player1 = this.player2;
+    this.player2 = temp;
   }
 
   private makeMove(pos: number) {
@@ -138,27 +147,25 @@ export default class TicTacToe {
       )),
     ];
 
-    await this.currentInteraction?.editReply({
+    await this.currentInteraction.editReply({
       content: finished
         ? 'Game over.'
-        : `Current turn: ${
-          this.turn === 'x' ? this.player1?.toString() : this.player2?.toString()
-        }`,
+        : `Current turn: ${this.turn === 'x' ? this.player1.toString() : this.player2.toString()}`,
       components: rows,
     });
   }
 
   private checkIfCorrectUser(interaction: ButtonInteraction<CacheType>) {
     const { user } = interaction;
-    if (!(user.id === this.player1?.id || user.id === this.player2?.id)) {
+    if (!(user.id === this.player1.id || user.id === this.player2.id)) {
       interaction.reply({ content: 'You are not a part of this game.', ephemeral: true });
       return false;
     }
-    if (user.id === this.player1?.id && this.turn === 'o') {
+    if (user.id === this.player1.id && this.turn === 'o') {
       interaction.reply({ content: 'It is not your turn.', ephemeral: true });
       return false;
     }
-    if (user.id === this.player2?.id && this.turn === 'x') {
+    if (user.id === this.player2.id && this.turn === 'x') {
       interaction.reply({ content: 'It is not your turn.', ephemeral: true });
       return false;
     }
@@ -166,7 +173,7 @@ export default class TicTacToe {
   }
 
   async handleClick(interaction: ButtonInteraction<CacheType>, pos: string) {
-    if (this.currentInteraction?.id !== interaction.message.interaction?.id) return;
+    if (this.currentInteraction.id !== interaction.message.interaction?.id) return;
     if (!this.checkIfCorrectUser(interaction)) return;
     interaction.deferUpdate();
     this.resetTimeout();
@@ -174,10 +181,10 @@ export default class TicTacToe {
     const winner = TicTacToe.getWinner(this.table, this.turn);
     if (winner) {
       const embed = new MessageEmbed()
-        .setTitle(`${winner === 'x' ? this.player1?.username : this.player2?.username} won!`)
-        .setDescription(`Match Between ${this.player1?.toString()} and ${this.player2?.toString()}`)
+        .setTitle(`${winner === 'x' ? this.player1.username : this.player2.username} won!`)
+        .setDescription(`Match Between ${this.player1.toString()} and ${this.player2.toString()}`)
         .setTimestamp();
-      await this.currentInteraction?.channel?.send({ embeds: [embed] });
+      await this.currentInteraction.channel?.send({ embeds: [embed] });
       this.switchTurn();
       this.status = TicTacToeStatus.Finished;
       this.endGame();
@@ -198,27 +205,27 @@ export default class TicTacToe {
 
   private async endGame() {
     if (this.timeOut) clearTimeout(this.timeOut);
-    if (this.currentInteraction?.id) tictactoeCollection.delete(this.currentInteraction.id);
+    if (this.currentInteraction.id) tictactoeCollection.delete(this.currentInteraction.id);
     let content: string = '';
     switch (this.status) {
       case TicTacToeStatus.Finished:
         await this.drawTable(true);
         break;
       case TicTacToeStatus.Declined:
-        content = `${this.player2?.toString()} has declined the game.`;
+        content = `${this.player2.toString()} has declined the game.`;
         break;
       case TicTacToeStatus.GameTimeout:
         content = `Game timed out. ${
-          this.turn === 'x' ? this.player2?.toString() : this.player1?.toString()
+          this.turn === 'x' ? this.player2.toString() : this.player1.toString()
         } won.`;
         break;
       case TicTacToeStatus.RequestTimeout:
-        content = `Request timed out, ${this.player2?.toString()} did not accept the game.`;
+        content = `Request timed out, ${this.player2.toString()} did not accept the game.`;
         break;
       default:
         break;
     }
 
-    if (this.status !== TicTacToeStatus.Finished) await this.currentInteraction?.editReply({ content, components: [] });
+    if (this.status !== TicTacToeStatus.Finished) await this.currentInteraction.editReply({ content, components: [] });
   }
 }

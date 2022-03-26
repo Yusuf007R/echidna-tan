@@ -1,7 +1,9 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
-import { CacheType, Collection, CommandInteraction } from 'discord.js';
+import {
+  CacheType, Collection, CommandInteraction, GuildMember,
+} from 'discord.js';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import configs from '../configs';
@@ -83,8 +85,9 @@ export default class CommandManager {
     if (!command) return interaction.reply('Command not found.');
 
     try {
+      if (!command.canExecute(interaction)) return;
       await interaction.deferReply();
-      command.run(interaction, []);
+      command.run(interaction);
     } catch (error) {
       console.log(error);
       interaction.reply('An error occured while executing the command.');
