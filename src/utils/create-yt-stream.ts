@@ -18,7 +18,7 @@ const createYtStream = (
   } else {
     // stream is big so necessary to split
     const pipeNextStream = () => {
-      current++;
+      current += 1;
       let end: number | undefined = chunkSize * (current + 1) - 1;
       if (end >= contentLength) end = undefined;
       const nextStream = ytdl.downloadFromInfo(info, {

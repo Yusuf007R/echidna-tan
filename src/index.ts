@@ -5,11 +5,11 @@ import CommandManager from './managers/command-manager';
 import configs from './configs';
 import MusicPlayer from './structures/music-player';
 
-import TicTacToeInstance from './structures/tic-tac-toe';
+import TicTacToe from './structures/tic-tac-toe';
 
 export const player = new MusicPlayer();
 
-export const tictactoeCollection = new Collection<string, TicTacToeInstance>();
+export const tictactoeCollection = new Collection<string, TicTacToe>();
 
 export const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES],
@@ -48,7 +48,6 @@ client.on('interactionCreate', async (interaction) => {
           case 'request':
             await tictactoe.startGame(interaction, value);
             break;
-
           default:
             break;
         }

@@ -50,7 +50,7 @@ export default class MusicPlayer {
         interaction.editReply({ content: `${video.videoDetails.title} added to the queue.` });
         this._play();
       } catch (error) {
-        this._internalErrorMessage(error);
+        this.internalErrorMessage(error);
       }
       return;
     }
@@ -64,7 +64,7 @@ export default class MusicPlayer {
         });
         this._play();
       } catch (error) {
-        this._internalErrorMessage(error);
+        this.internalErrorMessage(error);
       }
       return;
     }
@@ -122,7 +122,7 @@ export default class MusicPlayer {
       this.currentInteration = interaction;
       await interaction.editReply({ content: 'Select a song!', components: [row] });
     } catch (error) {
-      this._internalErrorMessage(error);
+      this.internalErrorMessage(error);
     }
   }
 
@@ -140,7 +140,7 @@ export default class MusicPlayer {
         components: [],
       });
     } catch (error) {
-      this._internalErrorMessage(error);
+      this.internalErrorMessage(error);
     }
   }
 
@@ -163,12 +163,12 @@ export default class MusicPlayer {
           return b.audioBitrate - a.audioBitrate;
         });
 
-      if (!filteredFormats.length) return this._internalErrorMessage('No audio formats found after filtering');
+      if (!filteredFormats.length) return this.internalErrorMessage('No audio formats found after filtering');
       const format = filteredFormats[0];
       const resource = createAudioResource(createYTStream(data, format, {}));
       this.audioPlayer?.play(resource);
     } catch (error) {
-      this._internalErrorMessage(error);
+      this.internalErrorMessage(error);
     }
   }
 
@@ -185,6 +185,7 @@ export default class MusicPlayer {
     }
 
     const guildMember = this.currentInteration?.member as GuildMember;
+
     if (this.voiceConnection || !guildMember || !guildMember.voice.channelId) return this.currentInteration?.editReply('No voice channel found');
     this.voiceConnection = joinVoiceChannel({
       channelId: guildMember.voice.channelId,
@@ -217,7 +218,7 @@ export default class MusicPlayer {
     ) {
       try {
         const data = this.currentInfo;
-        if (!data) return this._internalErrorMessage('No current info');
+        if (!data) return this.internalErrorMessage('No current info');
         const {
           title, video_url, thumbnails, lengthSeconds,
         } = data.videoDetails;
@@ -230,12 +231,12 @@ export default class MusicPlayer {
         if (thumbnails.length) embed.setThumbnail(thumbnails[0].url);
         this.currentInteration?.channel?.send({ embeds: [embed] });
       } catch (error) {
-        this._internalErrorMessage(error);
+        this.internalErrorMessage(error);
       }
     }
   }
 
-  async _internalErrorMessage(error: unknown) {
+  private async internalErrorMessage(error: unknown) {
     console.error(error);
     if (this.currentInteration) {
       this.currentInteration.editReply('Something went wrong, please try again later.');
