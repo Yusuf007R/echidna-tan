@@ -1,11 +1,20 @@
 import { CacheType, CommandInteraction, GuildMember } from 'discord.js';
 
-export type options = {
-  type: 'string' | 'user';
-  name: string;
-  description: string;
-  required?: boolean;
-};
+export type options =
+  | {
+      type: 'string' | 'user';
+      name: string;
+      description: string;
+      required?: boolean;
+    }
+  | {
+      type: 'int';
+      name: string;
+      description: string;
+      required?: boolean;
+      min?: number;
+      max?: number;
+    };
 
 export type commandConfigs = {
   name: string;

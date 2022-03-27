@@ -17,8 +17,8 @@ export const client = new Client({
 
 client.once('ready', () => {
   client.user?.setActivity({
-    name: '/help',
-    type: 'COMPETING',
+    name: 'with onii-sama',
+    type: 'PLAYING',
   });
   console.log(`Logged in as ${client.user?.tag}`);
 });

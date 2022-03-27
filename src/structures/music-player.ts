@@ -2,6 +2,7 @@ import {
   AudioPlayer,
   AudioPlayerState,
   AudioPlayerStatus,
+  AudioResource,
   createAudioPlayer,
   createAudioResource,
   joinVoiceChannel,
@@ -23,7 +24,7 @@ import ytpl from 'ytpl';
 
 import ytsr from 'ytsr';
 import { musicPlayerCollection } from '..';
-import createYTStream from '../utils/create-yt-stream';
+import createYtStream from '../utils/create-yt-stream';
 import secondsToMinutes from '../utils/seconds-to-minutes';
 
 export default class MusicPlayer {
@@ -36,6 +37,8 @@ export default class MusicPlayer {
   private currentInteration: CommandInteraction<CacheType> | null = null;
 
   private currentInfo: ytdl.videoInfo | null = null;
+
+  private currentAudioResource: AudioResource<null> | null = null;
 
   constructor() {}
 
@@ -106,6 +109,14 @@ export default class MusicPlayer {
     await interaction.reply('Stopping the music and disconnecting from the voice channel.');
   }
 
+  async volume(interaction: CommandInteraction<CacheType>) {
+    if (!this.audioPlayer) return interaction.reply('No music is playing.');
+    const volume = interaction.options.getInteger('volume');
+    if (volume == null) return interaction.reply('No volume provided');
+    this.currentAudioResource?.volume?.setVolume(volume / 100);
+    interaction.reply(`Volume set to ${volume}%`);
+  }
+
   private async youtubeSearch(interaction: CommandInteraction<CacheType>, query: string) {
     try {
       const results = await ytsr(query, { limit: 5 });
@@ -169,8 +180,11 @@ export default class MusicPlayer {
 
       if (!filteredFormats.length) return this.internalErrorMessage('No audio formats found after filtering');
       const format = filteredFormats[0];
-      const resource = createAudioResource(createYTStream(data, format, {}));
-      this.audioPlayer?.play(resource);
+
+      this.currentAudioResource = createAudioResource(createYtStream(data, format, {}), {
+        inlineVolume: true,
+      });
+      this.audioPlayer?.play(this.currentAudioResource);
     } catch (error) {
       this.internalErrorMessage(error);
     }

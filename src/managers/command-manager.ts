@@ -60,6 +60,22 @@ export default class CommandManager {
                 }
                 return option;
               });
+              break;
+            case 'int':
+              slash.addIntegerOption((option) => {
+                option.setName(element.name).setDescription(element.description);
+                if (element.required) {
+                  option.setRequired(true);
+                }
+                if (element.min) {
+                  option.setMinValue(element.min);
+                }
+                if (element.max) {
+                  option.setMaxValue(element.max);
+                }
+                return option;
+              });
+              break;
             default:
               break;
           }
