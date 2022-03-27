@@ -86,7 +86,7 @@ export default class CommandManager {
 
     try {
       if (!command.canExecute(interaction)) return;
-      await interaction.deferReply();
+      if (command.shouldDefer) await interaction.deferReply();
       command.run(interaction);
     } catch (error) {
       console.log(error);

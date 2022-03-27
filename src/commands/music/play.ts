@@ -9,6 +9,7 @@ export default class Play extends Command {
       name: 'play',
       description: 'Play or search a song',
       voiceChannelOnly: true,
+      shouldDefer: true,
       options: [
         {
           type: 'string',

@@ -12,6 +12,7 @@ export type commandConfigs = {
   description: string;
   options?: options[];
   voiceChannelOnly?: boolean;
+  shouldDefer?: boolean;
 };
 
 export class Command {
@@ -23,11 +24,14 @@ export class Command {
 
   voiceChannelOnly?: boolean;
 
+  shouldDefer?: boolean;
+
   constructor(configs: commandConfigs) {
     this.name = configs.name;
     this.description = configs.description;
     this.options = configs.options;
     this.voiceChannelOnly = configs.voiceChannelOnly;
+    this.shouldDefer = configs.shouldDefer;
   }
 
   run(interaction: CommandInteraction<CacheType>): Promise<void> {

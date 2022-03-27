@@ -11,10 +11,9 @@ export default class TicTacToeCommand extends Command {
       description: 'Play tic-tac-toe',
       options: [
         {
-          type: 'string',
-          name: 'query',
-          description: 'query to search or url to play',
-          required: true,
+          type: 'user',
+          name: 'user',
+          description: 'The user to play with',
         },
       ],
     });

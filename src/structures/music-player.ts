@@ -73,29 +73,29 @@ export default class MusicPlayer {
   }
 
   pause(interaction: CommandInteraction<CacheType>) {
-    if (!this.audioPlayer) return interaction.editReply('No music is playing.');
-    if (this.audioPlayer.state.status === AudioPlayerStatus.Paused) return interaction.editReply('music is already paused.');
-    interaction.editReply('Music paused.');
+    if (!this.audioPlayer) return interaction.reply('No music is playing.');
+    if (this.audioPlayer.state.status === AudioPlayerStatus.Paused) return interaction.reply('music is already paused.');
+    interaction.reply('Music paused.');
     this.audioPlayer?.pause();
   }
 
   resume(interaction: CommandInteraction<CacheType>) {
-    if (!this.audioPlayer) return interaction.editReply('No music is playing.');
-    if (this.audioPlayer?.state.status === AudioPlayerStatus.Playing) return interaction.editReply('Music is already playing.');
-    interaction.editReply('Music resumed.');
+    if (!this.audioPlayer) return interaction.reply('No music is playing.');
+    if (this.audioPlayer?.state.status === AudioPlayerStatus.Playing) return interaction.reply('Music is already playing.');
+    interaction.reply('Music resumed.');
     this.audioPlayer?.unpause();
   }
 
   skip(interaction: CommandInteraction<CacheType>) {
-    if (!this.audioPlayer) return interaction.editReply('No music is playing.');
-    if (this.queue.length <= 1) return interaction.editReply('No more songs in the queue.');
-    interaction.editReply('Song skipped.');
+    if (!this.audioPlayer) return interaction.reply('No music is playing.');
+    if (this.queue.length <= 1) return interaction.reply('No more songs in the queue.');
+    interaction.reply('Song skipped.');
     this.audioPlayer?.stop();
   }
 
   async stop(interaction: CommandInteraction<CacheType>) {
-    if (!interaction.guildId) return interaction.editReply('This command can only be used in a guild.');
-    if (!this.audioPlayer) return interaction.editReply('No music is playing.');
+    if (!interaction.guildId) return interaction.reply('This command can only be used in a guild.');
+    if (!this.audioPlayer) return interaction.reply('No music is playing.');
     this.audioPlayer?.removeAllListeners();
     this.queue = [];
     this.audioPlayer?.stop(true);
@@ -103,7 +103,7 @@ export default class MusicPlayer {
     this.voiceConnection?.destroy();
     this.voiceConnection = null;
     musicPlayerCollection.delete(interaction.guildId);
-    await interaction.editReply('Stopping the music and disconnecting from the voice channel.');
+    await interaction.reply('Stopping the music and disconnecting from the voice channel.');
   }
 
   private async youtubeSearch(interaction: CommandInteraction<CacheType>, query: string) {
@@ -130,7 +130,8 @@ export default class MusicPlayer {
   }
 
   async selectMusic(interaction: SelectMenuInteraction<CacheType>) {
-    if (interaction.message.interaction?.id !== this.currentInteration?.id) return interaction.update({ content: 'Wrong interaction', components: [] });
+    await interaction.deferUpdate();
+    if (interaction.message.interaction?.id !== this.currentInteration?.id) return interaction.editReply({ content: 'Wrong interaction', components: [] });
     if (!interaction.values.length) return interaction.editReply('Nothing selected');
     const id = interaction.values[0];
 
@@ -138,7 +139,7 @@ export default class MusicPlayer {
       const videoInfo = await ytdl.getInfo(id);
       this.queue.push(videoInfo);
       this._play();
-      interaction.update({
+      interaction.editReply({
         content: `${videoInfo.videoDetails.title} added to the queue.`,
         components: [],
       });
@@ -232,7 +233,7 @@ export default class MusicPlayer {
           .setDescription(`[${title}](${video_url}/ 'Click to open link.') `)
           .setTimestamp()
           .setFooter({ text: `Duration: ${minutes}` });
-        console.log(thumbnails);
+
         if (thumbnails.length) embed.setThumbnail(thumbnails[0].url);
         this.currentInteration?.channel?.send({ embeds: [embed] });
       } catch (error) {
