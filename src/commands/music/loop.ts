@@ -3,20 +3,19 @@ import { musicPlayerCollection } from '../..';
 
 import { Command } from '../../structures/command';
 
-export default class Volume extends Command {
+export default class Loop extends Command {
   constructor() {
     super({
-      name: 'volume',
-      description: 'Set the volume of the music player. (0-100)',
+      name: 'loop',
+      description: 'Set the loop mode of the player.',
       voiceChannelOnly: true,
       options: [
         {
-          type: 'int',
-          description: 'The volume to set the music player to.',
-          name: 'volume',
+          type: 'string',
+          name: 'mode',
+          description: 'The mode to set the loop to.',
           required: true,
-          min: 0,
-          max: 100,
+          options: ['none', 'all', 'single'],
         },
       ],
     });
@@ -24,6 +23,6 @@ export default class Volume extends Command {
 
   async run(interaction: CommandInteraction<CacheType>) {
     const player = musicPlayerCollection.getOrCreate(interaction.guildId!);
-    player.setVolume(interaction);
+    player.setLoopMode(interaction);
   }
 }

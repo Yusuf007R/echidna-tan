@@ -2,10 +2,11 @@ import { CacheType, CommandInteraction, GuildMember } from 'discord.js';
 
 export type options =
   | {
-      type: 'string' | 'user';
+      type: 'string';
       name: string;
       description: string;
       required?: boolean;
+      options?: string[];
     }
   | {
       type: 'int';
@@ -14,6 +15,17 @@ export type options =
       required?: boolean;
       min?: number;
       max?: number;
+    }
+  | {
+      type: 'sub-command';
+      name: string;
+      description: string;
+    }
+  | {
+      type: 'user';
+      name: string;
+      description: string;
+      required?: boolean;
     };
 
 export type commandConfigs = {

@@ -49,6 +49,9 @@ export default class CommandManager {
                 if (element.required) {
                   option.setRequired(true);
                 }
+                if (element.options?.length) {
+                  element.options.forEach((opt) => option.addChoice(opt, opt));
+                }
                 return option;
               });
               break;
@@ -73,6 +76,13 @@ export default class CommandManager {
                 if (element.max) {
                   option.setMaxValue(element.max);
                 }
+                return option;
+              });
+              break;
+
+            case 'sub-command':
+              slash.addSubcommand((option) => {
+                option.setName(element.name).setDescription(element.description);
                 return option;
               });
               break;
