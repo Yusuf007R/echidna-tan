@@ -6,7 +6,13 @@ export type options =
       name: string;
       description: string;
       required?: boolean;
-      options?: string[];
+      choices?: string[];
+    }
+  | {
+      type: 'bool';
+      name: string;
+      description: string;
+      required?: boolean;
     }
   | {
       type: 'int';
@@ -20,6 +26,7 @@ export type options =
       type: 'sub-command';
       name: string;
       description: string;
+      options?: options[];
     }
   | {
       type: 'user';

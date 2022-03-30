@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from '@discordjs/builders';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
 import {
@@ -7,7 +7,7 @@ import {
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import configs from '../configs';
-import { Command } from '../structures/command';
+import { Command, options } from '../structures/command';
 
 export default class CommandManager {
   commands: Collection<string, Command>;
@@ -41,55 +41,7 @@ export default class CommandManager {
         .setDescription(command.description);
 
       if (command.options) {
-        command.options.forEach((element) => {
-          switch (element.type) {
-            case 'string':
-              slash.addStringOption((option) => {
-                option.setName(element.name).setDescription(element.description);
-                if (element.required) {
-                  option.setRequired(true);
-                }
-                if (element.options?.length) {
-                  element.options.forEach((opt) => option.addChoice(opt, opt));
-                }
-                return option;
-              });
-              break;
-            case 'user':
-              slash.addUserOption((option) => {
-                option.setName(element.name).setDescription(element.description);
-                if (element.required) {
-                  option.setRequired(true);
-                }
-                return option;
-              });
-              break;
-            case 'int':
-              slash.addIntegerOption((option) => {
-                option.setName(element.name).setDescription(element.description);
-                if (element.required) {
-                  option.setRequired(true);
-                }
-                if (element.min) {
-                  option.setMinValue(element.min);
-                }
-                if (element.max) {
-                  option.setMaxValue(element.max);
-                }
-                return option;
-              });
-              break;
-
-            case 'sub-command':
-              slash.addSubcommand((option) => {
-                option.setName(element.name).setDescription(element.description);
-                return option;
-              });
-              break;
-            default:
-              break;
-          }
-        });
+        this.optionBuilder(command.options, slash);
       }
       return slash.toJSON();
     });
@@ -118,5 +70,68 @@ export default class CommandManager {
       console.log(error);
       interaction.reply('An error occured while executing the command.');
     }
+  }
+
+  async optionBuilder(
+    options: options[],
+    slash: SlashCommandBuilder | SlashCommandSubcommandBuilder,
+  ) {
+    options.forEach((element) => {
+      switch (element.type) {
+        case 'string':
+          slash.addStringOption((option) => {
+            option.setName(element.name).setDescription(element.description);
+            if (element.required) {
+              option.setRequired(true);
+            }
+            if (element.choices?.length) {
+              element.choices.forEach((opt) => option.addChoice(opt, opt));
+            }
+
+            return option;
+          });
+          break;
+        case 'user':
+          slash.addUserOption((option) => {
+            option.setName(element.name).setDescription(element.description);
+            if (element.required) {
+              option.setRequired(true);
+            }
+            return option;
+          });
+          break;
+        case 'int':
+          slash.addIntegerOption((option) => {
+            option.setName(element.name).setDescription(element.description);
+            if (element.required) {
+              option.setRequired(true);
+            }
+            if (element.min) {
+              option.setMinValue(element.min);
+            }
+            if (element.max) {
+              option.setMaxValue(element.max);
+            }
+            return option;
+          });
+          break;
+        case 'sub-command':
+          if (!(slash instanceof SlashCommandBuilder)) return;
+          slash.addSubcommand((option) => {
+            option.setName(element.name).setDescription(element.description);
+            if (element.options) this.optionBuilder(element.options, option);
+            return option;
+          });
+          break;
+        case 'bool':
+          slash.addBooleanOption((option) => {
+            option.setName(element.name).setDescription(element.description);
+            return option;
+          });
+          break;
+        default:
+          break;
+      }
+    });
   }
 }

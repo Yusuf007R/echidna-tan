@@ -15,7 +15,7 @@ export default class Loop extends Command {
           name: 'mode',
           description: 'The mode to set the loop to.',
           required: true,
-          options: ['none', 'all', 'single'],
+          choices: ['none', 'all', 'single'],
         },
       ],
     });

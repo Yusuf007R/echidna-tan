@@ -25,7 +25,7 @@ import ytsr from 'ytsr';
 import { musicPlayerCollection } from '..';
 
 import secondsToMinutes from '../utils/seconds-to-minutes';
-import shuffle from './shuffle';
+import shuffle from '../utils/shuffle';
 import Track from './track';
 
 export enum LoopState {
@@ -35,21 +35,21 @@ export enum LoopState {
 }
 
 export default class MusicPlayer {
-  private voiceConnection: VoiceConnection | null = null;
+  protected voiceConnection: VoiceConnection | null = null;
 
-  private queue: Track[] = [];
+  protected queue: Track[] = [];
 
-  private audioPlayer: AudioPlayer | null = null;
+  protected audioPlayer: AudioPlayer | null = null;
 
-  private currentInteration: CommandInteraction<CacheType> | null = null;
+  protected currentInteration: CommandInteraction<CacheType> | null = null;
 
-  private currentTrack: Track | null = null;
+  protected currentTrack: Track | null = null;
 
-  private volume = 1;
+  protected volume = 1;
 
   private ignoreNextNowPlaying = false;
 
-  private loop: LoopState = LoopState.NONE;
+  protected loop: LoopState = LoopState.NONE;
 
   constructor() {}
 
