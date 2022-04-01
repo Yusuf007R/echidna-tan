@@ -16,13 +16,13 @@ import {
   MessageSelectMenu,
   SelectMenuInteraction,
 } from 'discord.js';
+import { EventEmitter } from 'stream';
 
 import ytdl from 'ytdl-core';
 import ytpl from 'ytpl';
 
 import ytsr from 'ytsr';
-
-import { musicPlayerCollection } from '..';
+import { echidnaClient } from '..';
 
 import secondsToMinutes from '../utils/seconds-to-minutes';
 import shuffle from '../utils/shuffle';
@@ -35,21 +35,23 @@ export enum LoopState {
 }
 
 export default class MusicPlayer {
-  protected voiceConnection: VoiceConnection | null = null;
+  voiceConnection: VoiceConnection | null = null;
 
-  protected queue: Track[] = [];
+  queue: Track[] = [];
 
-  protected audioPlayer: AudioPlayer | null = null;
+  audioPlayer: AudioPlayer | null = null;
 
-  protected currentInteration: CommandInteraction<CacheType> | null = null;
+  currentInteration: CommandInteraction<CacheType> | null = null;
 
-  protected currentTrack: Track | null = null;
+  currentTrack: Track | null = null;
 
-  protected volume = 1;
+  volume = 1;
 
   private ignoreNextNowPlaying = false;
 
-  protected loop: LoopState = LoopState.NONE;
+  loop: LoopState = LoopState.NONE;
+
+  events = new EventEmitter();
 
   constructor() {}
 
@@ -61,7 +63,7 @@ export default class MusicPlayer {
     if (ytdl.validateURL(trimedQuery) || ytdl.validateID(trimedQuery)) {
       try {
         const track = new Track(trimedQuery);
-        this.queue.push(track);
+        this.pushTrack(track);
         interaction.editReply({ content: `${(await track.getInfo()).title} added to the queue.` });
         this._play();
       } catch (error) {
@@ -69,11 +71,10 @@ export default class MusicPlayer {
       }
       return;
     }
-
     if (ytpl.validateID(trimedQuery)) {
       try {
         const playlist = await ytpl(trimedQuery, { limit: Infinity });
-        this.queue.push(...playlist.items.map((item) => new Track(item.shortUrl)));
+        this.pushTrack([...playlist.items.map((item) => new Track(item.shortUrl))]);
         interaction.editReply({
           content: `${playlist.items.length} songs have been added to the Queue.`,
         });
@@ -87,6 +88,7 @@ export default class MusicPlayer {
   }
 
   pause(interaction: CommandInteraction<CacheType>) {
+    this.events.emit('pause');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (this.audioPlayer.state.status === AudioPlayerStatus.Paused) return interaction.reply('music is already paused.');
     interaction.reply('Music paused.');
@@ -94,6 +96,7 @@ export default class MusicPlayer {
   }
 
   resume(interaction: CommandInteraction<CacheType>) {
+    this.events.emit('resume');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (this.audioPlayer?.state.status === AudioPlayerStatus.Playing) return interaction.reply('Music is already playing.');
     interaction.reply('Music resumed.');
@@ -101,6 +104,7 @@ export default class MusicPlayer {
   }
 
   skip(interaction: CommandInteraction<CacheType>) {
+    this.events.emit('skip');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (this.queue.length <= 1) return interaction.reply('No more songs in the queue.');
     interaction.reply('Song skipped.');
@@ -108,6 +112,7 @@ export default class MusicPlayer {
   }
 
   async seek(interaction: CommandInteraction<CacheType>) {
+    this.events.emit('seek');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (!this.currentTrack) return interaction.reply('No track is playing.');
     const time = interaction.options.getInteger('time');
@@ -118,12 +123,14 @@ export default class MusicPlayer {
   }
 
   async stop(interaction: CommandInteraction<CacheType>) {
+    this.events.emit('stop');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     this._stop();
     await interaction.reply('Stopping the music and disconnecting from the voice channel.');
   }
 
   async shuffle(interaction: CommandInteraction<CacheType>) {
+    this.events.emit('shuffle');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     console.log(this.queue);
     this.queue = shuffle(this.queue);
@@ -132,6 +139,7 @@ export default class MusicPlayer {
   }
 
   async setVolume(interaction: CommandInteraction<CacheType>) {
+    this.events.emit('volume');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     const volume = interaction.options.getInteger('volume');
     if (volume == null) return interaction.reply('No volume provided');
@@ -169,6 +177,7 @@ export default class MusicPlayer {
   }
 
   async setLoopMode(interaction: CommandInteraction<CacheType>) {
+    this.events.emit('loop');
     const mode = interaction.options.getString('mode');
     if (!mode) return interaction.reply('No mode provided');
     switch (mode) {
@@ -220,7 +229,7 @@ export default class MusicPlayer {
 
     try {
       const track = new Track(id);
-      this.queue.push();
+      this.pushTrack(track);
       this._play();
       interaction.editReply({
         content: `${(await track.getInfo()).title} added to the queue.`,
@@ -229,6 +238,15 @@ export default class MusicPlayer {
     } catch (error) {
       this.internalErrorMessage(error);
     }
+  }
+
+  pushTrack(track: Track | Track[]) {
+    this.events.emit('queue');
+    if (Array.isArray(track)) {
+      this.queue.push(...track);
+      return;
+    }
+    this.queue.push(track);
   }
 
   private async _play() {
@@ -240,8 +258,10 @@ export default class MusicPlayer {
       }
 
       this.currentTrack = this.queue.shift()!;
+      this.events.emit('queue');
 
       this.audioPlayer?.play(await this.currentTrack.getStream(0, this.volume));
+      this.events.emit('play');
     } catch (error) {
       this.internalErrorMessage(error);
     }
@@ -255,7 +275,7 @@ export default class MusicPlayer {
     this.voiceConnection?.removeAllListeners();
     this.voiceConnection?.destroy();
     this.voiceConnection = null;
-    musicPlayerCollection.delete(this.currentInteration.guildId);
+    echidnaClient.musicManager.delete(this.currentInteration.guildId);
   }
 
   private async _connectVoiceChannel() {
@@ -292,11 +312,11 @@ export default class MusicPlayer {
       console.log('Song ended');
       switch (this.loop) {
         case LoopState.SINGLE:
-          this.queue.push(this.currentTrack);
+          this.pushTrack(this.currentTrack);
           this.loop = LoopState.NONE;
           break;
         case LoopState.ALL:
-          this.queue.push(this.currentTrack);
+          this.pushTrack(this.currentTrack);
           break;
         default:
           break;
