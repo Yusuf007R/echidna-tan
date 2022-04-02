@@ -7,6 +7,14 @@ import internal from 'stream';
 import ytdl from 'ytdl-core';
 import createYtStream from '../utils/create-yt-stream';
 
+export type socketTrack = {
+  id: string;
+  url: string;
+  duration: number;
+  title: string;
+  thumbnail?: string;
+};
+
 export default class Track {
   public url: string;
 
@@ -88,5 +96,18 @@ export default class Track {
     });
 
     return this.AudioResource;
+  }
+
+  async toSocketTrack(): Promise<socketTrack> {
+    const data = await this.getInfo();
+    const thumbnails = [...data.thumbnails];
+    thumbnails.sort((a, b) => b.width + b.height - (a.width + a.height));
+    return {
+      duration: Number(data.lengthSeconds),
+      id: data.videoId,
+      title: data.title,
+      url: this.url,
+      thumbnail: thumbnails.length ? thumbnails[0].url : undefined,
+    };
   }
 }

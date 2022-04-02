@@ -16,16 +16,17 @@ import {
   MessageSelectMenu,
   SelectMenuInteraction,
 } from 'discord.js';
-import { EventEmitter } from 'stream';
 
 import ytdl from 'ytdl-core';
 import ytpl from 'ytpl';
 
 import ytsr from 'ytsr';
 import { echidnaClient } from '..';
+import queueToSocketQueue from '../utils/queue-to-socket-queue';
 
 import secondsToMinutes from '../utils/seconds-to-minutes';
 import shuffle from '../utils/shuffle';
+import { MusicPlayerEventEmitter } from '../DTOs/music-player.event-emitter';
 import Track from './track';
 
 export enum LoopState {
@@ -51,7 +52,7 @@ export default class MusicPlayer {
 
   loop: LoopState = LoopState.NONE;
 
-  events = new EventEmitter();
+  events = new MusicPlayerEventEmitter();
 
   constructor() {}
 
@@ -88,63 +89,63 @@ export default class MusicPlayer {
   }
 
   pause(interaction: CommandInteraction<CacheType>) {
-    this.events.emit('pause');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (this.audioPlayer.state.status === AudioPlayerStatus.Paused) return interaction.reply('music is already paused.');
-    interaction.reply('Music paused.');
     this.audioPlayer?.pause();
+    this.events.emit('pause');
+    interaction.reply('Music paused.');
   }
 
   resume(interaction: CommandInteraction<CacheType>) {
-    this.events.emit('resume');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (this.audioPlayer?.state.status === AudioPlayerStatus.Playing) return interaction.reply('Music is already playing.');
-    interaction.reply('Music resumed.');
     this.audioPlayer?.unpause();
+    this.events.emit('resume');
+    interaction.reply('Music resumed.');
   }
 
   skip(interaction: CommandInteraction<CacheType>) {
-    this.events.emit('skip');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (this.queue.length <= 1) return interaction.reply('No more songs in the queue.');
-    interaction.reply('Song skipped.');
     this.audioPlayer?.stop();
+    this.events.emit('skip');
+    interaction.reply('Song skipped.');
   }
 
   async seek(interaction: CommandInteraction<CacheType>) {
-    this.events.emit('seek');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (!this.currentTrack) return interaction.reply('No track is playing.');
     const time = interaction.options.getInteger('time');
     if (time == null) return interaction.reply('No time provided');
     this.ignoreNextNowPlaying = true;
     this.audioPlayer.play(await this.currentTrack.getStream(time));
+    this.events.emit('seek', time);
     interaction.reply(`Seeking to ${secondsToMinutes(time)}`);
   }
 
   async stop(interaction: CommandInteraction<CacheType>) {
-    this.events.emit('stop');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     this._stop();
+    this.events.emit('stop');
     await interaction.reply('Stopping the music and disconnecting from the voice channel.');
   }
 
   async shuffle(interaction: CommandInteraction<CacheType>) {
-    this.events.emit('shuffle');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     console.log(this.queue);
     this.queue = shuffle(this.queue);
     console.log(this.queue);
+    this.events.emit('queue', await queueToSocketQueue(this.queue));
     await interaction.reply('Queue shuffled.');
   }
 
   async setVolume(interaction: CommandInteraction<CacheType>) {
-    this.events.emit('volume');
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     const volume = interaction.options.getInteger('volume');
     if (volume == null) return interaction.reply('No volume provided');
     this.currentTrack?.volumenTransformer?.setVolume(volume / 100);
     this.volume = volume / 100;
+    this.events.emit('volume', volume);
     interaction.reply(`Volume set to ${volume}%`);
   }
 
@@ -177,7 +178,7 @@ export default class MusicPlayer {
   }
 
   async setLoopMode(interaction: CommandInteraction<CacheType>) {
-    this.events.emit('loop');
+    this.events.emit('loop', this.loop);
     const mode = interaction.options.getString('mode');
     if (!mode) return interaction.reply('No mode provided');
     switch (mode) {
@@ -240,13 +241,13 @@ export default class MusicPlayer {
     }
   }
 
-  pushTrack(track: Track | Track[]) {
-    this.events.emit('queue');
+  async pushTrack(track: Track | Track[]) {
     if (Array.isArray(track)) {
       this.queue.push(...track);
       return;
     }
     this.queue.push(track);
+    this.events.emit('queue', await queueToSocketQueue(this.queue));
   }
 
   private async _play() {
@@ -258,10 +259,10 @@ export default class MusicPlayer {
       }
 
       this.currentTrack = this.queue.shift()!;
-      this.events.emit('queue');
+      this.events.emit('queue', await queueToSocketQueue(this.queue));
 
       this.audioPlayer?.play(await this.currentTrack.getStream(0, this.volume));
-      this.events.emit('play');
+      this.events.emit('play', await this.currentTrack.toSocketTrack());
     } catch (error) {
       this.internalErrorMessage(error);
     }

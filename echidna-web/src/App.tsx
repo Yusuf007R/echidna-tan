@@ -1,11 +1,21 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import logo from './logo.svg';
 import './App.css';
 import {Button} from '@mantine/core';
-import {io} from 'socket.io-client';
-var socket = io('localhost:3000');
+import {io, Socket} from 'socket.io-client';
+const socket = io('localhost:3000');
 function App() {
-  const [count, setCount] = useState(0);
+  const [isPause, setisPause] = useState(false);
+
+  useEffect(() => {
+    socket.emit('joinGuild', import.meta.env.VITE_GUILD_ID);
+    socket.on('pause', () => {
+      setisPause(true);
+    });
+    socket.on('resume', () => {
+      setisPause(false);
+    });
+  }, []);
 
   return (
     <div className="App">
@@ -14,11 +24,20 @@ function App() {
         <p>Hello Vite + React!</p>
         <p>
           <Button
+            disabled={isPause}
             onClick={() => {
-              socket.emit('count', count);
-              setCount(count => count + 1);
+              socket.emit('pause');
+              setisPause(true);
             }}>
-            count is: {count}
+            pause
+          </Button>
+          <Button
+            disabled={!isPause}
+            onClick={() => {
+              socket.emit('resume');
+              setisPause(false);
+            }}>
+            resume
           </Button>
         </p>
         <p>
