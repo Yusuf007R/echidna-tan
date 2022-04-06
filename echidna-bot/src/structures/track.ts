@@ -5,15 +5,8 @@ import {
 
 import internal from 'stream';
 import ytdl from 'ytdl-core';
+import { socketTrack } from '../../../common/DTOs/music-player-socket';
 import createYtStream from '../utils/create-yt-stream';
-
-export type socketTrack = {
-  id: string;
-  url: string;
-  duration: number;
-  title: string;
-  thumbnail?: string;
-};
 
 export default class Track {
   public url: string;
@@ -28,9 +21,11 @@ export default class Track {
 
   private stream: opus.Encoder | null = null;
 
-  private AudioResource: AudioResource<null> | null = null;
+  AudioResource: AudioResource<null> | null = null;
 
   private trackinfo: ytdl.videoInfo | null = null;
+
+  beginTime = 0;
 
   constructor(url: string) {
     this.url = url;
@@ -43,6 +38,7 @@ export default class Track {
   }
 
   async getStream(seek = 0, volume = 1) {
+    this.beginTime = seek;
     if (!this.trackinfo) this.trackinfo = await ytdl.getInfo(this.url);
     const filteredFormats = this.trackinfo.formats
       .filter((item) => !!item.audioBitrate)
@@ -94,6 +90,7 @@ export default class Track {
     this.AudioResource = createAudioResource(this.stream, {
       inputType: StreamType.Opus,
     });
+    this.AudioResource.playbackDuration;
 
     return this.AudioResource;
   }
@@ -109,5 +106,11 @@ export default class Track {
       url: this.url,
       thumbnail: thumbnails.length ? thumbnails[0].url : undefined,
     };
+  }
+
+  getCurrentTime() {
+    const time = this.AudioResource?.playbackDuration;
+    const begin = this.beginTime;
+    return (time ?? 0) / 1000 + (begin ?? 0);
   }
 }

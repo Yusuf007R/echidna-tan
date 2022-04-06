@@ -5,16 +5,24 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint src/**/*.ts",
+    "format": "eslint src/**/*.ts --fix"
   },
   "dependencies": {
-    "@mantine/core": "^4.1.0",
-    "@mantine/hooks": "^4.1.0",
+    "@chakra-ui/react": "^1.8.7",
+    "@emotion/react": "^11",
+    "@emotion/styled": "^11",
+    "apisauce": "^2.1.5",
+    "easy-peasy": "^5.0.4",
+    "framer-motion": "^6",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-icons": "^4.3.1",
     "socket.io-client": "^4.4.1"
   },
   "devDependencies": {
+    "@types/node": "^17.0.23",
     "@types/react": "^17.0.33",
     "@types/react-dom": "^17.0.10",
     "@vitejs/plugin-react": "^1.0.7",

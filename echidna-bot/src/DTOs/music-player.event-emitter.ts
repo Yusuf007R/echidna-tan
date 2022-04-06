@@ -1,28 +1,23 @@
 import { AudioPlayerStatus } from '@discordjs/voice';
 import { EventEmitter } from 'stream';
-import { socketTrack } from '../structures/track';
-
-export type socketLoopMode = 'none' | 'all' | 'single';
+import { LoopState, MusicSocketData, socketTrack } from '../../../common/DTOs/music-player-socket';
 
 export declare interface MusicPlayerEventEmitter {
-  on(event: 'pause', listener: VoidFunction): this;
-  on(event: 'resume', listener: VoidFunction): this;
-  on(event: 'skip', listener: VoidFunction): this;
-  on(event: 'seek', listener: (time: number) => void): this;
+  on(event: 'currentTrack', listener: (track: socketTrack) => void): this;
   on(event: 'stop', listener: VoidFunction): this;
   on(event: 'volume', listener: (volume: number) => void): this;
-  on(event: 'loop', listener: (loop: socketLoopMode) => void): this;
+  on(event: 'queue', listener: (tracks: socketTrack[]) => void): this;
+  on(event: 'loop', listener: (loop: LoopState) => void): this;
+  on(event: 'status', listener: (status: AudioPlayerStatus) => void): this;
+  on(event: 'data', listener: (data: MusicSocketData) => void): this;
 
-  emit(eventName: 'play', queue: socketTrack): boolean;
-  emit(eventName: 'pause', ...args: any[]): boolean;
-  emit(eventName: 'resume', ...args: any[]): boolean;
-  emit(eventName: 'skip', ...args: any[]): boolean;
-  emit(eventName: 'seek', time: number): boolean;
+  emit(eventName: 'currentTrack', track: socketTrack): boolean;
   emit(eventName: 'stop', ...args: any[]): boolean;
   emit(eventName: 'queue', queue: socketTrack[]): boolean;
   emit(eventName: 'volume', volume: number): boolean;
-  emit(eventName: 'loop', loop: socketLoopMode): boolean;
+  emit(eventName: 'loop', loop: LoopState): boolean;
   emit(eventName: 'status', status: AudioPlayerStatus): boolean;
+  emit(event: 'data', data: MusicSocketData): this;
 }
 
 export class MusicPlayerEventEmitter extends EventEmitter {}

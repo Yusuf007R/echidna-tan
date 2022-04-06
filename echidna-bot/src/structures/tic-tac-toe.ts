@@ -7,7 +7,8 @@ import {
   MessageEmbed,
   User,
 } from 'discord.js';
-import { tictactoeCollection } from '..';
+import { echidnaClient } from '..';
+
 import TicTacToeUtils from '../utils/tic-tac-toe-utils';
 import wait from '../utils/wait';
 
@@ -224,7 +225,7 @@ export default class TicTacToe {
 
   private async endGame() {
     if (this.timeOut) clearTimeout(this.timeOut);
-    if (this.currentInteraction.id) tictactoeCollection.delete(this.currentInteraction.id);
+    if (this.currentInteraction.id) echidnaClient.ticTacToeManager.delete(this.currentInteraction.id);
     let content: string = '';
     switch (this.status) {
       case TicTacToeStatus.Finished:

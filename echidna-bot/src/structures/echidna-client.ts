@@ -2,7 +2,7 @@ import { Client, Collection, Intents } from 'discord.js';
 import configs from '../configs';
 import CommandManager from '../managers/command-manager';
 import MusicPlayerManager from '../managers/music-player-manager';
-import { io } from '../sockets';
+import { io } from '../api/index';
 import DanBooru from './dan-booru';
 import TicTacToe from './tic-tac-toe';
 

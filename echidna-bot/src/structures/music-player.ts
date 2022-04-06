@@ -28,12 +28,7 @@ import secondsToMinutes from '../utils/seconds-to-minutes';
 import shuffle from '../utils/shuffle';
 import { MusicPlayerEventEmitter } from '../DTOs/music-player.event-emitter';
 import Track from './track';
-
-export enum LoopState {
-  NONE = 'none',
-  SINGLE = 'single',
-  ALL = 'all',
-}
+import { LoopState, MusicSocketData } from '../../../common/DTOs/music-player-socket';
 
 export default class MusicPlayer {
   voiceConnection: VoiceConnection | null = null;
@@ -46,13 +41,15 @@ export default class MusicPlayer {
 
   currentTrack: Track | null = null;
 
-  volume = 1;
+  volume = 100;
 
   private ignoreNextNowPlaying = false;
 
-  loop: LoopState = LoopState.NONE;
+  loop: LoopState = LoopState.None;
 
   events = new MusicPlayerEventEmitter();
+
+  alReadyInitalized = false;
 
   constructor() {}
 
@@ -74,7 +71,8 @@ export default class MusicPlayer {
     }
     if (ytpl.validateID(trimedQuery)) {
       try {
-        const playlist = await ytpl(trimedQuery, { limit: Infinity });
+        const playlist = await ytpl(trimedQuery, { limit: 30 });
+        if (playlist.estimatedItemCount > 30) interaction.channel?.send('Only the first 30 songs will be added to the queue.');
         this.pushTrack([...playlist.items.map((item) => new Track(item.shortUrl))]);
         interaction.editReply({
           content: `${playlist.items.length} songs have been added to the Queue.`,
@@ -92,7 +90,7 @@ export default class MusicPlayer {
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (this.audioPlayer.state.status === AudioPlayerStatus.Paused) return interaction.reply('music is already paused.');
     this.audioPlayer?.pause();
-    this.events.emit('pause');
+    this.events.emit('status', this.audioPlayer.state.status);
     interaction.reply('Music paused.');
   }
 
@@ -100,15 +98,15 @@ export default class MusicPlayer {
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (this.audioPlayer?.state.status === AudioPlayerStatus.Playing) return interaction.reply('Music is already playing.');
     this.audioPlayer?.unpause();
-    this.events.emit('resume');
+    this.events.emit('status', this.audioPlayer.state.status);
     interaction.reply('Music resumed.');
   }
 
   skip(interaction: CommandInteraction<CacheType>) {
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
-    if (this.queue.length <= 1) return interaction.reply('No more songs in the queue.');
+    if (!this.queue.length) return interaction.reply('No more songs in the queue.');
     this.audioPlayer?.stop();
-    this.events.emit('skip');
+
     interaction.reply('Song skipped.');
   }
 
@@ -117,15 +115,21 @@ export default class MusicPlayer {
     if (!this.currentTrack) return interaction.reply('No track is playing.');
     const time = interaction.options.getInteger('time');
     if (time == null) return interaction.reply('No time provided');
+    this._seek(time);
+
+    interaction.reply(`Seeking to ${secondsToMinutes(time)}`);
+  }
+
+  async _seek(time: number) {
+    if (!this.audioPlayer || !this.currentTrack) return;
     this.ignoreNextNowPlaying = true;
     this.audioPlayer.play(await this.currentTrack.getStream(time));
-    this.events.emit('seek', time);
-    interaction.reply(`Seeking to ${secondsToMinutes(time)}`);
   }
 
   async stop(interaction: CommandInteraction<CacheType>) {
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
-    this._stop();
+    if (!this.currentInteration?.guildId) return;
+    this._stop(this.currentInteration?.guildId);
     this.events.emit('stop');
     await interaction.reply('Stopping the music and disconnecting from the voice channel.');
   }
@@ -143,10 +147,21 @@ export default class MusicPlayer {
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     const volume = interaction.options.getInteger('volume');
     if (volume == null) return interaction.reply('No volume provided');
-    this.currentTrack?.volumenTransformer?.setVolume(volume / 100);
-    this.volume = volume / 100;
+    this._setVolume(volume);
     this.events.emit('volume', volume);
     interaction.reply(`Volume set to ${volume}%`);
+  }
+
+  _setVolume(volume: number) {
+    if (!this.audioPlayer) return;
+    this.volume = volume;
+    this.currentTrack?.volumenTransformer?.setVolume(this.volume / 100);
+    this.events.emit('volume', volume);
+  }
+
+  _setLoop(loop: LoopState) {
+    this.loop = loop;
+    this.events.emit('loop', loop);
   }
 
   async nowPlaying(interaction?: CommandInteraction<CacheType>) {
@@ -178,25 +193,25 @@ export default class MusicPlayer {
   }
 
   async setLoopMode(interaction: CommandInteraction<CacheType>) {
-    this.events.emit('loop', this.loop);
     const mode = interaction.options.getString('mode');
     if (!mode) return interaction.reply('No mode provided');
     switch (mode) {
       case 'none':
         interaction.reply('Loop mode set to none.');
-        this.loop = LoopState.NONE;
+        this.loop = LoopState.None;
         break;
       case 'single':
         interaction.reply('Loop mode set to single.');
-        this.loop = LoopState.SINGLE;
+        this.loop = LoopState.Single;
         break;
       case 'all':
         interaction.reply('Loop mode set to all.');
-        this.loop = LoopState.ALL;
+        this.loop = LoopState.All;
         break;
       default:
         break;
     }
+    this.events.emit('loop', this.loop);
   }
 
   private async youtubeSearch(interaction: CommandInteraction<CacheType>, query: string) {
@@ -242,11 +257,8 @@ export default class MusicPlayer {
   }
 
   async pushTrack(track: Track | Track[]) {
-    if (Array.isArray(track)) {
-      this.queue.push(...track);
-      return;
-    }
-    this.queue.push(track);
+    if (Array.isArray(track)) this.queue.push(...track);
+    else this.queue.push(track);
     this.events.emit('queue', await queueToSocketQueue(this.queue));
   }
 
@@ -261,22 +273,26 @@ export default class MusicPlayer {
       this.currentTrack = this.queue.shift()!;
       this.events.emit('queue', await queueToSocketQueue(this.queue));
 
-      this.audioPlayer?.play(await this.currentTrack.getStream(0, this.volume));
-      this.events.emit('play', await this.currentTrack.toSocketTrack());
+      this.audioPlayer?.play(await this.currentTrack.getStream(0, this.volume / 100));
+      this.events.emit('currentTrack', await this.currentTrack.toSocketTrack());
+      if (!this.alReadyInitalized) {
+        this.events.emit('data', await this.getDataToSocket());
+        this.alReadyInitalized = true;
+      }
     } catch (error) {
       this.internalErrorMessage(error);
     }
   }
 
-  private _stop() {
-    if (!this.currentInteration?.guildId) return;
+  _stop(guildId: string) {
     this.audioPlayer?.removeAllListeners();
     this.queue = [];
     this.audioPlayer?.stop(true);
     this.voiceConnection?.removeAllListeners();
     this.voiceConnection?.destroy();
     this.voiceConnection = null;
-    echidnaClient.musicManager.delete(this.currentInteration.guildId);
+    this.events.removeAllListeners();
+    echidnaClient.musicManager.remove(guildId);
   }
 
   private async _connectVoiceChannel() {
@@ -305,6 +321,8 @@ export default class MusicPlayer {
   }
 
   private async _audioPlayerStateListener(oldState: AudioPlayerState, newState: AudioPlayerState) {
+    this.events.emit('status', newState.status);
+
     if (
       oldState.status === AudioPlayerStatus.Playing
       && newState.status === AudioPlayerStatus.Idle
@@ -312,11 +330,11 @@ export default class MusicPlayer {
       if (!this.currentTrack) return;
       console.log('Song ended');
       switch (this.loop) {
-        case LoopState.SINGLE:
+        case LoopState.Single:
           this.pushTrack(this.currentTrack);
-          this.loop = LoopState.NONE;
+          this.loop = LoopState.None;
           break;
-        case LoopState.ALL:
+        case LoopState.All:
           this.pushTrack(this.currentTrack);
           break;
         default:
@@ -327,8 +345,8 @@ export default class MusicPlayer {
       this.currentInteration?.followUp(
         'Music queue is empty, So I will disconnect from the voice channel.',
       );
-
-      this._stop();
+      if (!this.currentInteration?.guildId) return;
+      this._stop(this.currentInteration?.guildId);
     }
 
     if (
@@ -344,5 +362,16 @@ export default class MusicPlayer {
     if (this.currentInteration) {
       this.currentInteration.editReply('Something went wrong, please try again later.');
     }
+  }
+
+  async getDataToSocket(): Promise<MusicSocketData> {
+    return {
+      queue: await queueToSocketQueue(this.queue),
+      currentTrack: (await this.currentTrack?.toSocketTrack()) ?? null,
+      loop: this.loop,
+      volume: this.volume,
+      status: this.audioPlayer?.state.status ?? AudioPlayerStatus.Idle,
+      currentTime: this.currentTrack?.getCurrentTime() ?? 0,
+    };
   }
 }
