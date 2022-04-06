@@ -38,10 +38,10 @@ export default function MusicProgressBar() {
         seek(value);
       }}
       value={musicProgressValue}>
-      <SliderTrack>
+      <SliderTrack h="2px">
         <SliderFilledTrack />
       </SliderTrack>
-      <SliderThumb />
+      <SliderThumb w="12px" h="12px" />
     </Slider>
   );
 }

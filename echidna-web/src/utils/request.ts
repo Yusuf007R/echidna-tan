@@ -1,9 +1,9 @@
 import {create} from 'apisauce';
+import config from '../configs';
 
 export const playerRequest = create({
-  // @ts-ignore
-  baseURL: `${import.meta.env.VITE_API_URL}/player`,
+  baseURL: `${config.url}/player`,
   headers: {
-    'Guild-Id': import.meta.env.VITE_GUILD_ID,
+    'Guild-Id': config.guildId,
   },
 });

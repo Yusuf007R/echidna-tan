@@ -4,7 +4,7 @@ import {
   MusicSocketData,
 } from '../../../common/DTOs/music-player-socket';
 import {playerRequest} from '../utils/request';
-import toast from '../utils/toast';
+import showToast from '../utils/toast';
 
 const postPause = async () => {
   const response = await playerRequest.post<true>('/pause');
@@ -37,16 +37,12 @@ const getData = async () => {
 };
 
 function handleResponse<T>(response: ApiResponse<T, T>) {
-  if (response.ok && response?.data) {
+  if (response.ok && response.data) {
     return response.data;
   }
-  toast({
-    title: 'Error',
-    description: response.originalError ?? response.problem ?? 'Unknown error',
-    status: 'error',
-    duration: 9000,
-    isClosable: true,
-  });
+
+  // @ts-ignore
+  showToast('ERROR', response.data?.error ?? 'Unknown Error', 'error');
   return null;
 }
 

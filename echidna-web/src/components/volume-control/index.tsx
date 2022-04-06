@@ -19,7 +19,7 @@ export default function VolumeControl() {
   const setVolume = useAppActions(actions => actions.musicPlayer.volume);
 
   return (
-    <Popover closeOnBlur={false}>
+    <Popover closeOnBlur={false} trigger="hover">
       <PopoverTrigger>
         <IconButton
           mx="4"
