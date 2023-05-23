@@ -1,6 +1,11 @@
-import { CacheType, CommandInteraction } from 'discord.js';
-import { echidnaClient } from '../..';
-import { Command } from '../../structures/command';
+import {
+  ApplicationCommandOptionType,
+  CacheType,
+  CommandInteraction,
+} from 'discord.js';
+import {echidnaClient} from '../..';
+import {Command} from '../../structures/command';
+import GetChoices from '../../utils/get-choices';
 
 export default class DanbooruCommand extends Command {
   constructor() {
@@ -29,13 +34,15 @@ export default class DanbooruCommand extends Command {
 
   async run(interaction: CommandInteraction<CacheType>) {
     await interaction.deferReply();
-    const tags = interaction.options.getString('tags');
-    const postId = interaction.options.getInteger('post-id');
-    const nsfw = interaction.options.getBoolean('nsfw');
+    const choices = new GetChoices(interaction.options);
+    const tags = choices.getString('tags');
+    const postId = choices.getNumber('post-id');
+    const nsfw = choices.getBoolean('nsfw');
     if (nsfw && !echidnaClient.danbooru.isNsfwAlowed(interaction)) {
       interaction.editReply('NSFW is not allowed in this channel.');
       return;
     }
+    console.log(tags, postId, nsfw);
     try {
       if (tags) {
         const post = await echidnaClient.danbooru.querySinglePost({
@@ -45,17 +52,22 @@ export default class DanbooruCommand extends Command {
         echidnaClient.danbooru.sendMessage(interaction, post);
         return;
       }
-      if (postId !== null) {
+      if (postId) {
         const post = await echidnaClient.danbooru.getPostById(postId);
         echidnaClient.danbooru.sendMessage(interaction, post);
         return;
       }
     } catch (error: any) {
-      interaction.editReply(error.message ?? 'Internal error, try again later.');
+      interaction.editReply(
+        error.message ?? 'Internal error, try again later.',
+      );
       console.log(error);
       return;
     }
-    const post = await echidnaClient.danbooru.querySinglePost({ tags: ['order:rank'], nsfw: !!nsfw });
+    const post = await echidnaClient.danbooru.querySinglePost({
+      tags: ['order:rank'],
+      nsfw: !!nsfw,
+    });
     echidnaClient.danbooru.sendMessage(interaction, post);
   }
 }

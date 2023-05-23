@@ -1,4 +1,5 @@
 import {
+  keyframes,
   Slider,
   SliderFilledTrack,
   SliderThumb,
@@ -32,14 +33,28 @@ export default function MusicProgressBar() {
       }
     };
   }, [isPlaying]);
+
+  const key = keyframes`
+    0%{background-position:32% 0%}
+    50%{background-position:69% 100%}
+    100%{background-position:32% 0%}
+  `;
+
   return (
     <Slider
       onChange={value => {
         seek(value);
       }}
       value={musicProgressValue}>
-      <SliderTrack h="2px">
-        <SliderFilledTrack />
+      <SliderTrack h="5px">
+        <SliderFilledTrack
+          sx={{
+            backgroundSize: '600% 600%',
+            animationPlayState: isPlaying ? 'running' : 'paused',
+          }}
+          bgGradient="linear(to-r, pink.700, pink.400, purple.400, purple.700)"
+          animation={`${key} infinite 4s linear`}
+        />
       </SliderTrack>
       <SliderThumb w="12px" h="12px" />
     </Slider>

@@ -8,13 +8,10 @@ import {
   VoiceConnection,
 } from '@discordjs/voice';
 import {
+  ActionRow,
   CacheType,
   CommandInteraction,
   GuildMember,
-  MessageActionRow,
-  MessageEmbed,
-  MessageSelectMenu,
-  SelectMenuInteraction,
 } from 'discord.js';
 
 import ytdl from 'ytdl-core';
@@ -29,6 +26,9 @@ import shuffle from '../utils/shuffle';
 import { MusicPlayerEventEmitter } from '../DTOs/music-player.event-emitter';
 import Track from './track';
 import { LoopState, MusicSocketData } from '../../../common/DTOs/music-player-socket';
+import { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder } from '@discordjs/builders';
+import GetChoices from '../utils/get-choices';
+import { StringSelectMenuInteraction } from 'discord.js';
 
 export default class MusicPlayer {
   voiceConnection: VoiceConnection | null = null;
@@ -54,7 +54,7 @@ export default class MusicPlayer {
   constructor() {}
 
   async play(interaction: CommandInteraction<CacheType>) {
-    const query = interaction.options.getString('query');
+    const query = new GetChoices(interaction.options).getString('query');
     this.currentInteration = interaction;
     if (!query) return interaction.editReply('No query provided');
     const trimedQuery = query.trim();
@@ -113,7 +113,7 @@ export default class MusicPlayer {
   async seek(interaction: CommandInteraction<CacheType>) {
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
     if (!this.currentTrack) return interaction.reply('No track is playing.');
-    const time = interaction.options.getInteger('time');
+    const time = new GetChoices(interaction.options).getNumber('time');
     if (time == null) return interaction.reply('No time provided');
     this._seek(time);
 
@@ -123,7 +123,7 @@ export default class MusicPlayer {
   async _seek(time: number) {
     if (!this.audioPlayer || !this.currentTrack) return;
     this.ignoreNextNowPlaying = true;
-    this.audioPlayer.play(await this.currentTrack.getStream(time));
+    this.audioPlayer.play(await this.currentTrack.getStream(time, this.volume / 100));
   }
 
   async stop(interaction: CommandInteraction<CacheType>) {
@@ -136,16 +136,16 @@ export default class MusicPlayer {
 
   async shuffle(interaction: CommandInteraction<CacheType>) {
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
-    console.log(this.queue);
+
     this.queue = shuffle(this.queue);
-    console.log(this.queue);
+
     this.events.emit('queue', await queueToSocketQueue(this.queue));
     await interaction.reply('Queue shuffled.');
   }
 
   async setVolume(interaction: CommandInteraction<CacheType>) {
     if (!this.audioPlayer) return interaction.reply('No music is playing.');
-    const volume = interaction.options.getInteger('volume');
+    const volume = new GetChoices(interaction.options).getNumber('volume');
     if (volume == null) return interaction.reply('No volume provided');
     this._setVolume(volume);
     this.events.emit('volume', volume);
@@ -174,7 +174,7 @@ export default class MusicPlayer {
       } = await this.currentTrack.getInfo();
       thumbnails.sort((a, b) => b.width + b.height - (a.width + a.height));
       const minutes = secondsToMinutes(Number(lengthSeconds));
-      const embed = new MessageEmbed()
+      const embed = new EmbedBuilder()
         .setTitle('Now playing: ')
         .setDescription(`[${title}](${video_url}/ 'Click to open link.') `)
         .setTimestamp()
@@ -193,7 +193,7 @@ export default class MusicPlayer {
   }
 
   async setLoopMode(interaction: CommandInteraction<CacheType>) {
-    const mode = interaction.options.getString('mode');
+    const mode =  new GetChoices(interaction.options).getString('mode');
     if (!mode) return interaction.reply('No mode provided');
     switch (mode) {
       case 'none':
@@ -219,8 +219,8 @@ export default class MusicPlayer {
       const results = await ytsr(query, { limit: 5 });
       const tracks = results.items.filter((item) => item.type === 'video') as ytsr.Video[];
       if (!tracks.length) return interaction.editReply('No results found');
-      const row = new MessageActionRow().addComponents(
-        new MessageSelectMenu()
+      const row =  new ActionRowBuilder<SelectMenuBuilder>().setComponents(
+        new SelectMenuBuilder()
           .setCustomId('music')
           .setPlaceholder('Click here to select a music')
           .addOptions(
@@ -237,7 +237,7 @@ export default class MusicPlayer {
     }
   }
 
-  async selectMusic(interaction: SelectMenuInteraction<CacheType>) {
+  async selectMusic(interaction: StringSelectMenuInteraction<CacheType>) {
     await interaction.deferUpdate();
     if (interaction.message.interaction?.id !== this.currentInteration?.id) return interaction.editReply({ content: 'Wrong interaction', components: [] });
     if (!interaction.values.length) return interaction.editReply('Nothing selected');
@@ -259,7 +259,10 @@ export default class MusicPlayer {
   async pushTrack(track: Track | Track[]) {
     if (Array.isArray(track)) this.queue.push(...track);
     else this.queue.push(track);
-    this.events.emit('queue', await queueToSocketQueue(this.queue));
+    this.events.emit(
+      'trackAdded',
+      Array.isArray(track) ? await queueToSocketQueue(track) : await track.toSocketTrack(),
+    );
   }
 
   private async _play() {
@@ -271,10 +274,11 @@ export default class MusicPlayer {
       }
 
       this.currentTrack = this.queue.shift()!;
-      this.events.emit('queue', await queueToSocketQueue(this.queue));
+      this.events.emit('trackRemoved', await this.currentTrack.toSocketTrack());
 
       this.audioPlayer?.play(await this.currentTrack.getStream(0, this.volume / 100));
       this.events.emit('currentTrack', await this.currentTrack.toSocketTrack());
+
       if (!this.alReadyInitalized) {
         this.events.emit('data', await this.getDataToSocket());
         this.alReadyInitalized = true;
@@ -321,7 +325,7 @@ export default class MusicPlayer {
   }
 
   private async _audioPlayerStateListener(oldState: AudioPlayerState, newState: AudioPlayerState) {
-    this.events.emit('status', newState.status);
+    if (newState.status != AudioPlayerStatus.Buffering) this.events.emit('status', newState.status);
 
     if (
       oldState.status === AudioPlayerStatus.Playing

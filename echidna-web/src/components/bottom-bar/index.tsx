@@ -1,22 +1,4 @@
-import {
-  Box,
-  Button,
-  Flex,
-  Icon,
-  IconButton,
-  Popover,
-  PopoverArrow,
-  PopoverBody,
-  PopoverCloseButton,
-  PopoverContent,
-  PopoverHeader,
-  PopoverTrigger,
-  Slider,
-  SliderFilledTrack,
-  SliderThumb,
-  SliderTrack,
-} from '@chakra-ui/react';
-import {useEffect, useRef} from 'react';
+import {Box, Flex, IconButton} from '@chakra-ui/react';
 
 import {
   MdLoop,
@@ -24,7 +6,6 @@ import {
   MdPlayArrow,
   MdSkipNext,
   MdSkipPrevious,
-  MdVolumeUp,
 } from 'react-icons/md';
 import {LoopState} from '../../../../common/DTOs/music-player-socket';
 
@@ -42,7 +23,7 @@ export default function BottomBar() {
   const loop = useAppActions(actions => actions.musicPlayer.loop);
 
   return (
-    <Flex w="100%" position="fixed" bottom="0" flexDirection="column" h="95px">
+    <Flex w="100%" position="fixed" bottom="0" flexDirection="column">
       <Box position="relative" top="15px">
         <MusicProgressBar />
       </Box>

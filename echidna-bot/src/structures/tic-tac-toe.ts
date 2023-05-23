@@ -1,16 +1,19 @@
+
 import {
+  ButtonBuilder,
+  ButtonComponent,
   ButtonInteraction,
+  ButtonStyle,
   CacheType,
   CommandInteraction,
-  MessageActionRow,
-  MessageButton,
-  MessageEmbed,
+  EmbedBuilder,
   User,
 } from 'discord.js';
 import { echidnaClient } from '..';
 
 import TicTacToeUtils from '../utils/tic-tac-toe-utils';
 import wait from '../utils/wait';
+import { ActionRowBuilder } from '@discordjs/builders';
 
 export enum TurnEnum {
   X = 'x',
@@ -116,15 +119,15 @@ export default class TicTacToe {
     await this.currentInteraction.editReply({
       content: `${this.player1?.toString()} has challenged you to a game of Tic Tac Toe. Do you accept?`,
       components: [
-        new MessageActionRow().addComponents(
-          new MessageButton()
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
             .setCustomId('tictactoe-request-yes')
             .setLabel('Accept')
-            .setStyle('PRIMARY'),
-          new MessageButton()
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
             .setCustomId('tictactoe-request-no')
             .setLabel('Decline')
-            .setStyle('DANGER'),
+            .setStyle(ButtonStyle.Danger),
         ),
       ],
     });
@@ -151,16 +154,16 @@ export default class TicTacToe {
     const table = [...this.table];
 
     const rows = [
-      ...[...new Array(3).fill(0).map(() => table.splice(0, 3))].map((colum, columIndex) => new MessageActionRow().addComponents(
+      ...[...new Array(3).fill(0).map(() => table.splice(0, 3))].map((colum, columIndex) => new ActionRowBuilder<ButtonBuilder>().addComponents(
         ...colum.map((row, rowIndex) => {
-          const button = new MessageButton()
+          const button = new ButtonBuilder()
             .setLabel(row === TurnEnum.X ? 'X' : row === TurnEnum.O ? 'O' : '-')
             .setCustomId(`tictactoe-game-${rowIndex + columIndex * 3}`)
-            .setStyle('SECONDARY');
+            .setStyle(ButtonStyle.Secondary);
           if (!Number.isInteger(row)) {
             button.setDisabled(true);
-            if (row === TurnEnum.X) button.setStyle('PRIMARY');
-            if (row === TurnEnum.O) button.setStyle('DANGER');
+            if (row === TurnEnum.X) button.setStyle(ButtonStyle.Primary);
+            if (row === TurnEnum.O) button.setStyle(ButtonStyle.Danger);
           }
           if (finished) button.setDisabled(true);
           return button;
@@ -252,7 +255,7 @@ export default class TicTacToe {
   async didGameEnd() {
     const isWinner = TicTacToeUtils.didWin(this.table, this.turn);
     const isDraw = TicTacToeUtils.didDraw(this.table);
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
       .setDescription(
         `Match Between ${this.player1 ? this.player1.toString() : 'AI'} and ${
           this.player2 ? this.player2.toString() : 'AI'

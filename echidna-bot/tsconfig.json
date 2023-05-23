@@ -12,6 +12,9 @@
     "removeComments": true,
     "preserveConstEnums": true,
     "sourceMap": true,
-    "strictFunctionTypes": false
-  }
+    "strictFunctionTypes": false,
+    "esModuleInterop": true,
+    "typeRoots": ["./node_modules/@types", "./src/DTOs"]
+  },
+  "files": ["src/DTOs/global-type.d.ts"]
 }

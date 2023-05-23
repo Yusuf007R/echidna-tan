@@ -1,5 +1,6 @@
+import { EmbedBuilder } from '@discordjs/builders';
 import {
-  CacheType, CommandInteraction, MessageEmbed, TextChannel,
+  CacheType, CommandInteraction, TextChannel,
 } from 'discord.js';
 import { DanBooruError } from '../DTOs/dan-booru-error';
 import { DanBooruPost } from '../DTOs/dan-booru-post';
@@ -42,7 +43,7 @@ export default class DanBooru {
   }
 
   makeEmbed(post: DanBooruPost) {
-    return new MessageEmbed()
+    return new EmbedBuilder()
       .setURL(`https://danbooru.donmai.us/posts/${post.id}`)
       .setTitle(`Post #${post.id}`)
       .setImage(post.file_url)
@@ -60,7 +61,7 @@ export default class DanBooru {
   }
 
   isNsfwAlowed(interaction: CommandInteraction<CacheType>) {
-    if (interaction.channel?.isText() && interaction.inGuild()) {
+    if (interaction.channel?.isTextBased() && interaction.inGuild()) {
       const channel = interaction.channel as TextChannel;
       return channel.nsfw;
     }

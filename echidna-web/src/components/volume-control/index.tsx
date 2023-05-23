@@ -39,7 +39,7 @@ export default function VolumeControl() {
             }}
             value={volume ?? 0}>
             <SliderTrack>
-              <SliderFilledTrack />
+              <SliderFilledTrack bgGradient="linear(to-r, pink.700, pink.400, purple.400, purple.700)" />
             </SliderTrack>
             <SliderThumb />
           </Slider>

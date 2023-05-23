@@ -43,7 +43,7 @@ export default class TicTacToeUtils {
     return bestMove;
   }
 
-  static minimax(table: tableType, depth: number, isMaximizing: boolean, aiSymbol: TurnEnum) {
+  static minimax(table: tableType, depth: number, isMaximizing: boolean, aiSymbol: TurnEnum):number {
     const score = this.valueOfTable(table, aiSymbol);
     if (score === -10) {
       return score;
@@ -57,7 +57,7 @@ export default class TicTacToeUtils {
 
     if (!isMaximizing) {
       const bestMaximumValue = table.reduce(
-        (currentBest: number, cell: number | TurnEnum, index: number): number => {
+        (currentBest: number, cell: number, index: number): number => {
           const tableCopy = [...table];
           if (Number.isInteger(cell)) {
             tableCopy[index] = aiSymbol;
@@ -70,11 +70,11 @@ export default class TicTacToeUtils {
         },
         -Infinity,
       );
-      return bestMaximumValue;
+      return bestMaximumValue as number;
     }
 
     const bestMinimunValue = table.reduce(
-      (currentBest: number, cell: number | TurnEnum, index: number): number => {
+      (currentBest: number, cell: number, index: number): number => {
         const tableCopy = [...table];
         if (Number.isInteger(cell)) {
           tableCopy[index] = aiSymbol === TurnEnum.X ? TurnEnum.O : TurnEnum.X;
@@ -85,8 +85,8 @@ export default class TicTacToeUtils {
         }
         return currentBest;
       },
-      Infinity,
+      Infinity as number,
     );
-    return bestMinimunValue;
+    return bestMinimunValue as number;
   }
 }

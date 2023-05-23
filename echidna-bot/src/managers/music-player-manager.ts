@@ -28,6 +28,8 @@ export default class MusicPlayerManager extends Collection<string, MusicPlayer> 
 
     this.initializedSocketListeners.set(guildId, true);
 
+    player.events.eventNames;
+
     player.events.on('status', (status) => {
       if (!player.alReadyInitalized) return;
       console.log('[SOCKET] status');
@@ -63,6 +65,18 @@ export default class MusicPlayerManager extends Collection<string, MusicPlayer> 
       if (!player.alReadyInitalized) return;
       console.log('[Socket] Emit queue');
       io.in(guildId).emit('queue', tracks);
+    });
+
+    player.events.on('trackAdded', (data) => {
+      if (!player.alReadyInitalized) return;
+      console.log('[Socket] Emit trackAdded');
+      io.in(guildId).emit('trackAdded', data);
+    });
+
+    player.events.on('trackRemoved', (data) => {
+      if (!player.alReadyInitalized) return;
+      console.log('[Socket] Emit trackRemoved');
+      io.in(guildId).emit('trackRemoved', data);
     });
 
     player.events.on('data', (data) => {

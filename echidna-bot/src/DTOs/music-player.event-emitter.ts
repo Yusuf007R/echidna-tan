@@ -10,6 +10,9 @@ export declare interface MusicPlayerEventEmitter {
   on(event: 'loop', listener: (loop: LoopState) => void): this;
   on(event: 'status', listener: (status: AudioPlayerStatus) => void): this;
   on(event: 'data', listener: (data: MusicSocketData) => void): this;
+  on(event: 'partialData', listener: (data: Partial<MusicSocketData>) => void): this;
+  on(event: 'trackAdded', listener: (data: socketTrack | socketTrack[]) => void): this;
+  on(event: 'trackRemoved', listener: (data: socketTrack | socketTrack[]) => void): this;
 
   emit(eventName: 'currentTrack', track: socketTrack): boolean;
   emit(eventName: 'stop', ...args: any[]): boolean;
@@ -17,7 +20,10 @@ export declare interface MusicPlayerEventEmitter {
   emit(eventName: 'volume', volume: number): boolean;
   emit(eventName: 'loop', loop: LoopState): boolean;
   emit(eventName: 'status', status: AudioPlayerStatus): boolean;
-  emit(event: 'data', data: MusicSocketData): this;
+  emit(event: 'data', data: MusicSocketData): boolean;
+  emit(event: 'partialData', data: Partial<MusicSocketData>): boolean;
+  emit(event: 'trackAdded', data: socketTrack | socketTrack[]): boolean;
+  emit(event: 'trackRemoved', data: socketTrack | socketTrack[]): boolean;
 }
 
 export class MusicPlayerEventEmitter extends EventEmitter {}

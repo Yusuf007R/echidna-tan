@@ -27,6 +27,8 @@ export interface ServerToClientEvents {
   currentTime: (currentTime: number) => void;
   data:(data: MusicSocketData) => void;
   partialData: (data: Partial<MusicSocketData>) => void;
+  trackAdded: (data: socketTrack | socketTrack[]) => void;
+  trackRemoved: (data: socketTrack | socketTrack[]) => void;
 }
 
 export interface ClientToServerEvents {

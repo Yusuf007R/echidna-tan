@@ -1,6 +1,5 @@
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from '@discordjs/builders';
-import { REST } from '@discordjs/rest';
-import { Routes } from 'discord-api-types/v9';
+import { REST, Routes } from 'discord.js'
 import {
   CacheType, Collection, CommandInteraction, GuildMember,
 } from 'discord.js';
@@ -85,7 +84,7 @@ export default class CommandManager {
               option.setRequired(true);
             }
             if (element.choices?.length) {
-              element.choices.forEach((opt) => option.addChoice(opt, opt));
+              option.addChoices(...element.choices.map(e=>({name:e, value:e})))
             }
 
             return option;
