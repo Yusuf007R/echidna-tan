@@ -13,7 +13,7 @@ export default class NowPlaying extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = echidnaClient.musicManager.getOrCreate(interaction.guildId!);
-    player.nowPlaying(interaction);
+    echidnaClient.musicPlayer.nowPlaying(interaction.guildId!, interaction);
+  
   }
 }

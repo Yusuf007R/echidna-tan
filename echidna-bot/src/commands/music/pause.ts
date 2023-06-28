@@ -13,7 +13,8 @@ export default class Pause extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = echidnaClient.musicManager.getOrCreate(interaction.guildId!);
-    player.pause(interaction);
+    const player = echidnaClient.musicPlayer.get(interaction.guildId!);
+    player.pause();
+    interaction.reply({ content: 'Paused the current song.' })
   }
 }

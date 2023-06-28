@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { DanBooruError } from '../DTOs/dan-booru-error';
 import { DanBooruPost } from '../DTOs/dan-booru-post';
-import danBooruAPI from '../utils/request';
+import { danBooruAPI } from '../utils/request';
 
 export type getImageProps = {
   tags?: string[];

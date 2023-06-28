@@ -13,7 +13,8 @@ export default class Stop extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>, args?: string[]) {
-    const player = echidnaClient.musicManager.getOrCreate(interaction.guildId!);
-    player.stop(interaction);
+    const player = echidnaClient.musicPlayer.get(interaction.guildId!);
+    player.destroy()
+    interaction.reply({ content: 'Stopped the current song.' })
   }
 }

@@ -1,13 +1,14 @@
-import {ActivityType, Client, Collection, GatewayIntentBits} from 'discord.js';
+import { ActivityType, Client, Collection, GatewayIntentBits } from 'discord.js';
+
 import configs from '../configs';
 import CommandManager from '../managers/command-manager';
-import MusicPlayerManager from '../managers/music-player-manager';
-import {io} from '../api/index';
 import DanBooru from './dan-booru';
+import MusicPlayer from './music-player';
 import TicTacToe from './tic-tac-toe';
 
 export default class EchidnaClient extends Client {
-  musicManager = new MusicPlayerManager();
+  // musicManager = new MusicPlayerManager();
+  musicPlayer = new MusicPlayer(this);
 
   ticTacToeManager = new Collection<string, TicTacToe>();
 
@@ -15,13 +16,12 @@ export default class EchidnaClient extends Client {
 
   danbooru = new DanBooru();
 
-  io = io;
+
 
   constructor() {
     super({
       intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
     });
-
     this.init();
   }
 
@@ -31,24 +31,25 @@ export default class EchidnaClient extends Client {
         name: 'with onii-sama',
         type: ActivityType.Competing,
       });
+      this.musicPlayer.init(this);
       console.log(`Logged in as ${this.user?.tag}`);
     });
 
     this.on('error', error => console.log('Client error', error));
 
     this.on('interactionCreate', async interaction => {
-      if (interaction.isCommand())
+      if (interaction.isCommand()) {
         this.commandManager.executeCommand(interaction);
-      if (interaction.isStringSelectMenu()) {
-        if (interaction.customId === 'music') {
-          if (!interaction.guildId) return;
-          const player = this.musicManager.get(interaction.guildId);
-          if (!player) return;
-          player.selectMusic(interaction);
-        }
-
-        
+        return;
       }
+      // if (interaction.isStringSelectMenu()) {
+      //   if (interaction.customId === 'music') {
+      //     if (!interaction.guildId) return;
+      //     const player = this.musicManager.get(interaction.guildId);
+      //     if (!player) return;
+      //     player.selectMusic(interaction);
+      //   }
+      // }
       if (interaction.isButton()) {
         const [type, action, value] = interaction.customId.split('-');
         switch (type) {

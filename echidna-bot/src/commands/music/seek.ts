@@ -1,7 +1,8 @@
 import { CacheType, CommandInteraction } from 'discord.js';
-import { echidnaClient } from '../..';
 
+import { echidnaClient } from '../..';
 import { Command } from '../../structures/command';
+import GetChoices from '../../utils/get-choices';
 
 export default class Seek extends Command {
   constructor() {
@@ -22,7 +23,9 @@ export default class Seek extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = echidnaClient.musicManager.getOrCreate(interaction.guildId!);
-    player.seek(interaction);
+    const player = echidnaClient.musicPlayer.get(interaction.guildId!);
+    const seekTime = new GetChoices(interaction.options).getNumber('time', true)!;
+    player.seekTo(seekTime)
+    interaction.reply({ content: `Seeked to \`${seekTime}\`` })
   }
 }

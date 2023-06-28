@@ -13,7 +13,8 @@ export default class Skip extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = echidnaClient.musicManager.getOrCreate(interaction.guildId!);
-    player.skip(interaction);
+    const player = echidnaClient.musicPlayer.get(interaction.guildId!);
+    player.stop();
+    interaction.reply({ content: 'Skipped the current song.' })
   }
 }

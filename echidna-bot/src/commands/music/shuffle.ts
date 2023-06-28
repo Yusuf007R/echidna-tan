@@ -13,7 +13,8 @@ export default class Shuffle extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = echidnaClient.musicManager.getOrCreate(interaction.guildId!);
-    player.shuffle(interaction);
+    const player = echidnaClient.musicPlayer.get(interaction.guildId!);
+    player.queue.shuffle();
+    interaction.reply({ content: 'Shuffled the queue.' })
   }
 }

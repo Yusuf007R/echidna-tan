@@ -1,4 +1,4 @@
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
 
 class GetChoices {
   private options: CommandInteraction<CacheType>['options'];
@@ -7,12 +7,14 @@ class GetChoices {
     this.options = opt;
   }
 
-  private get(key: string, required:boolean = false) {
+  private get(key: string, required = false) {
     const option = this.options.get(key);
     if(required){
       if (!option) throw new Error(`Missing option ${key}`);
-      if (!option.value)
+      if (!option.value && option.value !== 0)
         throw new Error(`Missing value for option ${key}`);
+
+      return option.value;
     }
     return option?.value;
   }

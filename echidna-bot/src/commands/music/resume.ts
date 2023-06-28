@@ -13,7 +13,8 @@ export default class Resume extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = echidnaClient.musicManager.getOrCreate(interaction.guildId!);
-    player.resume(interaction);
+    const player = echidnaClient.musicPlayer.get(interaction.guildId!);
+    player.pause(false)
+    interaction.reply({ content: 'Resumed the current song.' })
   }
 }
