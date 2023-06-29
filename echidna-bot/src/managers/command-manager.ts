@@ -1,8 +1,5 @@
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from '@discordjs/builders';
-import { REST, Routes } from 'discord.js'
-import {
-  CacheType, Collection, CommandInteraction, GuildMember,
-} from 'discord.js';
+import { CacheType, Collection, CommandInteraction, REST, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import configs from '../configs';
@@ -26,8 +23,8 @@ export default class CommandManager {
         .map((file) => {
           const commandFile = join(commandFolder, file);
           const Command = require(commandFile).default;
-          const command = new Command();
-          this.commands.set(command.name, command);
+          const cmdObj = new Command();
+          this.commands.set(cmdObj.name, cmdObj);
         });
     });
     console.log('Commands loaded');
@@ -66,8 +63,8 @@ export default class CommandManager {
       if (command.shouldDefer) await interaction.deferReply();
       command.run(interaction);
     } catch (error) {
-      console.log(error);
-      interaction.reply('An error occured while executing the command.');
+      console.error(error);
+      interaction.editReply('An error occured while executing the command.');
     }
   }
 

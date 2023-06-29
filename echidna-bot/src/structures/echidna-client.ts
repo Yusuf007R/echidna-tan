@@ -7,7 +7,6 @@ import MusicPlayer from './music-player';
 import TicTacToe from './tic-tac-toe';
 
 export default class EchidnaClient extends Client {
-  // musicManager = new MusicPlayerManager();
   musicPlayer = new MusicPlayer(this);
 
   ticTacToeManager = new Collection<string, TicTacToe>();
@@ -15,8 +14,6 @@ export default class EchidnaClient extends Client {
   commandManager = new CommandManager();
 
   danbooru = new DanBooru();
-
-
 
   constructor() {
     super({
@@ -42,14 +39,12 @@ export default class EchidnaClient extends Client {
         this.commandManager.executeCommand(interaction);
         return;
       }
-      // if (interaction.isStringSelectMenu()) {
-      //   if (interaction.customId === 'music') {
-      //     if (!interaction.guildId) return;
-      //     const player = this.musicManager.get(interaction.guildId);
-      //     if (!player) return;
-      //     player.selectMusic(interaction);
-      //   }
-      // }
+      if (interaction.isStringSelectMenu()) {
+        if (interaction.customId === 'music') {
+          if (!interaction.guildId) return;
+          this.musicPlayer.selectMusic(interaction);
+        }
+      }
       if (interaction.isButton()) {
         const [type, action, value] = interaction.customId.split('-');
         switch (type) {

@@ -4,9 +4,9 @@ const danBooruAPI = create({
   baseURL: 'https://danbooru.donmai.us/',
 });
 
-const valorantAPI = create({
-  baseURL: 'https://api.henrikdev.xyz/valorant/',
-});
+const baseAPI = create({baseURL: ''});
 
-export { danBooruAPI, valorantAPI };
+
+
+export { baseAPI, danBooruAPI };
 

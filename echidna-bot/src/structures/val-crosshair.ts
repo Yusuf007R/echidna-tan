@@ -3,13 +3,13 @@ import { AttachmentBuilder, CacheType, CommandInteraction } from 'discord.js';
 import { readFileSync } from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import { valorantAPI } from '../utils/request';
+import { baseAPI } from '../utils/request';
 
 export default class ValCrosshair {
   constructor() {}
 
   async getCrosshairImage(crosshairId: string) {
-    return await valorantAPI.get<Buffer>(
+    return await baseAPI.get<Buffer>(
       'https://api.henrikdev.xyz/valorant/v1/crosshair/generate',
       {id: crosshairId},
       {

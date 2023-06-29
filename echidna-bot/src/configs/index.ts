@@ -7,4 +7,11 @@ if (!guildId) throw new Error('No guild id found');
 const clientId = process.env.DISCORD_BOT_CLIENT_ID;
 if (!clientId) throw new Error('No client id found');
 
-export default { token, guildId, clientId };
+const lavaLinkPassword = process.env.LAVA_LINK_PASSWORD;
+if (!lavaLinkPassword) throw new Error('No lava link password found');
+
+const lavaLinkHost = process.env.LAVA_LINK_HOST;
+if (!lavaLinkHost) throw new Error('No lava link host found');
+
+
+export default { token, guildId, clientId, lavaLinkPassword, lavaLinkHost };
