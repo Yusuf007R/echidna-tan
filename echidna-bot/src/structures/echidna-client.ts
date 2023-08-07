@@ -5,6 +5,7 @@ import CommandManager from '../managers/command-manager';
 import DanBooru from './dan-booru';
 import MusicPlayer from './music-player';
 import TicTacToe from './tic-tac-toe';
+import WaifuGenerator from './waifu-generator';
 
 export default class EchidnaClient extends Client {
   musicPlayer = new MusicPlayer(this);
@@ -15,9 +16,11 @@ export default class EchidnaClient extends Client {
 
   danbooru = new DanBooru();
 
+  waifuGenerator = new WaifuGenerator();
+
   constructor() {
     super({
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions],
     });
     this.init();
   }
@@ -35,41 +38,55 @@ export default class EchidnaClient extends Client {
     this.on('error', error => console.log('Client error', error));
 
     this.on('interactionCreate', async interaction => {
-      if (interaction.isCommand()) {
-        this.commandManager.executeCommand(interaction);
-        return;
-      }
-      if (interaction.isStringSelectMenu()) {
-        if (interaction.customId === 'music') {
-          if (!interaction.guildId) return;
-          this.musicPlayer.selectMusic(interaction);
+      try {
+        if (interaction.isCommand()) {
+          this.commandManager.executeCommand(interaction);
+          return;
         }
-      }
-      if (interaction.isButton()) {
-        const [type, action, value] = interaction.customId.split('-');
-        switch (type) {
-          case 'tictactoe':
-            if (!interaction.message.interaction?.id) return;
-            const tictactoe = this.ticTacToeManager.get(
-              interaction.message.interaction.id,
-            );
-            if (!tictactoe) {
-              interaction.reply({content: 'No game found', ephemeral: true});
-              return;
-            }
-            switch (action) {
-              case 'game':
-                await tictactoe.handleClick(interaction, value);
-                break;
-              case 'request':
-                await tictactoe.startGame(interaction, value);
-                break;
-              default:
-                break;
-            }
-          default:
-            break;
+        if (interaction.isStringSelectMenu()) {
+          if (interaction.customId === 'music') {
+            if (!interaction.guildId) return;
+            this.musicPlayer.selectMusic(interaction);
+          }
         }
+        if (interaction.isButton()) {
+          const [type, action, value] = interaction.customId.split('-');
+
+          switch (type) {
+            case 'tictactoe':
+              if (!interaction.message.interaction?.id) return;
+              const tictactoe = this.ticTacToeManager.get(
+                interaction.message.interaction.id,
+              );
+              if (!tictactoe) {
+                interaction.reply({content: 'No game found', ephemeral: true});
+                return;
+              }
+              switch (action) {
+                case 'game':
+                  await tictactoe.handleClick(interaction, value);
+                  break;
+                case 'request':
+                  await tictactoe.startGame(interaction, value);
+                  break;
+                default:
+                  break;
+              }
+            default:
+              break;
+          }
+        }
+      } catch (error: any) {
+        if (interaction.isMessageComponent()) {
+          interaction.message.reply({
+            content: error?.message || 'Internal error, try again later.',
+          });
+
+          return;
+        }
+        interaction.channel?.send(
+          error?.message || 'Internal error, try again later.',
+        );
       }
     });
 

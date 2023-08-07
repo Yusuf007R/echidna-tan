@@ -13,5 +13,8 @@ if (!lavaLinkPassword) throw new Error('No lava link password found');
 const lavaLinkHost = process.env.LAVA_LINK_HOST;
 if (!lavaLinkHost) throw new Error('No lava link host found');
 
+const runpodToken = process.env.RUNPOD_TOKEN;
+if (!runpodToken) throw new Error('No runpod token found');
 
-export default { token, guildId, clientId, lavaLinkPassword, lavaLinkHost };
+
+export default { token, guildId, clientId, lavaLinkPassword, lavaLinkHost, runpodToken };

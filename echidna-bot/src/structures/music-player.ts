@@ -12,7 +12,7 @@ import { echidnaClient } from '..';
 import configs from '../configs';
 import GetChoices from '../utils/get-choices';
 import getImageUrl from '../utils/get-image-from-url';
-import milisecondsToMinutes from '../utils/seconds-to-minutes';
+import milisecondsToReadable from '../utils/seconds-to-minutes';
 import EchidnaClient from './echidna-client';
 
 export default class MusicPlayer extends Poru {
@@ -146,7 +146,7 @@ export default class MusicPlayer extends Poru {
       if (!player) return interaction?.editReply('No player found');
       const currentTrack = player.currentTrack;
       const {title, uri, image, length} = currentTrack.info;
-      const minutes = milisecondsToMinutes(length);
+      const minutes = milisecondsToReadable(length);
       const embed = new EmbedBuilder()
         .setTitle('Now playing: ')
         .setDescription(`[${title}](${uri}/ 'Click to open link.') `)
