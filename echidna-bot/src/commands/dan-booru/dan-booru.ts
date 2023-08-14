@@ -1,11 +1,5 @@
-import {
-  ApplicationCommandOptionType,
-  CacheType,
-  CommandInteraction,
-} from 'discord.js';
-import {echidnaClient} from '../..';
-import {Command} from '../../structures/command';
-import GetChoices from '../../utils/get-choices';
+import { CacheType, CommandInteraction } from 'discord.js';
+import { Command } from '../../structures/command';
 
 export default class DanbooruCommand extends Command {
   constructor() {
@@ -34,27 +28,26 @@ export default class DanbooruCommand extends Command {
 
   async run(interaction: CommandInteraction<CacheType>) {
     await interaction.deferReply();
-    const choices = new GetChoices(interaction.options);
-    const tags = choices.getString('tags');
-    const postId = choices.getNumber('post-id');
-    const nsfw = choices.getBoolean('nsfw');
-    if (nsfw && !echidnaClient.danbooru.isNsfwAlowed(interaction)) {
+    const tags = this.choices.getString('tags');
+    const postId = this.choices.getNumber('post-id');
+    const nsfw = this.choices.getBoolean('nsfw');
+    if (nsfw && !this.echidna.danbooru.isNsfwAlowed(interaction)) {
       interaction.editReply('NSFW is not allowed in this channel.');
       return;
     }
     console.log(tags, postId, nsfw);
     try {
       if (tags) {
-        const post = await echidnaClient.danbooru.querySinglePost({
+        const post = await this.echidna.danbooru.querySinglePost({
           tags: tags.split(' '),
           nsfw: !!nsfw,
         });
-        echidnaClient.danbooru.sendMessage(interaction, post);
+        this.echidna.danbooru.sendMessage(interaction, post);
         return;
       }
       if (postId) {
-        const post = await echidnaClient.danbooru.getPostById(postId);
-        echidnaClient.danbooru.sendMessage(interaction, post);
+        const post = await this.echidna.danbooru.getPostById(postId);
+        this.echidna.danbooru.sendMessage(interaction, post);
         return;
       }
     } catch (error: any) {
@@ -64,10 +57,10 @@ export default class DanbooruCommand extends Command {
       console.log(error);
       return;
     }
-    const post = await echidnaClient.danbooru.querySinglePost({
+    const post = await this.echidna.danbooru.querySinglePost({
       tags: ['order:rank'],
       nsfw: !!nsfw,
     });
-    echidnaClient.danbooru.sendMessage(interaction, post);
+    this.echidna.danbooru.sendMessage(interaction, post);
   }
 }

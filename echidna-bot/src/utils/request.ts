@@ -1,4 +1,4 @@
-import { create } from 'apisauce';
+import {create} from 'apisauce';
 
 const danBooruAPI = create({
   baseURL: 'https://danbooru.donmai.us/',
@@ -6,9 +6,9 @@ const danBooruAPI = create({
 
 const waifuGeneratorAPI = create({
   baseURL: 'https://api.runpod.ai/v2/tg9unsqf6rbd3r/runsync',
-  headers:{
-    Authorization:`Bearer ${process.env.RUNPOD_TOKEN}`
-  }
+  headers: {
+    Authorization: `Bearer ${process.env.RUNPOD_TOKEN}`,
+  },
 });
 
 const baseAPI = create({baseURL: ''});
@@ -20,7 +20,7 @@ waifuGeneratorAPI.axiosInstance.interceptors.request.use(config => {
   config.method = 'post';
   config.data = {
     input: {
-      method: method,
+      method,
       endpoint: url,
       data: config.data,
     },
@@ -29,5 +29,4 @@ waifuGeneratorAPI.axiosInstance.interceptors.request.use(config => {
   return config;
 });
 
-export { baseAPI, danBooruAPI, waifuGeneratorAPI };
-
+export {baseAPI, danBooruAPI, waifuGeneratorAPI};

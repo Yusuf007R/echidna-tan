@@ -1,5 +1,6 @@
-import { CacheType, CommandInteraction } from 'discord.js';
+import {CacheType, CommandInteraction} from 'discord.js';
 
+type R<K, T> = T extends true ? K : K | undefined;
 class GetChoices {
   private options: CommandInteraction<CacheType>['options'];
 
@@ -9,7 +10,7 @@ class GetChoices {
 
   private get(key: string, required = false) {
     const option = this.options.get(key);
-    if(required){
+    if (required) {
       if (!option) throw new Error(`Missing option ${key}`);
       if (!option.value && option.value !== 0)
         throw new Error(`Missing value for option ${key}`);
@@ -19,25 +20,25 @@ class GetChoices {
     return option?.value;
   }
 
-  getString(key: string, required = false) {
+  getString<B extends boolean>(key: string, required = false as B) {
     const option = this.get(key, required);
     if (option !== undefined && typeof option !== 'string')
       throw new Error(`Option ${key} is not a string`);
-    return option;
+    return option as R<string, B>;
   }
 
-  getNumber(key: string, required = false) {
+  getNumber<B extends boolean>(key: string, required = false as B) {
     const option = this.get(key, required);
     if (option !== undefined && typeof option !== 'number')
       throw new Error(`Option ${key} is not a number`);
-    return option;
+    return option as R<number, B>;
   }
 
-  getBoolean(key: string, required = false) {
+  getBoolean<B extends boolean>(key: string, required = false as B) {
     const option = this.get(key, required);
     if (option !== undefined && typeof option !== 'boolean')
       throw new Error(`Option ${key} is not a boolean`);
-    return option;
+    return option as R<boolean, B>;
   }
 }
 

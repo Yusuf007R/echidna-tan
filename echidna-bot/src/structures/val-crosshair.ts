@@ -1,9 +1,9 @@
-import { EmbedBuilder } from '@discordjs/builders';
-import { AttachmentBuilder, CacheType, CommandInteraction } from 'discord.js';
-import { readFileSync } from 'fs';
+import {readFileSync} from 'fs';
 import path from 'path';
+import {EmbedBuilder} from '@discordjs/builders';
+import {AttachmentBuilder, CacheType, CommandInteraction} from 'discord.js';
 import sharp from 'sharp';
-import { baseAPI } from '../utils/request';
+import {baseAPI} from '../utils/request';
 
 export default class ValCrosshair {
   constructor() {}
@@ -23,7 +23,7 @@ export default class ValCrosshair {
       path.resolve(__dirname, '../assets/crosshair-bg.webp'),
     );
     return await sharp(crosshairBg)
-      .composite([{input: await sharp(crosshair).resize(256, 256).toBuffer(),}])
+      .composite([{input: await sharp(crosshair).resize(256, 256).toBuffer()}])
       .toBuffer();
   }
 
@@ -38,11 +38,10 @@ export default class ValCrosshair {
       name: 'crosshair.png',
     });
 
-    
     const embed = new EmbedBuilder()
-      .setTitle(`Crosshair`)
+      .setTitle('Crosshair')
       .setDescription(`Crosshair ID: ${crosshairId}`)
-      .setImage(`attachment://crosshair.png`)
+      .setImage('attachment://crosshair.png')
       .setTimestamp()
       .setFooter({
         text: `Requested by ${interaction.user.username}`,

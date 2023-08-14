@@ -1,10 +1,6 @@
-import {
-  CacheType,
-  CommandInteraction
-} from 'discord.js';
-import { Command } from '../../structures/command';
+import {CacheType, CommandInteraction} from 'discord.js';
+import {Command} from '../../structures/command';
 import ValCrosshair from '../../structures/val-crosshair';
-import GetChoices from '../../utils/get-choices';
 
 export default class ValCrosshairCommand extends Command {
   constructor() {
@@ -24,10 +20,7 @@ export default class ValCrosshairCommand extends Command {
 
   async run(interaction: CommandInteraction<CacheType>) {
     await interaction.deferReply();
-    const crosshairId = new GetChoices(interaction.options).getString(
-      'crosshair-id',
-      true,
-    )!;
+    const crosshairId = this.choices.getString('crosshair-id', true);
     return new ValCrosshair().getCrosshair(interaction, crosshairId);
   }
 }

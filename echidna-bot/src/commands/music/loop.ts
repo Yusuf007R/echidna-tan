@@ -1,8 +1,6 @@
 import { CacheType, CommandInteraction } from 'discord.js';
-import { echidnaClient } from '../..';
 
 import { Command } from '../../structures/command';
-import GetChoices from '../../utils/get-choices';
 
 export default class LoopCommand extends Command {
   constructor() {
@@ -23,10 +21,9 @@ export default class LoopCommand extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = echidnaClient.musicPlayer.get(interaction.guildId!);
-    const mode = new GetChoices(interaction.options).getString('mode', true)!;
-    player.setLoop(mode.toUpperCase() as any)
-    interaction.reply({ content: `Loop mode set to \`${mode}\`` })
-
+    const player = this.echidna.musicPlayer.get(interaction.guildId!);
+    const mode = this.choices.getString('mode', true);
+    player.setLoop(mode.toUpperCase() as any);
+    interaction.reply({content: `Loop mode set to \`${mode}\``});
   }
 }

@@ -1,7 +1,5 @@
 import { CacheType, CommandInteraction } from 'discord.js';
-import { echidnaClient } from '../..';
 import { Command } from '../../structures/command';
-import GetChoices from '../../utils/get-choices';
 
 export default class WaifuGeneratorCommand extends Command {
   constructor() {
@@ -20,12 +18,12 @@ export default class WaifuGeneratorCommand extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const choices = new GetChoices(interaction.options);
-    const prompt = choices.getString('prompt', true)!;
-    const config = echidnaClient.waifuGenerator.getConfigs({prompt});
-    const {embed, attachment, info} = echidnaClient.waifuGenerator.makeEmbed(
-      await echidnaClient.waifuGenerator.getImage(config),
-    );
+    const prompt = this.choices.getString('prompt', true);
+    const config = this.echidna.waifuGenerator.getConfigs({prompt});
+    const {embed, attachment, info} =
+      this.echidna.waifuGenerator.makeEmbed(
+        await this.echidna.waifuGenerator.getImage(config),
+      );
     const message = await interaction.editReply({
       embeds: [embed],
       files: [attachment],
@@ -46,7 +44,7 @@ export default class WaifuGeneratorCommand extends Command {
       })
       .then(async reaction => {
         if (reaction.first()?.emoji.name === '⬆️') {
-          await echidnaClient.waifuGenerator.upscaleImage(message, info);
+          await this.echidna.waifuGenerator.upscaleImage(message, info);
           await message.reactions.cache
             .find(r => r.emoji.name === '⬆️')
             ?.remove();

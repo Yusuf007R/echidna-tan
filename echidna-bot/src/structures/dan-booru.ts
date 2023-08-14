@@ -1,10 +1,8 @@
-import { EmbedBuilder } from '@discordjs/builders';
-import {
-  CacheType, CommandInteraction, TextChannel,
-} from 'discord.js';
-import { DanBooruError } from '../DTOs/dan-booru-error';
-import { DanBooruPost } from '../DTOs/dan-booru-post';
-import { danBooruAPI } from '../utils/request';
+import {EmbedBuilder} from '@discordjs/builders';
+import {CacheType, CommandInteraction, TextChannel} from 'discord.js';
+import {DanBooruError} from '../DTOs/dan-booru-error';
+import {DanBooruPost} from '../DTOs/dan-booru-post';
+import {danBooruAPI} from '../utils/request';
 
 export type getImageProps = {
   tags?: string[];
@@ -18,7 +16,7 @@ export default class DanBooru {
   constructor() {}
 
   async querySinglePost(props: getImageProps) {
-    const { tags = [], random = true, nsfw = false } = props;
+    const {tags = [], random = true, nsfw = false} = props;
     if (!nsfw) tags.push('rating:safe');
     if (this.safeMode) tags.push('rating:safe');
     let url = '/posts.json?';
@@ -48,7 +46,7 @@ export default class DanBooru {
       .setTitle(`Post #${post.id}`)
       .setImage(post.file_url)
       .setTimestamp()
-      .setFooter({ text: `Artist:${post.tag_string_artist}` });
+      .setFooter({text: `Artist:${post.tag_string_artist}`});
   }
 
   sendMessage(interaction: CommandInteraction<CacheType>, post: DanBooruPost) {
@@ -57,7 +55,7 @@ export default class DanBooru {
       return;
     }
     const embed = this.makeEmbed(post);
-    interaction.editReply({ embeds: [embed] });
+    interaction.editReply({embeds: [embed]});
   }
 
   isNsfwAlowed(interaction: CommandInteraction<CacheType>) {

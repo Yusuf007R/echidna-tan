@@ -1,6 +1,6 @@
-import { ActivityType, Client, Collection, GatewayIntentBits } from 'discord.js';
+import {ActivityType, Client, Collection, GatewayIntentBits} from 'discord.js';
 
-import configs from '../configs';
+import configs from '../config';
 import CommandManager from '../managers/command-manager';
 import DanBooru from './dan-booru';
 import MusicPlayer from './music-player';
@@ -20,7 +20,12 @@ export default class EchidnaClient extends Client {
 
   constructor() {
     super({
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions],
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMessageReactions,
+      ],
     });
     this.init();
   }
@@ -33,6 +38,10 @@ export default class EchidnaClient extends Client {
       });
       this.musicPlayer.init(this);
       console.log(`Logged in as ${this.user?.tag}`);
+
+      const guilds = this.guilds.cache.map(guild => guild.id);
+      this.commandManager.loadCommands();
+      this.commandManager.registerCommands(guilds);
     });
 
     this.on('error', error => console.log('Client error', error));
@@ -54,24 +63,30 @@ export default class EchidnaClient extends Client {
 
           switch (type) {
             case 'tictactoe':
-              if (!interaction.message.interaction?.id) return;
-              const tictactoe = this.ticTacToeManager.get(
-                interaction.message.interaction.id,
-              );
-              if (!tictactoe) {
-                interaction.reply({content: 'No game found', ephemeral: true});
-                return;
+              {
+                if (!interaction.message.interaction?.id) return;
+                const tictactoe = this.ticTacToeManager.get(
+                  interaction.message.interaction.id,
+                );
+                if (!tictactoe) {
+                  interaction.reply({
+                    content: 'No game found',
+                    ephemeral: true,
+                  });
+                  return;
+                }
+                switch (action) {
+                  case 'game':
+                    await tictactoe.handleClick(interaction, value);
+                    break;
+                  case 'request':
+                    await tictactoe.startGame(interaction, value);
+                    break;
+                  default:
+                    break;
+                }
               }
-              switch (action) {
-                case 'game':
-                  await tictactoe.handleClick(interaction, value);
-                  break;
-                case 'request':
-                  await tictactoe.startGame(interaction, value);
-                  break;
-                default:
-                  break;
-              }
+              break;
             default:
               break;
           }

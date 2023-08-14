@@ -1,5 +1,4 @@
 import { CacheType, CommandInteraction } from 'discord.js';
-import { echidnaClient } from '../..';
 
 import { Command } from '../../structures/command';
 
@@ -13,7 +12,9 @@ export default class NowPlaying extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    echidnaClient.musicPlayer.nowPlaying(interaction.guildId!, interaction);
-  
+    this.echidna.musicPlayer.nowPlaying(
+      interaction.guildId!,
+      interaction,
+    );
   }
 }

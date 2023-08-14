@@ -16,6 +16,5 @@
     "strict": true,
     "typeRoots": ["./node_modules/@types", "./src/DTOs"]
   },
-  "include": ["src/**/*"],
-  "files": ["src/DTOs/global-type.d.ts"]
+  "include": ["src/**/*"]
 }

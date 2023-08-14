@@ -1,5 +1,4 @@
 import { CacheType, CommandInteraction } from 'discord.js';
-import { echidnaClient } from '../..';
 
 import { Command } from '../../structures/command';
 
@@ -13,8 +12,8 @@ export default class Shuffle extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = echidnaClient.musicPlayer.get(interaction.guildId!);
+    const player = this.echidna.musicPlayer.get(interaction.guildId!);
     player.queue.shuffle();
-    interaction.reply({ content: 'Shuffled the queue.' })
+    interaction.reply({content: 'Shuffled the queue.'});
   }
 }

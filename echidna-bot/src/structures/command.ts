@@ -1,4 +1,7 @@
-import { CacheType, CommandInteraction, GuildMember } from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
+import GetChoices from '../utils/get-choices';
+import Base from './base';
+import { EventValidator } from './event-validator';
 
 export type options =
   | {
@@ -41,42 +44,49 @@ export type commandConfigs = {
   options?: options[];
   voiceChannelOnly?: boolean;
   shouldDefer?: boolean;
+  validators?: Array<new () => EventValidator>;
 };
 
-export class Command {
-  name: string;
+export abstract class Command extends Base {
+  readonly name: string;
 
-  description: string;
+  readonly description: string;
 
   options?: options[];
 
-  voiceChannelOnly?: boolean;
-
   shouldDefer?: boolean;
 
+  readonly validators: Array<new () => EventValidator>;
+
+  choices!: GetChoices;
+
+
   constructor(configs: commandConfigs) {
+    super();
     this.name = configs.name;
     this.description = configs.description;
     this.options = configs.options;
-    this.voiceChannelOnly = configs.voiceChannelOnly;
     this.shouldDefer = configs.shouldDefer;
+    this.validators = configs.validators || [];
   }
 
-  run(interaction: CommandInteraction<CacheType>): Promise<void> {
-    return Promise.resolve();
+  abstract run(
+    _interaction: CommandInteraction<CacheType>,
+    ..._rest: unknown[]
+  ) : Promise<void>;
+  
+
+  async _run(interaction: CommandInteraction<CacheType>) {
+    const validators = this.validators.map(validator =>
+      new validator().validate(interaction),
+    );
+    if (!(await Promise.all(validators)).every(validator => validator)) return;
+    if (this.shouldDefer) await interaction.deferReply();
+    this.choices = new GetChoices(interaction.options);
+    return this.run(interaction, this.choices);
   }
 
-  canExecute(interaction: CommandInteraction<CacheType>): boolean {
-    if (this.voiceChannelOnly) {
-      const member = interaction.member as GuildMember;
-      if (!member.voice.channel) {
-        interaction.reply({
-          content: 'You need to be in a voice channel.',
-          ephemeral: true,
-        });
-        return false;
-      }
-    }
-    return true;
+  pushValidator(validators: Array<new () => EventValidator>): void {
+    this.validators.push(...validators);
   }
 }

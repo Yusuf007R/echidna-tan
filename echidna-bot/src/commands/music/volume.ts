@@ -1,8 +1,6 @@
 import { CacheType, CommandInteraction } from 'discord.js';
 
-import { echidnaClient } from '../..';
 import { Command } from '../../structures/command';
-import GetChoices from '../../utils/get-choices';
 
 export default class Volume extends Command {
   constructor() {
@@ -24,9 +22,9 @@ export default class Volume extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = echidnaClient.musicPlayer.get(interaction.guildId!);
-    const volume = new GetChoices(interaction.options).getNumber('volume', true)!;
-    player.setVolume(volume)
-    interaction.reply({ content: `Volume set to \`${volume}\`` })
+    const player = this.echidna.musicPlayer.get(interaction.guildId!);
+    const volume = this.choices.getNumber('volume', true);
+    player.setVolume(volume);
+    interaction.reply({content: `Volume set to \`${volume}\``});
   }
 }

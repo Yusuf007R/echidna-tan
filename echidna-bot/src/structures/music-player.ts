@@ -9,13 +9,12 @@ import {
 import { Player, Poru } from 'poru';
 import sharp from 'sharp';
 import { echidnaClient } from '..';
-import configs from '../configs';
-import GetChoices from '../utils/get-choices';
+import configs from '../config';
 import getImageUrl from '../utils/get-image-from-url';
 import milisecondsToReadable from '../utils/seconds-to-minutes';
 import EchidnaClient from './echidna-client';
 
-export default class MusicPlayer extends Poru {
+export default class MusicPlayer extends Poru{
   constructor(client: EchidnaClient) {
     super(
       client,
@@ -29,23 +28,21 @@ export default class MusicPlayer extends Poru {
       ],
       {library: 'discord.js'},
     );
-    this.on('trackStart', (player, track) => {
+    this.on('trackStart', player => {
       const channel = client.channels.cache.get(player.textChannel);
       if (!channel || !channel.isTextBased()) return;
       return this.nowPlaying(player.guildId);
     });
   }
 
-  async play(interaction: CommandInteraction<CacheType>) {
+  async play(interaction: CommandInteraction<CacheType>, query: string) {
     const guildMember = interaction?.member as GuildMember;
 
     if (!guildMember || !guildMember.voice.channelId || !interaction.guild)
       return interaction.editReply('No voice channel found');
-
-    const query = new GetChoices(interaction.options).getString('query', true)!;
     let player = this.players.get(interaction.guildId!);
     if (!player) {
-      let temp = interaction as any;
+      const temp = interaction as any;
       player = this.createConnection({
         guildId: temp.guild.id,
         voiceChannel: temp?.member?.voice?.channelId,
@@ -75,30 +72,34 @@ export default class MusicPlayer extends Poru {
         );
         break;
       case 'TRACK_LOADED':
-        const track = res.tracks[0];
-        track.info.requester = interaction.user;
-        player.queue.add(track);
-        interaction.editReply({
-          content: `${track.info.title} added to the queue.`,
-          components: [],
-        });
+        {
+          const track = res.tracks[0];
+          track.info.requester = interaction.user;
+          player.queue.add(track);
+          interaction.editReply({
+            content: `${track.info.title} added to the queue.`,
+            components: [],
+          });
+        }
         break;
       case 'SEARCH_RESULT':
-        const row = new ActionRowBuilder<SelectMenuBuilder>().setComponents(
-          new SelectMenuBuilder()
-            .setCustomId('music')
-            .setPlaceholder('Click here to select a music')
-            .addOptions(
-              res.tracks.slice(0, 5).map(item => ({
-                label: item.info.title,
-                value: `${item.info.identifier}`,
-              })),
-            ),
-        );
-        await interaction.editReply({
-          content: 'Select a song!',
-          components: [row],
-        });
+        {
+          const row = new ActionRowBuilder<SelectMenuBuilder>().setComponents(
+            new SelectMenuBuilder()
+              .setCustomId('music')
+              .setPlaceholder('Click here to select a music')
+              .addOptions(
+                res.tracks.slice(0, 5).map(item => ({
+                  label: item.info.title,
+                  value: `${item.info.identifier}`,
+                })),
+              ),
+          );
+          await interaction.editReply({
+            content: 'Select a song!',
+            components: [row],
+          });
+        }
         break;
       default:
         break;
@@ -144,7 +145,7 @@ export default class MusicPlayer extends Poru {
     try {
       const player = this.players.get(guildId);
       if (!player) return interaction?.editReply('No player found');
-      const currentTrack = player.currentTrack;
+      const {currentTrack} = player;
       const {title, uri, image, length} = currentTrack.info;
       const minutes = milisecondsToReadable(length);
       const embed = new EmbedBuilder()
@@ -179,8 +180,8 @@ export default class MusicPlayer extends Poru {
   async getTrackDominantColor(
     player: Player,
   ): Promise<[number, number, number]> {
-    const currentTrack = player.currentTrack;
-    const image = currentTrack.info.image;
+    const {currentTrack} = player;
+    const {image} = currentTrack.info;
     if (!image) return [0, 0, 0];
     if (!player.data['image-url-cache']) player.data['image-url-cache'] = {};
     const imageCache = player.data['image-url-cache'] as Record<string, any>;

@@ -1,8 +1,8 @@
-import { EmbedBuilder } from '@discordjs/builders';
-import { AttachmentBuilder, Message } from 'discord.js';
+import {EmbedBuilder} from '@discordjs/builders';
+import {AttachmentBuilder, Message} from 'discord.js';
 
-import { RunpodRes, Txt2img } from '../DTOs/waifu-generator';
-import { waifuGeneratorAPI } from '../utils/request';
+import {RunpodRes, Txt2img} from '../DTOs/waifu-generator';
+import {waifuGeneratorAPI} from '../utils/request';
 import milisecondsToReadable from '../utils/seconds-to-minutes';
 
 export type getImageProps = {
@@ -10,8 +10,6 @@ export type getImageProps = {
 };
 
 export default class WaifuGenerator {
-  constructor() {}
-
   private get defaultConfigs() {
     return {
       alwayson_scripts: {},
@@ -67,7 +65,7 @@ export default class WaifuGenerator {
   makeEmbed(res: RunpodRes<Txt2img>) {
     const image = res.output.images[0];
     const attachment = new AttachmentBuilder(Buffer.from(image, 'base64'), {
-      name: `image.png`,
+      name: 'image.png',
     });
     const info = JSON.parse(res.output.info);
     const fieldsToDisplay = {
@@ -78,18 +76,16 @@ export default class WaifuGenerator {
       seed: 'Seed',
     } as const;
     const embed = new EmbedBuilder()
-      .setTitle(`Waifu Generator`)
+      .setTitle('Waifu Generator')
       .setImage('attachment://image.png')
       .setFooter({
         text: this.getFooter(res.executionTime),
       })
       .addFields(
-        Object.entries(fieldsToDisplay).map(([field, name]) => {
-          return {
-            name: name,
-            value: info[field].toString(),
-          };
-        }),
+        Object.entries(fieldsToDisplay).map(([field, name]) => ({
+          name,
+          value: info[field].toString(),
+        })),
       );
 
     return {embed, attachment, info};
@@ -109,7 +105,7 @@ export default class WaifuGenerator {
     const newAttachment = new AttachmentBuilder(
       Buffer.from(res.output.images[0], 'base64'),
       {
-        name: `image.png`,
+        name: 'image.png',
       },
     );
 
