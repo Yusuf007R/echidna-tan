@@ -1,7 +1,7 @@
-import { CacheType, CommandInteraction } from 'discord.js';
+import {CacheType, CommandInteraction} from 'discord.js';
 import GetChoices from '../utils/get-choices';
 import Base from './base';
-import { EventValidator } from './event-validator';
+import {CommandValidator} from './command-validator';
 
 export type options =
   | {
@@ -44,7 +44,7 @@ export type commandConfigs = {
   options?: options[];
   voiceChannelOnly?: boolean;
   shouldDefer?: boolean;
-  validators?: Array<new () => EventValidator>;
+  validators?: Array<new () => CommandValidator>;
 };
 
 export abstract class Command extends Base {
@@ -56,10 +56,9 @@ export abstract class Command extends Base {
 
   shouldDefer?: boolean;
 
-  readonly validators: Array<new () => EventValidator>;
+  readonly validators: Array<new () => CommandValidator>;
 
   choices!: GetChoices;
-
 
   constructor(configs: commandConfigs) {
     super();
@@ -73,20 +72,20 @@ export abstract class Command extends Base {
   abstract run(
     _interaction: CommandInteraction<CacheType>,
     ..._rest: unknown[]
-  ) : Promise<void>;
-  
+  ): Promise<void>;
 
   async _run(interaction: CommandInteraction<CacheType>) {
     const validators = this.validators.map(validator =>
       new validator().validate(interaction),
     );
+
     if (!(await Promise.all(validators)).every(validator => validator)) return;
     if (this.shouldDefer) await interaction.deferReply();
     this.choices = new GetChoices(interaction.options);
     return this.run(interaction, this.choices);
   }
 
-  pushValidator(validators: Array<new () => EventValidator>): void {
+  pushValidator(validators: Array<new () => CommandValidator>): void {
     this.validators.push(...validators);
   }
 }

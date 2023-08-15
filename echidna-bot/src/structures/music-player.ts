@@ -1,4 +1,4 @@
-import { EmbedBuilder, SelectMenuBuilder } from '@discordjs/builders';
+import {EmbedBuilder, SelectMenuBuilder} from '@discordjs/builders';
 import {
   ActionRowBuilder,
   CacheType,
@@ -6,15 +6,15 @@ import {
   GuildMember,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import { Player, Poru } from 'poru';
+import {Player, Poru} from 'poru';
 import sharp from 'sharp';
-import { echidnaClient } from '..';
+import {echidnaClient} from '..';
 import configs from '../config';
 import getImageUrl from '../utils/get-image-from-url';
 import milisecondsToReadable from '../utils/seconds-to-minutes';
 import EchidnaClient from './echidna-client';
 
-export default class MusicPlayer extends Poru{
+export default class MusicPlayer extends Poru {
   constructor(client: EchidnaClient) {
     super(
       client,

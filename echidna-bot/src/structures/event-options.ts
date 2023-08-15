@@ -1,11 +1,11 @@
-import {EventValidator} from './event-validator';
+import {CommandValidator} from './command-validator';
 
 type eventOptionsConfig = {
-  validators?: Array<new () => EventValidator>;
+  validators?: Array<new () => CommandValidator>;
   // preRunners?: Array<new () => CommandPreRunner>;
 };
 export default class EventOptions {
-  validators: Array<new () => EventValidator>;
+  validators: Array<new () => CommandValidator>;
 
   constructor(configs: eventOptionsConfig) {
     this.validators = configs.validators ?? [];

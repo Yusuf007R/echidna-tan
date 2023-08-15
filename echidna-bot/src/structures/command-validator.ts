@@ -1,22 +1,22 @@
-import { BaseInteraction, CacheType } from 'discord.js';
+import {BaseInteraction, CacheType} from 'discord.js';
 import Base from './base';
 
-type EventValidatorConfig = {
+type CommandValidatorConfig = {
   name: string;
   description: string;
   message?: string;
 };
 
-export type EventValidatorNext = () => void;
+export type CommandValidatorNext = () => void;
 
-export class EventValidator extends Base{
+export class CommandValidator extends Base {
   name: string;
   description: string;
   message: string;
   resolve: (value: boolean) => void = () => {};
   reject: () => void = () => {};
 
-  constructor(configs: EventValidatorConfig) {
+  constructor(configs: CommandValidatorConfig) {
     super();
     this.name = configs.name;
     this.description = configs.description;
@@ -25,7 +25,7 @@ export class EventValidator extends Base{
 
   async isValid(
     _interaction: BaseInteraction<CacheType>,
-    _next: EventValidatorNext,
+    _next: CommandValidatorNext,
   ) {
     return;
   }
@@ -34,10 +34,9 @@ export class EventValidator extends Base{
     return new Promise((resolve, reject) => {
       this.resolve = resolve;
       this.reject = reject;
-      this.isValid(interaction, ()=>resolve(true)).then(() => resolve(false));
+      this.isValid(interaction, () => resolve(true)).then(() => resolve(false));
     });
   }
-
 
   sendMessage(interaction: BaseInteraction<CacheType>) {
     if (interaction.isCommand()) {

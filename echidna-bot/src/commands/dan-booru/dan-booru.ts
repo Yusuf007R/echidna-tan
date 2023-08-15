@@ -1,5 +1,5 @@
-import { CacheType, CommandInteraction } from 'discord.js';
-import { Command } from '../../structures/command';
+import {CacheType, CommandInteraction} from 'discord.js';
+import {Command} from '../../structures/command';
 
 export default class DanbooruCommand extends Command {
   constructor() {

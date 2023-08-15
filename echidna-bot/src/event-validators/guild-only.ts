@@ -1,7 +1,10 @@
-import { CacheType, Interaction } from 'discord.js';
-import { EventValidator, EventValidatorNext } from '../structures/event-validator';
+import {CacheType, Interaction} from 'discord.js';
+import {
+  CommandValidator,
+  CommandValidatorNext,
+} from '../structures/command-validator';
 
-export default class GuildOnly extends EventValidator {
+export default class GuildOnly extends CommandValidator {
   constructor() {
     super({
       name: 'GuildOnly',
@@ -10,7 +13,10 @@ export default class GuildOnly extends EventValidator {
     });
   }
 
-  async isValid(interaction: Interaction<CacheType>, next:EventValidatorNext){
+  async isValid(
+    interaction: Interaction<CacheType>,
+    next: CommandValidatorNext,
+  ) {
     if (!interaction.inGuild()) {
       this.sendMessage(interaction);
     }

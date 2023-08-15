@@ -1,7 +1,10 @@
-import { CacheType, GuildMember, Interaction } from 'discord.js';
-import { EventValidator, EventValidatorNext } from '../structures/event-validator';
+import {CacheType, GuildMember, Interaction} from 'discord.js';
+import {
+  CommandValidator,
+  CommandValidatorNext,
+} from '../structures/command-validator';
 
-export default class VoiceChannelOnly extends EventValidator {
+export default class VoiceChannelOnly extends CommandValidator {
   constructor() {
     super({
       name: 'voice-channel-only',
@@ -10,10 +13,13 @@ export default class VoiceChannelOnly extends EventValidator {
     });
   }
 
-  async isValid(interaction: Interaction<CacheType>, next: EventValidatorNext){
+  async isValid(
+    interaction: Interaction<CacheType>,
+    next: CommandValidatorNext,
+  ) {
     if (!interaction.inGuild()) return;
     if (!(interaction.member as GuildMember).voice.channel) {
-      this.sendMessage(interaction);
+      return this.sendMessage(interaction);
     }
     next();
   }

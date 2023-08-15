@@ -1,6 +1,6 @@
-import { CacheType, CommandInteraction } from 'discord.js';
+import {CacheType, CommandInteraction} from 'discord.js';
 
-import { Command } from '../../structures/command';
+import {Command} from '../../structures/command';
 
 export default class Skip extends Command {
   constructor() {

@@ -1,5 +1,5 @@
-import { CacheType, CommandInteraction } from 'discord.js';
-import { Command } from '../../structures/command';
+import {CacheType, CommandInteraction} from 'discord.js';
+import {Command} from '../../structures/command';
 
 export default class WaifuGeneratorCommand extends Command {
   constructor() {
@@ -20,10 +20,9 @@ export default class WaifuGeneratorCommand extends Command {
   async run(interaction: CommandInteraction<CacheType>) {
     const prompt = this.choices.getString('prompt', true);
     const config = this.echidna.waifuGenerator.getConfigs({prompt});
-    const {embed, attachment, info} =
-      this.echidna.waifuGenerator.makeEmbed(
-        await this.echidna.waifuGenerator.getImage(config),
-      );
+    const {embed, attachment, info} = this.echidna.waifuGenerator.makeEmbed(
+      await this.echidna.waifuGenerator.getImage(config),
+    );
     const message = await interaction.editReply({
       embeds: [embed],
       files: [attachment],

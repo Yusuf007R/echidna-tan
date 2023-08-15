@@ -1,7 +1,9 @@
-import {ActivityType, Client, Collection, GatewayIntentBits} from 'discord.js';
+import {Client, Collection, GatewayIntentBits} from 'discord.js';
 
 import configs from '../config';
 import CommandManager from '../managers/command-manager';
+import EventManager from '../managers/event-manager';
+import Base from './base';
 import DanBooru from './dan-booru';
 import MusicPlayer from './music-player';
 import TicTacToe from './tic-tac-toe';
@@ -18,6 +20,8 @@ export default class EchidnaClient extends Client {
 
   waifuGenerator = new WaifuGenerator();
 
+  eventManager = new EventManager(this);
+
   constructor() {
     super({
       intents: [
@@ -31,79 +35,13 @@ export default class EchidnaClient extends Client {
   }
 
   init() {
-    this.once('ready', () => {
-      this.user?.setActivity({
-        name: 'with onii-sama',
-        type: ActivityType.Competing,
-      });
-      this.musicPlayer.init(this);
-      console.log(`Logged in as ${this.user?.tag}`);
+    Base.setClient(this);
+    this.eventManager.init();
+    // this.once('ready', () => {});
 
-      const guilds = this.guilds.cache.map(guild => guild.id);
-      this.commandManager.loadCommands();
-      this.commandManager.registerCommands(guilds);
-    });
+    // this.on('error', error => console.log('Client error', error));
 
-    this.on('error', error => console.log('Client error', error));
-
-    this.on('interactionCreate', async interaction => {
-      try {
-        if (interaction.isCommand()) {
-          this.commandManager.executeCommand(interaction);
-          return;
-        }
-        if (interaction.isStringSelectMenu()) {
-          if (interaction.customId === 'music') {
-            if (!interaction.guildId) return;
-            this.musicPlayer.selectMusic(interaction);
-          }
-        }
-        if (interaction.isButton()) {
-          const [type, action, value] = interaction.customId.split('-');
-
-          switch (type) {
-            case 'tictactoe':
-              {
-                if (!interaction.message.interaction?.id) return;
-                const tictactoe = this.ticTacToeManager.get(
-                  interaction.message.interaction.id,
-                );
-                if (!tictactoe) {
-                  interaction.reply({
-                    content: 'No game found',
-                    ephemeral: true,
-                  });
-                  return;
-                }
-                switch (action) {
-                  case 'game':
-                    await tictactoe.handleClick(interaction, value);
-                    break;
-                  case 'request':
-                    await tictactoe.startGame(interaction, value);
-                    break;
-                  default:
-                    break;
-                }
-              }
-              break;
-            default:
-              break;
-          }
-        }
-      } catch (error: any) {
-        if (interaction.isMessageComponent()) {
-          interaction.message.reply({
-            content: error?.message || 'Internal error, try again later.',
-          });
-
-          return;
-        }
-        interaction.channel?.send(
-          error?.message || 'Internal error, try again later.',
-        );
-      }
-    });
+    // this.on('interactionCreate', async interaction => {});
 
     this.login(configs.token);
   }
