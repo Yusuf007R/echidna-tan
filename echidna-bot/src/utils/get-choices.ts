@@ -1,4 +1,4 @@
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
 
 type R<K, T> = T extends true ? K : K | undefined;
 class GetChoices {
@@ -7,6 +7,15 @@ class GetChoices {
   constructor(opt: CommandInteraction<CacheType>['options']) {
     this.options = opt;
   }
+
+
+
+
+
+
+
+
+  
 
   private get(key: string, required = false) {
     const option = this.options.get(key);
