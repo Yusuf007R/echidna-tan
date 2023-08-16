@@ -1,8 +1,8 @@
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
+import { MusicCommand } from './[options]';
 
-import {Command} from '../../structures/command';
 
-export default class Skip extends Command {
+export default class Skip extends MusicCommand {
   constructor() {
     super({
       name: 'skip',
@@ -12,8 +12,7 @@ export default class Skip extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = this.echidna.musicPlayer.get(interaction.guildId!);
-    player.stop();
+    this.player?.stop()
     interaction.reply({content: 'Skipped the current song.'});
   }
 }

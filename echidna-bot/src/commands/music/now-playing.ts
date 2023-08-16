@@ -1,8 +1,8 @@
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
+import { MusicCommand } from './[options]';
 
-import {Command} from '../../structures/command';
 
-export default class NowPlaying extends Command {
+export default class NowPlaying extends MusicCommand {
   constructor() {
     super({
       name: 'now-playing',

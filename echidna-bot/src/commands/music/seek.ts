@@ -1,8 +1,8 @@
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
+import { MusicCommand } from './[options]';
 
-import {Command} from '../../structures/command';
 
-export default class Seek extends Command {
+export default class Seek extends MusicCommand {
   constructor() {
     super({
       name: 'seek',
@@ -21,9 +21,8 @@ export default class Seek extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = this.echidna.musicPlayer.get(interaction.guildId!);
     const seekTime = this.choices.getNumber('time', true);
-    player.seekTo(seekTime);
+    this.player?.seekTo(seekTime);
     interaction.reply({content: `Seeked to \`${seekTime}\``});
   }
 }

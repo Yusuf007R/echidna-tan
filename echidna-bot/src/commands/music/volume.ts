@@ -1,8 +1,8 @@
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
+import { MusicCommand } from './[options]';
 
-import {Command} from '../../structures/command';
 
-export default class Volume extends Command {
+export default class Volume extends MusicCommand {
   constructor() {
     super({
       name: 'volume',
@@ -22,9 +22,8 @@ export default class Volume extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = this.echidna.musicPlayer.get(interaction.guildId!);
     const volume = this.choices.getNumber('volume', true);
-    player.setVolume(volume);
+    this.player?.setVolume(volume);
     interaction.reply({content: `Volume set to \`${volume}\``});
   }
 }

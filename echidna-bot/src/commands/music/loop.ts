@@ -1,8 +1,8 @@
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
+import { MusicCommand } from './[options]';
 
-import {Command} from '../../structures/command';
 
-export default class LoopCommand extends Command {
+export default class LoopCommand extends MusicCommand {
   constructor() {
     super({
       name: 'loop',
@@ -21,9 +21,8 @@ export default class LoopCommand extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = this.echidna.musicPlayer.get(interaction.guildId!);
     const mode = this.choices.getString('mode', true);
-    player.setLoop(mode.toUpperCase() as any);
+    this.player?.setLoop(mode.toUpperCase() as any);
     interaction.reply({content: `Loop mode set to \`${mode}\``});
   }
 }

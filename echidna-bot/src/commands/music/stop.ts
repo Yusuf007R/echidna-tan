@@ -1,8 +1,8 @@
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
+import { MusicCommand } from './[options]';
 
-import {Command} from '../../structures/command';
 
-export default class Stop extends Command {
+export default class Stop extends MusicCommand {
   constructor() {
     super({
       name: 'stop',
@@ -12,8 +12,7 @@ export default class Stop extends Command {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const player = this.echidna.musicPlayer.get(interaction.guildId!);
-    player.destroy();
+   this. player?.destroy();
     interaction.reply({content: 'Stopped the current song.'});
   }
 }
