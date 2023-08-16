@@ -1,6 +1,5 @@
-import { CacheType, CommandInteraction } from 'discord.js';
-import { MusicCommand } from './[options]';
-
+import {CacheType, CommandInteraction} from 'discord.js';
+import {MusicCommand} from './[options]';
 
 export default class Play extends MusicCommand {
   constructor() {

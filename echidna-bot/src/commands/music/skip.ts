@@ -1,6 +1,5 @@
-import { CacheType, CommandInteraction } from 'discord.js';
-import { MusicCommand } from './[options]';
-
+import {CacheType, CommandInteraction} from 'discord.js';
+import {MusicCommand} from './[options]';
 
 export default class Skip extends MusicCommand {
   constructor() {
@@ -12,7 +11,7 @@ export default class Skip extends MusicCommand {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    this.player?.stop()
+    this.player?.stop();
     interaction.reply({content: 'Skipped the current song.'});
   }
 }

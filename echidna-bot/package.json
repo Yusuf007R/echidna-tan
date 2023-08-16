@@ -13,6 +13,9 @@
     "fix": "npm run prettier && npm run format",
     "prepare": "cd .. && husky install echidna-bot/.husky"
   },
+  "lint-staged": {
+    "*": "npm run fix"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -37,6 +40,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.28.0",
     "husky": "^8.0.3",
+    "lint-staged": "^14.0.0",
     "prettier": "^3.0.1",
     "prettier-eslint": "^15.0.1",
     "ts-node": "^10.9.1",

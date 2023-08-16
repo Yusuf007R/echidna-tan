@@ -1,6 +1,5 @@
-import { CacheType, CommandInteraction } from 'discord.js';
-import { MusicCommand } from './[options]';
-
+import {CacheType, CommandInteraction} from 'discord.js';
+import {MusicCommand} from './[options]';
 
 export default class Stop extends MusicCommand {
   constructor() {
@@ -12,7 +11,7 @@ export default class Stop extends MusicCommand {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-   this. player?.destroy();
+    this.player?.destroy();
     interaction.reply({content: 'Stopped the current song.'});
   }
 }
