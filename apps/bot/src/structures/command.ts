@@ -1,7 +1,7 @@
 import {CacheType, CommandInteraction} from 'discord.js';
 import GetChoices from '../utils/get-choices';
-import Base from './base';
 import {CommandValidator} from './command-validator';
+import EchidnaSingleton from './echidna-singleton';
 
 export type options =
   | {
@@ -47,7 +47,7 @@ export type commandConfigs = {
   validators?: Array<new () => CommandValidator>;
 };
 
-export abstract class Command extends Base {
+export abstract class Command extends EchidnaSingleton {
   readonly name: string;
 
   readonly description: string;

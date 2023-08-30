@@ -1,17 +1,16 @@
-import { Client, Collection, GatewayIntentBits } from 'discord.js';
+import {Client, Collection, GatewayIntentBits} from 'discord.js';
 
 import configs from '../config';
 import CommandManager from '../managers/command-manager';
 import EventManager from '../managers/event-manager';
-import Base from './base';
 import DanBooru from './dan-booru';
+import EchidnaSingleton from './echidna-singleton';
 import MusicPlayer from './music-player';
 import TicTacToe from './tic-tac-toe';
 import WaifuGenerator from './waifu-generator';
 
 export default class EchidnaClient extends Client {
-
-  clientSingleton = new Base(this);
+  clientSingleton = new EchidnaSingleton(this);
 
   musicPlayer = new MusicPlayer();
 

@@ -8,10 +8,10 @@ import {
   EmbedBuilder,
   User,
 } from 'discord.js';
-import {echidnaClient} from '..';
 
 import TicTacToeUtils from '../utils/tic-tac-toe-utils';
 import wait from '../utils/wait';
+import EchidnaSingleton from './echidna-singleton';
 
 export enum TurnEnum {
   X = 'x',
@@ -238,7 +238,9 @@ export default class TicTacToe {
   private async endGame() {
     if (this.timeOut) clearTimeout(this.timeOut);
     if (this.currentInteraction.id)
-      echidnaClient.ticTacToeManager.delete(this.currentInteraction.id);
+      EchidnaSingleton.echidna.ticTacToeManager.delete(
+        this.currentInteraction.id,
+      );
     let content: string = '';
     switch (this.status) {
       case TicTacToeStatus.Finished:

@@ -1,8 +1,8 @@
 import {CacheType, CommandInteraction} from 'discord.js';
-import {Player} from 'poru';
 import GuildOnly from '../../event-validators/guild-only';
 import VoiceChannelOnly from '../../event-validators/voice-channel-only';
 import {Command, commandConfigs} from '../../structures/command';
+import CustomPlayer from '../../structures/custom-player';
 import EventOptions from '../../structures/event-options';
 
 export default class Options extends EventOptions {
@@ -12,7 +12,7 @@ export default class Options extends EventOptions {
 }
 
 export abstract class MusicCommand extends Command {
-  player?: Player;
+  player?: CustomPlayer;
   constructor(config: commandConfigs) {
     super(config);
   }

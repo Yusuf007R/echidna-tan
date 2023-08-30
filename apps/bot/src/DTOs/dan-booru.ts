@@ -51,3 +51,10 @@ export enum Rating {
   Q = 'q',
   S = 's',
 }
+
+export interface DanBooruError {
+  success: boolean;
+  error: string;
+  message: string;
+  backtrace: string[];
+}

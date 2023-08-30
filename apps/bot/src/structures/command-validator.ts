@@ -1,5 +1,5 @@
 import {BaseInteraction, CacheType} from 'discord.js';
-import Base from './base';
+import EchidnaSingleton from './echidna-singleton';
 
 type CommandValidatorConfig = {
   name: string;
@@ -9,7 +9,7 @@ type CommandValidatorConfig = {
 
 export type CommandValidatorNext = () => void;
 
-export class CommandValidator extends Base {
+export class CommandValidator extends EchidnaSingleton {
   name: string;
   description: string;
   message: string;

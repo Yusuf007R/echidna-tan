@@ -1,5 +1,5 @@
 import {ClientEvents} from 'discord.js';
-import Base from './base';
+import EchidnaSingleton from './echidna-singleton';
 
 export type discordEventConfig = {
   eventName: keyof ClientEvents;
@@ -8,7 +8,7 @@ export type discordEventConfig = {
 
 export type eventType = 'once' | 'on';
 
-export abstract class DiscordEvent extends Base {
+export abstract class DiscordEvent extends EchidnaSingleton {
   eventName: keyof ClientEvents;
   eventType: eventType;
 

@@ -1,4 +1,4 @@
-import { EmbedBuilder, SelectMenuBuilder } from '@discordjs/builders';
+import {EmbedBuilder, SelectMenuBuilder} from '@discordjs/builders';
 import {
   ActionRowBuilder,
   CacheType,
@@ -7,19 +7,19 @@ import {
   GuildMember,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import { Player, Poru } from 'poru';
+import {Player, Poru} from 'poru';
 import sharp from 'sharp';
-import { echidnaClient } from '..';
 import configs from '../config';
 import getImageUrl from '../utils/get-image-from-url';
 import milisecondsToReadable from '../utils/seconds-to-minutes';
-import Base from './base';
-
+import CustomPlayer from './custom-player';
+import EchidnaSingleton from './echidna-singleton';
 
 export default class MusicPlayer extends Poru {
+  players: Map<string, CustomPlayer> = new Map();
   constructor() {
     super(
-      Base.echidna,
+      EchidnaSingleton.echidna,
       [
         {
           name: 'local-node',
@@ -28,13 +28,19 @@ export default class MusicPlayer extends Poru {
           password: configs.lavaLinkPassword,
         },
       ],
-      {library: 'discord.js'},
+      {library: 'discord.js', customPlayer: CustomPlayer},
     );
     this.on('trackStart', player => {
-      const channel = Base.echidna.channels.cache.get(player.textChannel);
+      const channel = EchidnaSingleton.echidna.channels.cache.get(
+        player.textChannel,
+      );
       if (!channel || !channel.isTextBased()) return;
       return this.nowPlaying(player.guildId);
     });
+  }
+
+  get(guildId: string): CustomPlayer {
+    return super.get(guildId);
   }
 
   async play(interaction: CommandInteraction<CacheType>, query: string) {
@@ -190,11 +196,12 @@ export default class MusicPlayer extends Poru {
   getTextChannel(guildId: string) {
     const player = this.players.get(guildId);
     if (!player) return;
-    const channel = echidnaClient.channels.cache.get(player.textChannel);
+    const channel = EchidnaSingleton.echidna.channels.cache.get(
+      player.textChannel,
+    );
     if (!channel || !channel.isTextBased()) return;
     return channel;
   }
-
 
   async getTrackDominantColor(
     player: Player,
