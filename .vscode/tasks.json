@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [ 
+    
+    
+  ],
+  "inputs": [
+    {
+      "id": "project",
+      "type": "pickString",
+      "description": "Select a project",
+      "options": [
+        "bot",
+        "web"
+      ]
+    }
+  ]
+}

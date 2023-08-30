@@ -64,7 +64,11 @@ export default class TicTacToeUtils {
 
     if (!isMaximizing) {
       const bestMaximumValue = table.reduce(
-        (currentBest: number, cell: number, index: number): number => {
+        (
+          currentBest: number,
+          cell: number | TurnEnum,
+          index: number,
+        ): number => {
           const tableCopy = [...table];
           if (Number.isInteger(cell)) {
             tableCopy[index] = aiSymbol;
@@ -81,7 +85,7 @@ export default class TicTacToeUtils {
     }
 
     const bestMinimunValue = table.reduce(
-      (currentBest: number, cell: number, index: number): number => {
+      (currentBest: number, cell: number | TurnEnum, index: number): number => {
         const tableCopy = [...table];
         if (Number.isInteger(cell)) {
           tableCopy[index] = aiSymbol === TurnEnum.X ? TurnEnum.O : TurnEnum.X;

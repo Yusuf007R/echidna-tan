@@ -3,6 +3,9 @@
   "display": "Default",
   "compilerOptions": {
     "composite": false,
+    "lib": ["es2021"],
+    "module": "Node16",
+    "target": "es2021",
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
