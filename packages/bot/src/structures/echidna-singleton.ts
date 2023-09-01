@@ -1,12 +1,10 @@
-import {AsyncResource} from 'node:async_hooks';
 import EchidnaClient from './echidna-client';
 
-export default class EchidnaSingleton extends AsyncResource {
+export default class EchidnaSingleton {
   echidna: EchidnaClient;
   private static _echidna?: EchidnaClient;
 
   constructor(clientstatic?: EchidnaClient) {
-    super('Base');
     if (clientstatic) EchidnaSingleton._echidna = clientstatic;
     this.echidna = EchidnaSingleton._echidna!;
   }

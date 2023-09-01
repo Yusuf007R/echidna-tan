@@ -40,7 +40,7 @@ export default class MusicPlayer extends Poru {
   }
 
   get(guildId: string): CustomPlayer {
-    return super.get(guildId);
+    return super.get(guildId) as CustomPlayer;
   }
 
   async play(interaction: CommandInteraction<CacheType>, query: string) {
@@ -57,7 +57,7 @@ export default class MusicPlayer extends Poru {
         textChannel: temp?.channel?.id,
         deaf: true,
         mute: false,
-      });
+      }) as CustomPlayer;
     }
     const res = await this.resolve({
       query,
