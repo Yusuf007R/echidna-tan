@@ -6,10 +6,12 @@ import {
   ComponentType,
   GuildMember,
   StringSelectMenuInteraction,
+  User,
 } from 'discord.js';
 import {Player, Poru} from 'poru';
 import sharp from 'sharp';
 import configs from '../config';
+import capitalize from '../utils/capitalize';
 import getImageUrl from '../utils/get-image-from-url';
 import milisecondsToReadable from '../utils/seconds-to-minutes';
 import CustomPlayer from './custom-player';
@@ -168,18 +170,50 @@ export default class MusicPlayer extends Poru {
   ) {
     try {
       const player = this.players.get(guildId);
+      //!FIX THIS basically here if player doenst exist probably the interaction has not been sent or deferred, need to make some utils for this.
       if (!player) return interaction?.editReply('No player found');
       const {currentTrack} = player;
-      const {title, uri, image, length} = currentTrack.info;
+      const {title, uri, image, length, author} = currentTrack.info;
+      const requester = currentTrack.info.requester as User;
       const minutes = milisecondsToReadable(length);
+      const gap = {
+        name: '\n',
+        value: '\n',
+      };
       const embed = new EmbedBuilder()
-        .setTitle('Now playing: ')
-        .setDescription(`[${title}](${uri}/ 'Click to open link.') `)
-        .setTimestamp()
-        .setFooter({text: `Duration: ${minutes}`});
+        .setTitle(`${title}`)
+        .setAuthor({name: 'Now Playing: '})
+        .setDescription('Player Info: ')
+        .setFooter({
+          text: `Duration: ${minutes} - Requested by: ${requester.displayName}`,
+        })
+        .setURL(uri)
+        .addFields(
+          gap,
+          {
+            name: 'Volume',
+            value: `${player.volume}%`,
+            inline: true,
+          },
+          {
+            name: 'Loop mode',
+            value: `${capitalize(player.loop)}`,
+            inline: true,
+          },
+          gap,
+          {
+            name: `Queue (${player.queue.length})`,
+            value: `${
+              player.queue
+                .map(track => `[${track.info.title}](${track.info.uri})`)
+                .slice(0, 5)
+                .join('\n') || 'Empty'
+            }`,
+          },
+        );
 
       if (image) {
-        embed.setThumbnail(image);
+        embed.setImage(image);
         embed.setColor(await this.getTrackDominantColor(player));
       }
       if (interaction) {

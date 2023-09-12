@@ -23,7 +23,7 @@ export default class EventManager extends EchidnaSingleton {
   loadEvents() {
     const eventsRootFolder = join(__dirname, '../events');
     readdirSync(eventsRootFolder)
-      .filter(file => file.endsWith('.ts') || file.endsWith('.js'))
+      .filter(file => file.endsWith('.ts'))
       .map(file => {
         const eventFile = join(eventsRootFolder, file);
         const Event = require(eventFile).default;

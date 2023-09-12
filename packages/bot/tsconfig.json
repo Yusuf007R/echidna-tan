@@ -1,4 +1,12 @@
 {
   "extends": "tsconfig/bot.json",
-  "include": ["src/**/*"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"],
+  "compilerOptions": {
+    "outDir": "dist/",
+    "typeRoots": ["./node_modules/@types", "src/interfaces"],
+    "baseUrl": ".",
+    "target": "ES2017",
+    "module": "CommonJS"
+  }
 }

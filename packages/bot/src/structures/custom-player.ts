@@ -1,6 +1,6 @@
 import {Node, Player, Poru} from 'poru';
 import Queue from 'poru/dist/src/guild/Queue';
-import {ExtractMethods} from '../DTOs/utils';
+import {ExtractMethods} from '../interfaces/utils';
 
 export type playerMethods = ExtractMethods<Player>;
 export type playerMethodsKey = keyof playerMethods;

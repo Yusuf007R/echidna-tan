@@ -5,7 +5,8 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "docker": "turbo run docker",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "ui:add": "yarn workspace ui ui:add"
   },
   "devDependencies": {
     "@turbo/gen": "^1.9.7",

@@ -1,16 +1,11 @@
-import {createHTTPServer} from '@trpc/server/adapters/standalone';
-import {applyWSSHandler} from '@trpc/server/adapters/ws';
+import {protectedProcedure, router} from '@Api/trpc';
+import {playerData} from '@Structures/custom-player';
+import EchidnaSingleton from '@Structures/echidna-singleton';
 import {observable} from '@trpc/server/observable';
-import ws from 'ws';
-
-import cors from 'cors';
 import {z} from 'zod';
-import {playerData} from '../structures/custom-player';
-import EchidnaSingleton from '../structures/echidna-singleton';
-import {publicProcedure, router} from './trpc';
 
-const appRouter = router({
-  mutate: publicProcedure
+export default router({
+  mutate: protectedProcedure
     .input(
       z.union([
         z.object({
@@ -48,7 +43,7 @@ const appRouter = router({
         .get('')
         .callMethod(input.name, input?.input);
     }),
-  data: publicProcedure.subscription(({ctx}) => {
+  data: protectedProcedure.subscription(({ctx}) => {
     console.log('subscribed');
     return observable<playerData>(emit => {
       console.log('subscribed');
@@ -56,25 +51,3 @@ const appRouter = router({
     });
   }),
 });
-
-const server = createHTTPServer({
-  middleware: cors(),
-  router: appRouter,
-});
-
-const wss = new ws.Server({
-  port: 3066,
-});
-const handler = applyWSSHandler({wss, router: appRouter});
-
-wss.on('connection', ws => {
-  console.log(`➕➕ Connection (${wss.clients.size})`);
-  ws.once('close', () => {
-    console.log(`➖➖ Connection (${wss.clients.size})`);
-  });
-});
-console.log('✅ WebSocket Server listening on ws://localhost:3066');
-
-server.listen(3069);
-
-export type AppRouter = typeof appRouter;

@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createWSClient, httpBatchLink, splitLink, wsLink } from "@trpc/client";
 import { useState } from "react";
-import { trpc } from "../trpc/trpc";
+import { trpc } from "../trpc/trpc-client";
 
 export const Providers: React.FC<{ children: React.ReactNode }> = ({
   children,

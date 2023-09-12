@@ -1,3 +1,4 @@
+import 'dotenv/config';
 const token = process.env.DISCORD_TOKEN;
 if (!token) throw new Error('No token found');
 
@@ -16,6 +17,18 @@ if (!lavaLinkHost) throw new Error('No lava link host found');
 const runpodToken = process.env.RUNPOD_TOKEN;
 if (!runpodToken) throw new Error('No runpod token found');
 
+const waifuGeneratorEndpoint = process.env.WAIFU_GENERATOR_ENDPOINT;
+if (!waifuGeneratorEndpoint) throw new Error('No runpod endpoint found');
+
+const danbooruEndpoint = process.env.DANBOORU_ENDPOINT;
+if (!danbooruEndpoint) throw new Error('No danbooru endpoint found');
+
+const jwtSecretAccess = process.env.JWT_SECRET_ACCESS;
+if (!jwtSecretAccess) throw new Error('No jwt secret found');
+
+const jwtSecretRefresh = process.env.JWT_SECRET_REFRESH;
+if (!jwtSecretRefresh) throw new Error('No jwt secret found');
+
 export default {
   token,
   guildId,
@@ -23,4 +36,8 @@ export default {
   lavaLinkPassword,
   lavaLinkHost,
   runpodToken,
+  waifuGeneratorEndpoint,
+  danbooruEndpoint,
+  jwtSecretAccess,
+  jwtSecretRefresh,
 };

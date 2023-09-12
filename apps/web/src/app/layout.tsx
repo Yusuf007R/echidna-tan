@@ -1,5 +1,5 @@
+import "@ui/styles/globals.css";
 import { Providers } from "../lib/providers";
-
 export default function RootLayout({
   children,
 }: {

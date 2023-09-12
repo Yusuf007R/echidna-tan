@@ -1,13 +1,14 @@
 import {create} from 'apisauce';
+import config from '../config';
 
 const danBooruAPI = create({
-  baseURL: 'https://danbooru.donmai.us/',
+  baseURL: config.danbooruEndpoint,
 });
 
 const waifuGeneratorAPI = create({
-  baseURL: 'https://api.runpod.ai/v2/tg9unsqf6rbd3r/runsync',
+  baseURL: config.waifuGeneratorEndpoint,
   headers: {
-    Authorization: `Bearer ${process.env.RUNPOD_TOKEN}`,
+    Authorization: `Bearer ${config.runpodToken}`,
   },
 });
 

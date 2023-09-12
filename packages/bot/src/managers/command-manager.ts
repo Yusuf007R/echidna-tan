@@ -33,7 +33,7 @@ export default class CommandManager {
     readdirSync(commandsRootFolder).flatMap(folder => {
       const commandFolder = join(commandsRootFolder, folder);
       return readdirSync(commandFolder)
-        .filter(file => file.endsWith('.ts') || file.endsWith('.js'))
+        .filter(file => file.endsWith('.ts'))
         .map(file => {
           if (file.includes('options')) {
             const optionsFile = join(commandFolder, file);
