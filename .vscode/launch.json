@@ -1,0 +1,11 @@
+{
+  "configurations": [
+    {
+      "name": "Launch",
+      "request": "attach",
+      "port": 4444,
+      "type": "node"
+    }
+  ],
+  "inputs": []
+}
