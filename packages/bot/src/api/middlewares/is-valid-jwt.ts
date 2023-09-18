@@ -1,6 +1,6 @@
 import config from '@Configs';
 import {TRPCError} from '@trpc/server';
-import {verify} from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import {AccessTokenType, RefreshTokenType} from '../interfaces/jwt';
 import {middleware} from '../trpc';
 
@@ -14,7 +14,7 @@ export default function isValidJWT<T extends 'access' | 'refresh'>(type: T) {
           message: 'No token provided',
         });
 
-      const decodedJwt = verify(
+      const decodedJwt = jwt.verify(
         token,
         type === 'access' ? config.jwtSecretAccess : config.jwtSecretRefresh,
       ) as T extends 'access' ? AccessTokenType : RefreshTokenType;

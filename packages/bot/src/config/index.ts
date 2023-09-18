@@ -29,7 +29,7 @@ if (!jwtSecretAccess) throw new Error('No jwt secret found');
 const jwtSecretRefresh = process.env.JWT_SECRET_REFRESH;
 if (!jwtSecretRefresh) throw new Error('No jwt secret found');
 
-export default {
+const config = {
   token,
   guildId,
   clientId,
@@ -41,3 +41,4 @@ export default {
   jwtSecretAccess,
   jwtSecretRefresh,
 };
+export default config;

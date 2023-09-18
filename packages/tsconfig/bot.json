@@ -1,25 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Bot",
-  "extends": "./base.json",
-  "ts-node": {
-    "transpileOnly": true,
-    "files": true,
-    "require": ["tsconfig-paths/register"]
-  },
-  "compilerOptions": {
-    "paths": {
-      "@Configs": ["./src/config"],
-      "@Interfaces/*": ["./src/interfaces/*"],
-      "@Commands/*": ["./src/commands/*"],
-      "@Events/*": ["./src/events/*"],
-      "@Utils/*": ["./src/utils/*"],
-      "@Structures/*": ["./src/structures/*"],
-      "@Api/*": ["./src/api/*"],
-      "@ApiUtils/*": ["./src/api/utils/*"],
-      "@ApiInterfaces/*": ["./src/api/interfaces/*"],
-      "@ApiRouters/*": ["./src/api/routers/*"],
-      "@ApiMiddlewares/*": ["./src/api/middlewares/*"]
-    }
-  }
+  "extends": "./base.json"
+  
 }

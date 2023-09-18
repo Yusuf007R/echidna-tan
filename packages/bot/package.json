@@ -4,16 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --exit-child --respawn tsconfig-paths/register src/index.ts",
+    "dev": "ts-node-dev --exit-child --respawn -r tsconfig-paths/register ./src/index.ts",
     "start": "yarn run build && node ./dist/index.js",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src/**/*.ts --fix",
-    "prettier": "prettier --ignore-path .gitignore \"**/*.+(js|jsx|ts|tsx|json)\" --write",
+    "prettier": "prettier --ignore-path .gitignore \"**/*.+(js|jsx|ts|tsx)\" --write",
     "fix": "yarn run prettier && yarn run format",
     "prisma:migrate": "npx prisma migrate dev --name -- "
   },
-  "author": "",
+  "author": "Yusuf Rawat",
   "license": "ISC",
   "dependencies": {
     "@discordjs/builders": "^1.6.4",
@@ -46,7 +46,6 @@
     "prettier": "^3.0.1",
     "prettier-eslint": "^15.0.1",
     "prisma": "^5.2.0",
-    "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.6"
