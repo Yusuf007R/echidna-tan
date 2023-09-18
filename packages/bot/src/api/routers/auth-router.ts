@@ -1,10 +1,11 @@
-import {publicProcedure, refreshProcedure, router} from '@Api/trpc';
+import {publicProcedure, refreshProcedure} from '@Api/precedure';
+import {router} from '@Api/trpc';
 import {AccessTokenType} from '@ApiInterfaces/jwt';
 import config from '@Configs';
 import DiscordAPI from '@Structures/discord-api';
 import {Prisma} from '@prisma/client';
 import {TRPCError} from '@trpc/server';
-import {sign} from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import {z} from 'zod';
 
 // Auth router
@@ -53,11 +54,11 @@ export default router({
         username: user.username,
       };
 
-      const token = sign(jwtPayload, config.jwtSecretAccess, {
+      const token = jwt.sign(jwtPayload, config.jwtSecretAccess, {
         expiresIn: '5m',
       });
 
-      const refreshToken = sign(jwtPayload, config.jwtSecretRefresh);
+      const refreshToken = jwt.sign(jwtPayload, config.jwtSecretRefresh);
 
       await ctx.prisma.token.create({
         data: {
@@ -96,7 +97,7 @@ export default router({
       username: user.username,
     };
 
-    const token = sign(jwtPayload, config.jwtSecretAccess, {
+    const token = jwt.sign(jwtPayload, config.jwtSecretAccess, {
       expiresIn: '5m',
     });
 

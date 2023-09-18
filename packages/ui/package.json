@@ -4,7 +4,8 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint \"**/*.ts*\"",
-    "ui:add": "npx shadcn-ui@latest add"
+    "ui:shadcn": "npx shadcn-ui@latest add",
+    "ui:add": "turbo gen react-component"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",

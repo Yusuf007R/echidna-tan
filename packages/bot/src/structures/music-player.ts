@@ -8,6 +8,7 @@ import {
   StringSelectMenuInteraction,
   User,
 } from 'discord.js';
+import {EventEmitter} from 'events';
 import {Player, Poru} from 'poru';
 import sharp from 'sharp';
 import configs from '../config';
@@ -19,6 +20,7 @@ import EchidnaSingleton from './echidna-singleton';
 
 export default class MusicPlayer extends Poru {
   players: Map<string, CustomPlayer> = new Map();
+  methodEmitter = new EventEmitter();
   constructor() {
     super(
       EchidnaSingleton.echidna,
@@ -173,7 +175,7 @@ export default class MusicPlayer extends Poru {
       //!FIX THIS basically here if player doenst exist probably the interaction has not been sent or deferred, need to make some utils for this.
       if (!player) return interaction?.editReply('No player found');
       const {currentTrack} = player;
-      const {title, uri, image, length, author} = currentTrack.info;
+      const {title, uri, image, length} = currentTrack.info;
       const requester = currentTrack.info.requester as User;
       const minutes = milisecondsToReadable(length);
       const gap = {

@@ -1,6 +1,7 @@
 import {Node, Player, Poru} from 'poru';
-import Queue from 'poru/dist/src/guild/Queue';
+
 import {ExtractMethods} from '../interfaces/utils';
+import EchidnaSingleton from './echidna-singleton';
 
 export type playerMethods = ExtractMethods<Player>;
 export type playerMethodsKey = keyof playerMethods;
@@ -12,6 +13,7 @@ const PLAYER_METHODS_TO_LISTEN: playerMethodsKey[] = [
   'setVolume',
   'setLoop',
 ];
+export type Queue = Player['queue'];
 
 export type playerData = {
   isPlaying: boolean;
@@ -28,9 +30,15 @@ export default class CustomPlayer extends Player {
   constructor(poru: Poru, node: Node, options: any) {
     super(poru, node, options);
     return new Proxy(this, {
-      get(target, prop, receiver) {
+      get: (target, prop, receiver) => {
         if (PLAYER_METHODS_TO_LISTEN.includes(prop as playerMethodsKey)) {
-          console.log(prop, 'called');
+          EchidnaSingleton.echidna.musicPlayer.methodEmitter.emit(
+            'methodCalled',
+            {
+              method: prop as playerMethodsKey,
+              guild: target.guildId,
+            },
+          );
         }
         return Reflect.get(target, prop, receiver);
       },
@@ -42,7 +50,7 @@ export default class CustomPlayer extends Player {
     ...args: Parameters<playerMethods[T]>
   ) {
     const methodToCall = this[method] as playerMethods[T];
-    // @ts-expect-error
+    // @ts-expect-error this error is completely okay to ignore as args are already validated
     return methodToCall(...args);
   }
 
