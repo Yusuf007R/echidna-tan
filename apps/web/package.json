@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "web:add": "turbo gen react-component"
   },
   "dependencies": {
     "@tanstack/react-query": "^4.33.0",
