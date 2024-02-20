@@ -11,7 +11,7 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
+  userId       Int      @id @default(autoincrement())
   email        String?  @unique
   discordId    String?  @unique
   avatar       String?
@@ -24,11 +24,11 @@ model User {
 }
 
 model Token {
-  id           Int      @id @default(autoincrement())
+  tokenId      Int      @id @default(autoincrement())
   token        String   @unique
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   discordToken String   @unique
-  user         User     @relation(fields: [userId], references: [id])
-  userId       Int
+  user         User     @relation(fields: [idUser], references: [userId])
+  idUser       Int
 }

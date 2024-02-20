@@ -13,7 +13,7 @@ import {
 import {readdirSync} from 'fs';
 import {join} from 'path';
 import configs from '../config';
-import {Command, options} from '../structures/command';
+import {CmdType, Command, options} from '../structures/command';
 import EventOptions from '../structures/event-options';
 
 export default class CommandManager {
@@ -69,26 +69,24 @@ export default class CommandManager {
   }
 
   async registerCommands(guilds: string[]) {
-    const slashCommmands = this.commands.map(({command}) => {
-      const slash = new SlashCommandBuilder()
-        .setName(command.name)
-        .setDescription(command.description);
-
-      if (command.options) {
-        this.optionBuilder(command.options, slash);
-      }
-      return slash.toJSON();
-    });
-
+    const slashCommmandsGuild = this.filterMapCmds(['GUILD', 'BOTH']);
+    const slashCommmandsDM = this.filterMapCmds(['DM', 'BOTH']);
     try {
       const requests = guilds.map(guildId =>
         new REST()
           .setToken(configs.token)
           .put(Routes.applicationGuildCommands(configs.clientId, guildId), {
-            body: slashCommmands,
+            body: slashCommmandsGuild,
           }),
       );
+
+      await new REST()
+        .setToken(configs.token)
+        .put(Routes.applicationCommands(configs.clientId), {
+          body: slashCommmandsDM,
+        });
       await Promise.all(requests);
+
       console.log('Successfully registered application commands.');
     } catch (error) {
       console.error(error);
@@ -104,6 +102,21 @@ export default class CommandManager {
       console.error(error);
       interaction.editReply('An error occured while executing the command.');
     }
+  }
+
+  filterMapCmds(filters: CmdType[]) {
+    return this.commands
+      .filter(cmd => filters.includes(cmd.command.cmdType))
+      .map(({command}) => {
+        const slash = new SlashCommandBuilder()
+          .setName(command.name)
+          .setDescription(command.description);
+
+        if (command.options) {
+          this.optionBuilder(command.options, slash);
+        }
+        return slash.toJSON();
+      });
   }
 
   async optionBuilder(
@@ -134,6 +147,8 @@ export default class CommandManager {
             }
             return option;
           });
+
+          slash.addAttachmentOption();
           break;
         case 'int':
           slash.addIntegerOption(option => {

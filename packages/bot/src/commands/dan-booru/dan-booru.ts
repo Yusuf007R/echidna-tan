@@ -1,11 +1,12 @@
-import { CacheType, CommandInteraction } from 'discord.js';
-import { Command } from '../../structures/command';
+import {CacheType, CommandInteraction} from 'discord.js';
+import {Command} from '../../structures/command';
 
 export default class DanbooruCommand extends Command {
   constructor() {
     super({
       name: 'dan-booru',
       description: 'Dan booru commands',
+      cmdType: 'BOTH',
       options: [
         {
           type: 'string',
@@ -35,7 +36,7 @@ export default class DanbooruCommand extends Command {
       interaction.editReply('NSFW is not allowed in this channel.');
       return;
     }
-      try {
+    try {
       if (tags) {
         const post = await this.echidna.danbooru.querySinglePost({
           tags: tags.split(' '),

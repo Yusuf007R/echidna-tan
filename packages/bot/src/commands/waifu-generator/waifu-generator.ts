@@ -1,5 +1,5 @@
-import { CacheType, CommandInteraction } from 'discord.js';
-import { Command } from '../../structures/command';
+import {CacheType, CommandInteraction} from 'discord.js';
+import {Command} from '../../structures/command';
 
 export default class WaifuGeneratorCommand extends Command {
   constructor() {
@@ -7,6 +7,7 @@ export default class WaifuGeneratorCommand extends Command {
       shouldDefer: true,
       name: 'waifu-generator',
       description: 'Generate Waifu using AI',
+      cmdType: 'BOTH',
       options: [
         {
           type: 'string',

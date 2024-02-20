@@ -1,3 +1,4 @@
+import {ActivityType} from 'discord.js';
 import {DiscordEvent} from '../structures/discord-events';
 
 export default class ReadyEvent extends DiscordEvent {
@@ -6,11 +7,12 @@ export default class ReadyEvent extends DiscordEvent {
   }
 
   async run(): Promise<void> {
-    // this.echidna.user?.setActivity({
-    //   name: 'with onii-sama',
-    //   type: ActivityType.Competing,
-    // });
-    this.echidna.user?.setStatus('invisible');
+    this.echidna.user?.setActivity({
+      name: 'with onii-sama',
+      type: ActivityType.Competing,
+    });
+    this.echidna.user?.setStatus('online');
+
     this.echidna.musicPlayer.init(this.echidna);
     console.log(`Logged in as ${this.echidna.user?.tag}`);
 

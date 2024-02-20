@@ -38,6 +38,8 @@ export type options =
       required?: boolean;
     };
 
+export type CmdType = 'GUILD' | 'DM' | 'BOTH';
+
 export type commandConfigs = {
   name: string;
   description: string;
@@ -45,6 +47,7 @@ export type commandConfigs = {
   voiceChannelOnly?: boolean;
   shouldDefer?: boolean;
   validators?: Array<new () => CommandValidator>;
+  cmdType?: CmdType;
 };
 
 export abstract class Command extends EchidnaSingleton {
@@ -60,6 +63,8 @@ export abstract class Command extends EchidnaSingleton {
 
   choices!: GetChoices;
 
+  cmdType!: CmdType;
+
   constructor(configs: commandConfigs) {
     super();
     this.name = configs.name;
@@ -67,6 +72,7 @@ export abstract class Command extends EchidnaSingleton {
     this.options = configs.options;
     this.shouldDefer = configs.shouldDefer;
     this.validators = configs.validators || [];
+    this.cmdType = configs.cmdType || 'GUILD';
   }
 
   abstract run(
