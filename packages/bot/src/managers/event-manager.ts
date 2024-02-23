@@ -36,23 +36,14 @@ export default class EventManager extends EchidnaSingleton {
     console.log('Events loaded');
   }
 
-  async executeEvent(eventName: string, ...args: any[]) {
-    const event = this.events.get(eventName);
-    if (!event) {
-      throw new Error(`Event ${eventName} not found`);
-    }
-    try {
-      await event.event.run(args);
-    } catch (error) {
-      console.error(error);
-      throw new Error(`Error executing event ${eventName}`);
-    }
-  }
-
   listenEvent() {
     this.events.forEach(event => {
-      this.echidna[event.type](event.event.eventName, (...args) => {
-        event.event.run(...args);
+      this.echidna[event.type](event.event.eventName, async (...args) => {
+        try {
+          await event.event.run(...args);
+        } catch (error) {
+          console.error('Error executing event', error);
+        }
       });
     });
   }

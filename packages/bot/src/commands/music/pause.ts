@@ -12,6 +12,6 @@ export default class Pause extends MusicCommand {
 
   async run(interaction: CommandInteraction<CacheType>) {
     this.player?.pause();
-    interaction.reply({content: 'Paused the current song.'});
+    await interaction.reply({content: 'Paused the current song.'});
   }
 }

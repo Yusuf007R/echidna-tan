@@ -22,6 +22,6 @@ export default class Seek extends MusicCommand {
   async run(interaction: CommandInteraction<CacheType>) {
     const seekTime = this.choices.getNumber('time', true);
     this.player?.seekTo(seekTime);
-    interaction.reply({content: `Seeked to \`${seekTime}\``});
+    await interaction.reply({content: `Seeked to \`${seekTime}\``});
   }
 }

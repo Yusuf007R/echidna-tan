@@ -23,6 +23,6 @@ export default class Volume extends MusicCommand {
   async run(interaction: CommandInteraction<CacheType>) {
     const volume = this.choices.getNumber('volume', true);
     this.player?.setVolume(volume);
-    interaction.reply({content: `Volume set to \`${volume}\``});
+    await interaction.reply({content: `Volume set to \`${volume}\``});
   }
 }

@@ -13,7 +13,7 @@ import {
 import {readdirSync} from 'fs';
 import {join} from 'path';
 import configs from '../config';
-import {Command, options} from '../structures/command';
+import {CmdType, Command, options} from '../structures/command';
 import EventOptions from '../structures/event-options';
 
 export default class CommandManager {
@@ -69,26 +69,24 @@ export default class CommandManager {
   }
 
   async registerCommands(guilds: string[]) {
-    const slashCommmands = this.commands.map(({command}) => {
-      const slash = new SlashCommandBuilder()
-        .setName(command.name)
-        .setDescription(command.description);
-
-      if (command.options) {
-        this.optionBuilder(command.options, slash);
-      }
-      return slash.toJSON();
-    });
-
+    const slashCommmandsGuild = this.filterMapCmds(['GUILD', 'BOTH']);
+    const slashCommmandsDM = this.filterMapCmds(['DM', 'BOTH']);
     try {
       const requests = guilds.map(guildId =>
         new REST()
           .setToken(configs.token)
           .put(Routes.applicationGuildCommands(configs.clientId, guildId), {
-            body: slashCommmands,
+            body: slashCommmandsGuild,
           }),
       );
+
+      await new REST()
+        .setToken(configs.token)
+        .put(Routes.applicationCommands(configs.clientId), {
+          body: slashCommmandsDM,
+        });
       await Promise.all(requests);
+
       console.log('Successfully registered application commands.');
     } catch (error) {
       console.error(error);
@@ -99,11 +97,25 @@ export default class CommandManager {
     const cmd = this.commands.get(interaction.commandName);
     if (!cmd) return interaction.reply('Command not found.');
     try {
-      cmd.command._run(interaction);
+      await cmd.command._run(interaction);
     } catch (error) {
-      console.error(error);
       interaction.editReply('An error occured while executing the command.');
     }
+  }
+
+  filterMapCmds(filters: CmdType[]) {
+    return this.commands
+      .filter(cmd => filters.includes(cmd.command.cmdType))
+      .map(({command}) => {
+        const slash = new SlashCommandBuilder()
+          .setName(command.name)
+          .setDescription(command.description);
+
+        if (command.options) {
+          this.optionBuilder(command.options, slash);
+        }
+        return slash.toJSON();
+      });
   }
 
   async optionBuilder(
@@ -115,9 +127,7 @@ export default class CommandManager {
         case 'string':
           slash.addStringOption(option => {
             option.setName(element.name).setDescription(element.description);
-            if (element.required) {
-              option.setRequired(true);
-            }
+            if (element.required) option.setRequired(true);
             if (element.choices?.length) {
               option.addChoices(
                 ...element.choices.map(e => ({name: e, value: e})),
@@ -129,24 +139,16 @@ export default class CommandManager {
         case 'user':
           slash.addUserOption(option => {
             option.setName(element.name).setDescription(element.description);
-            if (element.required) {
-              option.setRequired(true);
-            }
+            if (element.required) option.setRequired(true);
             return option;
           });
           break;
         case 'int':
           slash.addIntegerOption(option => {
             option.setName(element.name).setDescription(element.description);
-            if (element.required) {
-              option.setRequired(true);
-            }
-            if (element.min) {
-              option.setMinValue(element.min);
-            }
-            if (element.max) {
-              option.setMaxValue(element.max);
-            }
+            if (element.required) option.setRequired(true);
+            if (element.min) option.setMinValue(element.min);
+            if (element.max) option.setMaxValue(element.max);
             return option;
           });
           break;
@@ -161,6 +163,14 @@ export default class CommandManager {
         case 'bool':
           slash.addBooleanOption(option => {
             option.setName(element.name).setDescription(element.description);
+            if (element.required) option.setRequired(true);
+            return option;
+          });
+          break;
+        case 'attachment':
+          slash.addAttachmentOption(option => {
+            option.setName(element.name).setDescription(element.description);
+            if (element.required) option.setRequired(true);
             return option;
           });
           break;

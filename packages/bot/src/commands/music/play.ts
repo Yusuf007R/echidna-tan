@@ -20,7 +20,7 @@ export default class Play extends MusicCommand {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    this.echidna.musicPlayer.play(
+    await this.echidna.musicPlayer.play(
       interaction,
       this.choices.getString('query', true),
     );

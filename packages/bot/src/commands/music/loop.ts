@@ -22,6 +22,6 @@ export default class LoopCommand extends MusicCommand {
   async run(interaction: CommandInteraction<CacheType>) {
     const mode = this.choices.getString('mode', true);
     this.player?.setLoop(mode.toUpperCase() as any);
-    interaction.reply({content: `Loop mode set to \`${mode}\``});
+    await interaction.reply({content: `Loop mode set to \`${mode}\``});
   }
 }

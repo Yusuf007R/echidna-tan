@@ -1,5 +1,5 @@
-import { CacheType, Interaction } from 'discord.js';
-import { DiscordEvent } from '../structures/discord-events';
+import {CacheType, Interaction} from 'discord.js';
+import {DiscordEvent} from '../structures/discord-events';
 
 export default class InteractionEvent extends DiscordEvent {
   constructor() {
@@ -9,7 +9,7 @@ export default class InteractionEvent extends DiscordEvent {
   async run(interaction: Interaction<CacheType>): Promise<void> {
     try {
       if (interaction.isCommand()) {
-       await this.echidna.commandManager.executeCommand(interaction);
+        await this.echidna.commandManager.executeCommand(interaction);
         return;
       }
       if (interaction.isButton()) {

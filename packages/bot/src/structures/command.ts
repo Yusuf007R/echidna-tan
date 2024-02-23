@@ -36,7 +36,15 @@ export type options =
       name: string;
       description: string;
       required?: boolean;
+    }
+  | {
+      type: 'attachment';
+      name: string;
+      description: string;
+      required?: boolean;
     };
+
+export type CmdType = 'GUILD' | 'DM' | 'BOTH';
 
 export type commandConfigs = {
   name: string;
@@ -45,6 +53,7 @@ export type commandConfigs = {
   voiceChannelOnly?: boolean;
   shouldDefer?: boolean;
   validators?: Array<new () => CommandValidator>;
+  cmdType?: CmdType;
 };
 
 export abstract class Command extends EchidnaSingleton {
@@ -60,6 +69,8 @@ export abstract class Command extends EchidnaSingleton {
 
   choices!: GetChoices;
 
+  cmdType!: CmdType;
+
   constructor(configs: commandConfigs) {
     super();
     this.name = configs.name;
@@ -67,6 +78,7 @@ export abstract class Command extends EchidnaSingleton {
     this.options = configs.options;
     this.shouldDefer = configs.shouldDefer;
     this.validators = configs.validators || [];
+    this.cmdType = configs.cmdType || 'GUILD';
   }
 
   abstract run(
@@ -82,7 +94,8 @@ export abstract class Command extends EchidnaSingleton {
     if (!(await Promise.all(validators)).every(validator => validator)) return;
     if (this.shouldDefer) await interaction.deferReply();
     this.choices = new GetChoices(interaction.options);
-    return this.run(interaction, this.choices);
+    await this.run(interaction, this.choices);
+    return;
   }
 
   pushValidator(validators: Array<new () => CommandValidator>): void {

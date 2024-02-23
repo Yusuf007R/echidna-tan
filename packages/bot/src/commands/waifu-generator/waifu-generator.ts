@@ -1,5 +1,5 @@
-import { CacheType, CommandInteraction } from 'discord.js';
-import { Command } from '../../structures/command';
+import {CacheType, CommandInteraction} from 'discord.js';
+import {Command} from '../../structures/command';
 
 export default class WaifuGeneratorCommand extends Command {
   constructor() {
@@ -7,6 +7,7 @@ export default class WaifuGeneratorCommand extends Command {
       shouldDefer: true,
       name: 'waifu-generator',
       description: 'Generate Waifu using AI',
+      cmdType: 'BOTH',
       options: [
         {
           type: 'string',
@@ -29,27 +30,22 @@ export default class WaifuGeneratorCommand extends Command {
     });
 
     await message.react('⬆️');
-    message
-      .awaitReactions({
-        filter: (reaction, user) => {
-          return (
-            reaction.emoji.name === '⬆️' &&
-            user.id === interaction.user.id &&
-            !user.bot
-          );
-        },
-        time: 2400000,
-        max: 1,
-        errors: ['time'],
-      })
-      .then(async reaction => {
-        if (reaction.first()?.emoji.name === '⬆️') {
-          await this.echidna.waifuGenerator.upscaleImage(message, info);
-          await message.reactions.cache
-            .find(r => r.emoji.name === '⬆️')
-            ?.remove();
-        }
-      })
-      .catch(error => console.log(error));
+    const reactions = await message.awaitReactions({
+      filter: (reaction, user) => {
+        return (
+          reaction.emoji.name === '⬆️' &&
+          user.id === interaction.user.id &&
+          !user.bot
+        );
+      },
+      time: 2400000,
+      max: 1,
+      errors: ['time'],
+    });
+
+    if (reactions.first()?.emoji.name === '⬆️') {
+      await this.echidna.waifuGenerator.upscaleImage(message, info);
+      await message.reactions.cache.find(r => r.emoji.name === '⬆️')?.remove();
+    }
   }
 }

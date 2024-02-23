@@ -12,6 +12,6 @@ export default class Resume extends MusicCommand {
 
   async run(interaction: CommandInteraction<CacheType>) {
     this.player?.pause(false);
-    interaction.reply({content: 'Resumed the current song.'});
+    await interaction.reply({content: 'Resumed the current song.'});
   }
 }

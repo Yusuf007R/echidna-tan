@@ -50,7 +50,7 @@ export default router({
       const jwtPayload: AccessTokenType = {
         dcToken: input.access_token,
         displayName: user.global_name || user.username,
-        userId: dbUser.id,
+        userId: dbUser.userId,
         username: user.username,
       };
 
@@ -64,7 +64,7 @@ export default router({
         data: {
           discordToken: input.access_token,
           token: refreshToken,
-          userId: dbUser.id,
+          idUser: dbUser.userId,
         },
       });
 
@@ -77,7 +77,7 @@ export default router({
   refreshTokens: refreshProcedure.mutation(async ({ctx}) => {
     const user = await ctx.prisma.user.findUnique({
       where: {
-        id: ctx.decodedJwt.userId,
+        userId: ctx.decodedJwt.userId,
       },
       include: {
         tokens: {where: {token: ctx.token}},
@@ -93,7 +93,7 @@ export default router({
     const jwtPayload: AccessTokenType = {
       dcToken: userToken.discordToken,
       displayName: user.globalName || user.username,
-      userId: user.id,
+      userId: user.userId,
       username: user.username,
     };
 

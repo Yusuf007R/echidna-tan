@@ -7,7 +7,8 @@
     "docker": "turbo run docker",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "ui:add": "yarn workspace ui ui:add",
-    "ui:shadcn": "yarn workspace ui ui:shadcn"
+    "ui:shadcn": "yarn workspace ui ui:shadcn",
+    "web:add": "yarn workspace web web:add"
   },
   "devDependencies": {
     "@turbo/gen": "^1.9.7",
