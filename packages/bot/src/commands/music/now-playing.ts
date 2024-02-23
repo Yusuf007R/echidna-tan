@@ -11,6 +11,9 @@ export default class NowPlaying extends MusicCommand {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    this.echidna.musicPlayer.nowPlaying(interaction.guildId!, interaction);
+    await this.echidna.musicPlayer.nowPlaying(
+      interaction.guildId!,
+      interaction,
+    );
   }
 }

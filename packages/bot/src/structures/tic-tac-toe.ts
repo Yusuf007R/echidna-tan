@@ -87,10 +87,14 @@ export default class TicTacToe {
     const player2 = interaction.options.getUser('user');
     await interaction.deferReply({ephemeral: !player2});
     if (player2) {
-      if (player1.id === player2.id)
-        return interaction.editReply("You can't play with yourself.");
-      if (player2.bot)
-        return interaction.editReply("You can't play with a bot.");
+      if (player1.id === player2.id) {
+        interaction.editReply("You can't play with yourself.");
+        return;
+      }
+      if (player2.bot) {
+        interaction.editReply("You can't play with a bot.");
+        return;
+      }
     }
     return new TicTacToe(interaction, player1, player2);
   }

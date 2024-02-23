@@ -12,6 +12,6 @@ export default class Shuffle extends MusicCommand {
 
   async run(interaction: CommandInteraction<CacheType>) {
     this.player?.queue.shuffle();
-    interaction.reply({content: 'Shuffled the queue.'});
+    await interaction.reply({content: 'Shuffled the queue.'});
   }
 }

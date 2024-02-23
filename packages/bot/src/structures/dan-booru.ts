@@ -48,13 +48,16 @@ export default class DanBooru {
       .setFooter({text: `Artist:${post.tag_string_artist}`});
   }
 
-  sendMessage(interaction: CommandInteraction<CacheType>, post: DanBooruPost) {
+  async sendMessage(
+    interaction: CommandInteraction<CacheType>,
+    post: DanBooruPost,
+  ) {
     if (post.rating != 's' && !this.isNsfwAlowed(interaction)) {
       interaction.editReply('NSFW is not allowed in this channel.');
       return;
     }
     const embed = this.makeEmbed(post);
-    interaction.editReply({embeds: [embed]});
+    await interaction.editReply({embeds: [embed]});
   }
 
   isNsfwAlowed(interaction: CommandInteraction<CacheType>) {

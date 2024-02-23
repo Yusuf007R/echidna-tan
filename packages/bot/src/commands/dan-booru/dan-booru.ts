@@ -61,6 +61,6 @@ export default class DanbooruCommand extends Command {
       tags: ['order:rank'],
       nsfw: !!nsfw,
     });
-    this.echidna.danbooru.sendMessage(interaction, post);
+    await this.echidna.danbooru.sendMessage(interaction, post);
   }
 }

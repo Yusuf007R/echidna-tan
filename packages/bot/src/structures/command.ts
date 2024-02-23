@@ -36,6 +36,12 @@ export type options =
       name: string;
       description: string;
       required?: boolean;
+    }
+  | {
+      type: 'attachment';
+      name: string;
+      description: string;
+      required?: boolean;
     };
 
 export type CmdType = 'GUILD' | 'DM' | 'BOTH';
@@ -88,7 +94,8 @@ export abstract class Command extends EchidnaSingleton {
     if (!(await Promise.all(validators)).every(validator => validator)) return;
     if (this.shouldDefer) await interaction.deferReply();
     this.choices = new GetChoices(interaction.options);
-    return this.run(interaction, this.choices);
+    await this.run(interaction, this.choices);
+    return;
   }
 
   pushValidator(validators: Array<new () => CommandValidator>): void {

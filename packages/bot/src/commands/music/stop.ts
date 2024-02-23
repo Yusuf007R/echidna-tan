@@ -12,6 +12,6 @@ export default class Stop extends MusicCommand {
 
   async run(interaction: CommandInteraction<CacheType>) {
     this.player?.destroy();
-    interaction.reply({content: 'Stopped the current song.'});
+    await interaction.reply({content: 'Stopped the current song.'});
   }
 }

@@ -3,7 +3,7 @@
     {
       "name": "Launch",
       "request": "attach",
-      "port": 4444,
+      "port": 9229,
       "type": "node"
     }
   ],

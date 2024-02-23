@@ -21,6 +21,6 @@ export default class ValCrosshairCommand extends Command {
   async run(interaction: CommandInteraction<CacheType>) {
     await interaction.deferReply();
     const crosshairId = this.choices.getString('crosshair-id', true);
-    return new ValCrosshair().getCrosshair(interaction, crosshairId);
+    return await new ValCrosshair().getCrosshair(interaction, crosshairId);
   }
 }

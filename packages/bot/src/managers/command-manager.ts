@@ -97,9 +97,8 @@ export default class CommandManager {
     const cmd = this.commands.get(interaction.commandName);
     if (!cmd) return interaction.reply('Command not found.');
     try {
-      cmd.command._run(interaction);
+      await cmd.command._run(interaction);
     } catch (error) {
-      console.error(error);
       interaction.editReply('An error occured while executing the command.');
     }
   }
@@ -128,9 +127,7 @@ export default class CommandManager {
         case 'string':
           slash.addStringOption(option => {
             option.setName(element.name).setDescription(element.description);
-            if (element.required) {
-              option.setRequired(true);
-            }
+            if (element.required) option.setRequired(true);
             if (element.choices?.length) {
               option.addChoices(
                 ...element.choices.map(e => ({name: e, value: e})),
@@ -142,26 +139,16 @@ export default class CommandManager {
         case 'user':
           slash.addUserOption(option => {
             option.setName(element.name).setDescription(element.description);
-            if (element.required) {
-              option.setRequired(true);
-            }
+            if (element.required) option.setRequired(true);
             return option;
           });
-
-          slash.addAttachmentOption();
           break;
         case 'int':
           slash.addIntegerOption(option => {
             option.setName(element.name).setDescription(element.description);
-            if (element.required) {
-              option.setRequired(true);
-            }
-            if (element.min) {
-              option.setMinValue(element.min);
-            }
-            if (element.max) {
-              option.setMaxValue(element.max);
-            }
+            if (element.required) option.setRequired(true);
+            if (element.min) option.setMinValue(element.min);
+            if (element.max) option.setMaxValue(element.max);
             return option;
           });
           break;
@@ -176,6 +163,14 @@ export default class CommandManager {
         case 'bool':
           slash.addBooleanOption(option => {
             option.setName(element.name).setDescription(element.description);
+            if (element.required) option.setRequired(true);
+            return option;
+          });
+          break;
+        case 'attachment':
+          slash.addAttachmentOption(option => {
+            option.setName(element.name).setDescription(element.description);
+            if (element.required) option.setRequired(true);
             return option;
           });
           break;

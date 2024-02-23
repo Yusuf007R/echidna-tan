@@ -20,7 +20,8 @@ export default class TicTacToeCommand extends Command {
 
   async run(interaction: CommandInteraction<CacheType>) {
     const tictactoe = await TicTacToe.initGame(interaction);
-    if (tictactoe instanceof TicTacToe)
-      this.echidna.ticTacToeManager.set(interaction.id, tictactoe);
+    if (!tictactoe) return;
+
+    this.echidna.ticTacToeManager.set(interaction.id, tictactoe);
   }
 }

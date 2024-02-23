@@ -19,6 +19,6 @@ export abstract class MusicCommand extends Command {
 
   async _run(interaction: CommandInteraction<CacheType>): Promise<void> {
     this.player = this.echidna.musicPlayer.get(interaction.guildId!);
-    super._run(interaction);
+    await super._run(interaction);
   }
 }

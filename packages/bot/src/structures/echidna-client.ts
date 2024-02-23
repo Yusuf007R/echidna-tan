@@ -31,6 +31,7 @@ export default class EchidnaClient extends Client {
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.DirectMessages,
       ],
     });
     this.init();

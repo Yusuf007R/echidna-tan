@@ -12,6 +12,6 @@ export default class Skip extends MusicCommand {
 
   async run(interaction: CommandInteraction<CacheType>) {
     this.player?.stop();
-    interaction.reply({content: 'Skipped the current song.'});
+    await interaction.reply({content: 'Skipped the current song.'});
   }
 }
