@@ -1,4 +1,3 @@
-import {baseAPI} from '@Utils/request';
 import wait from '@Utils/wait';
 import {
   AttachmentBuilder,
@@ -11,6 +10,7 @@ import {
 import {Readable, Stream} from 'stream';
 import z, {ZodError} from 'zod';
 
+import getImageUrl from '@Utils/get-image-from-url';
 import ffmpegStatic from 'ffmpeg-static';
 import Ffmpeg from 'fluent-ffmpeg';
 
@@ -130,8 +130,10 @@ export default class GifResize {
   }
 
   async resize(gif: gifTypeContent, options: gifResizeOptions) {
-    const gifBuffer = await this.getBufferFromUrl(gif.url);
-    const readebleStream = Readable.from(gifBuffer);
+    const gifBuffer = await getImageUrl(gif.url);
+    if (!gifBuffer.data) throw new Error('Gif not found');
+    const data = gifBuffer.data;
+    const readebleStream = Readable.from(data);
     const bufferStream = new Stream.PassThrough();
 
     const {width} = options;
@@ -156,14 +158,5 @@ export default class GifResize {
         bufferStream.destroy();
       });
     }) as Promise<Buffer>;
-  }
-
-  async getBufferFromUrl(url: string) {
-    const res = await baseAPI.get<Buffer>(url, undefined, {
-      responseType: 'arraybuffer',
-    });
-
-    if (!res.data) throw new Error('Internal error, try again later.');
-    return res.data;
   }
 }

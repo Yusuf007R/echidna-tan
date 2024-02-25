@@ -1,9 +1,15 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Next.js",
-  "extends": "./base.json",
+  "extends": "tsconfig/nextjs.json",
   "compilerOptions": {
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "isolatedModules": true,
     "allowJs": true,
     "declaration": false,
     "declarationMap": false,
@@ -23,8 +29,14 @@
       "@ui/components/*": ["../../packages/ui/components/ui/*"],
       "@ui/components/ui/*": ["../../packages/ui/components/ui/*"],
       "@ui/styles/*": ["../../packages/ui/styles/*"]
-    }
+    },
+    "composite": false,
+    "esModuleInterop": true,
+    "inlineSources": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true
   },
-  "include": ["src", "next-env.d.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }

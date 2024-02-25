@@ -1,5 +1,4 @@
 {
-  "extends": "tsconfig/bot.json",
   "include": ["src"],
   "exclude": ["node_modules", "dist"],
   "ts-node": {
@@ -8,6 +7,21 @@
     "require": ["tsconfig-paths/register"]
   },
   "compilerOptions": {
+    "composite": false,
+    "lib": ["es2021"],
+    "module": "Node16",
+    "target": "es2021",
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "strict": true,
     "outDir": "dist/",
     "typeRoots": ["./node_modules/@types", "src/interfaces"],
     "baseUrl": ".",
