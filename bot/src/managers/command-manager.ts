@@ -10,10 +10,10 @@ import {
   REST,
   Routes,
 } from 'discord.js';
-import {readdirSync} from 'fs';
-import {join} from 'path';
+import { readdirSync } from 'fs';
+import { join } from 'path';
 import configs from '../config';
-import {CmdType, Command, options} from '../structures/command';
+import { CmdType, Command, options } from '../structures/command';
 import EventOptions from '../structures/event-options';
 
 export default class CommandManager {
@@ -33,7 +33,7 @@ export default class CommandManager {
     readdirSync(commandsRootFolder).flatMap(folder => {
       const commandFolder = join(commandsRootFolder, folder);
       return readdirSync(commandFolder)
-        .filter(file => file.endsWith('.ts'))
+        .filter(file => file.endsWith('.ts') || file.endsWith('.js'))
         .map(file => {
           if (file.includes('options')) {
             const optionsFile = join(commandFolder, file);

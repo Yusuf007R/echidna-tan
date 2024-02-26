@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import {Collection} from 'discord.js';
-import {readdirSync} from 'fs';
-import {join} from 'path';
-import {DiscordEvent, eventType} from '../structures/discord-events';
+import { Collection } from 'discord.js';
+import { readdirSync } from 'fs';
+import { join } from 'path';
+import { DiscordEvent, eventType } from '../structures/discord-events';
 import EchidnaSingleton from '../structures/echidna-singleton';
 export default class EventManager extends EchidnaSingleton {
   events: Collection<string, {type: eventType; event: DiscordEvent}>;
@@ -22,8 +22,9 @@ export default class EventManager extends EchidnaSingleton {
 
   loadEvents() {
     const eventsRootFolder = join(__dirname, '../events');
+
     readdirSync(eventsRootFolder)
-      .filter(file => file.endsWith('.ts'))
+      .filter(file => file.endsWith('.ts') || file.endsWith('.js'))
       .map(file => {
         const eventFile = join(eventsRootFolder, file);
         const Event = require(eventFile).default;

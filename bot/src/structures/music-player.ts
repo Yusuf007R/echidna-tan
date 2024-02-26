@@ -1,4 +1,4 @@
-import {EmbedBuilder, SelectMenuBuilder} from '@discordjs/builders';
+import { EmbedBuilder, SelectMenuBuilder } from '@discordjs/builders';
 import {
   ActionRowBuilder,
   CacheType,
@@ -8,9 +8,9 @@ import {
   StringSelectMenuInteraction,
   User,
 } from 'discord.js';
-import {EventEmitter} from 'events';
-import {Player, Poru} from 'poru';
+import { Player, Poru } from 'poru';
 import sharp from 'sharp';
+import { EventEmitter } from 'tseep';
 import configs from '../config';
 import capitalize from '../utils/capitalize';
 import getImageUrl from '../utils/get-image-from-url';
