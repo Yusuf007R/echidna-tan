@@ -6,12 +6,13 @@
   "scripts": {
     "dev": "ts-node-dev --exit-child --respawn -r tsconfig-paths/register ./src/index.ts",
     "start": "yarn run build && node ./dist/index.js",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src/**/*.ts --fix",
     "prettier": "prettier --ignore-path .gitignore \"**/*.+(js|jsx|ts|tsx)\" --write",
     "fix": "yarn run prettier && yarn run format",
-    "prisma:migrate": "npx prisma migrate dev --name -- "
+    "prisma:migrate": "npx prisma migrate dev --name -- ",
+    "postinstall": "patch-package"
   },
   "author": "Yusuf Rawat",
   "license": "ISC",
@@ -33,8 +34,11 @@
     "jsonwebtoken": "^9.0.2",
     "langchain": "^0.0.127",
     "nanoid": "4.0.2",
+    "patch-package": "^8.0.0",
     "poru": "^4.2.1",
+    "postinstall-postinstall": "^2.1.0",
     "sharp": "^0.32.4",
+    "tseep": "^1.2.1",
     "ws": "^8.13.0",
     "zod": "^3.21.4"
   },
@@ -50,6 +54,7 @@
     "prettier-eslint": "^15.0.1",
     "prisma": "^5.3.1",
     "ts-node-dev": "^2.0.0",
+    "tsc-alias": "^1.8.8",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.6"
   }
