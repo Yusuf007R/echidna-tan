@@ -1,13 +1,13 @@
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
 import GuildOnly from '../../event-validators/guild-only';
 import VoiceChannelOnly from '../../event-validators/voice-channel-only';
-import {Command, commandConfigs} from '../../structures/command';
+import { Command, commandConfigs } from '../../structures/command';
 import CustomPlayer from '../../structures/custom-player';
 import EventOptions from '../../structures/event-options';
 
 export default class Options extends EventOptions {
   constructor() {
-    super({validators: [GuildOnly, VoiceChannelOnly]});
+    super({ validators: [GuildOnly, VoiceChannelOnly] });
   }
 }
 

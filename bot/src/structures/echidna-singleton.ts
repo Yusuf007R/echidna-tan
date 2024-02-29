@@ -10,8 +10,7 @@ export default class EchidnaSingleton {
   }
 
   static get echidna() {
-    if (!EchidnaSingleton._echidna)
-      throw new Error('Echidna client is not initialized');
+    if (!EchidnaSingleton._echidna) throw new Error('Echidna client is not initialized');
     return EchidnaSingleton._echidna;
   }
 }

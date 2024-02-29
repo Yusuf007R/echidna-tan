@@ -1,18 +1,11 @@
-import {Node, Player, Poru} from 'poru';
+import { Node, Player, Poru } from 'poru';
 
-import {ExtractMethods} from '../interfaces/utils';
+import { ExtractMethods } from '../interfaces/utils';
 import EchidnaSingleton from './echidna-singleton';
 
 export type playerMethods = ExtractMethods<Player>;
 export type playerMethodsKey = keyof playerMethods;
-const PLAYER_METHODS_TO_LISTEN: playerMethodsKey[] = [
-  'play',
-  'pause',
-  'stop',
-  'seekTo',
-  'setVolume',
-  'setLoop',
-];
+const PLAYER_METHODS_TO_LISTEN: playerMethodsKey[] = ['play', 'pause', 'stop', 'seekTo', 'setVolume', 'setLoop'];
 export type Queue = Player['queue'];
 
 export type playerData = {
@@ -32,23 +25,17 @@ export default class CustomPlayer extends Player {
     return new Proxy(this, {
       get: (target, prop, receiver) => {
         if (PLAYER_METHODS_TO_LISTEN.includes(prop as playerMethodsKey)) {
-          EchidnaSingleton.echidna.musicPlayer.methodEmitter.emit(
-            'methodCalled',
-            {
-              method: prop as playerMethodsKey,
-              guild: target.guildId,
-            },
-          );
+          EchidnaSingleton.echidna.musicPlayer.methodEmitter.emit('methodCalled', {
+            method: prop as playerMethodsKey,
+            guild: target.guildId
+          });
         }
         return Reflect.get(target, prop, receiver);
-      },
+      }
     });
   }
 
-  callMethod<T extends playerMethodsKey>(
-    method: T,
-    ...args: Parameters<playerMethods[T]>
-  ) {
+  callMethod<T extends playerMethodsKey>(method: T, ...args: Parameters<playerMethods[T]>) {
     const methodToCall = this[method] as playerMethods[T];
     // @ts-expect-error this error is completely okay to ignore as args are already validated
     return methodToCall(...args);
@@ -63,7 +50,7 @@ export default class CustomPlayer extends Player {
       position: this.position,
       timestamp: this.timestamp,
       volume: this.volume,
-      queue: this.queue,
+      queue: this.queue
     };
   }
 }

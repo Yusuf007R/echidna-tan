@@ -1,12 +1,12 @@
-import {publicProcedure, refreshProcedure} from '@Api/precedure';
-import {router} from '@Api/trpc';
-import {AccessTokenType} from '@ApiInterfaces/jwt';
+import { publicProcedure, refreshProcedure } from '@Api/precedure';
+import { router } from '@Api/trpc';
+import { AccessTokenType } from '@ApiInterfaces/jwt';
 import config from '@Configs';
 import DiscordAPI from '@Structures/discord-api';
-import {Prisma} from '@prisma/client';
-import {TRPCError} from '@trpc/server';
+import { Prisma } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 import * as jwt from 'jsonwebtoken';
-import {z} from 'zod';
+import { z } from 'zod';
 
 // Auth router
 export default router({
@@ -16,18 +16,16 @@ export default router({
         access_token: z.string(),
         refresh_token: z.string(),
         expires_in: z.number(),
-        token_type: z.string(),
-      }),
+        token_type: z.string()
+      })
     )
-    .mutation(async ({ctx, input}) => {
-      const user = await new DiscordAPI()
-        .setToken(input.access_token)
-        .getUserInfo();
+    .mutation(async ({ ctx, input }) => {
+      const user = await new DiscordAPI().setToken(input.access_token).getUserInfo();
 
       if (!user)
         throw new TRPCError({
           code: 'UNAUTHORIZED',
-          message: 'Invalid token',
+          message: 'Invalid token'
         });
 
       const temp: Prisma.UserCreateInput = {
@@ -36,26 +34,26 @@ export default router({
         globalName: user.global_name,
         accent_color: user.accent_color,
         avatar: user.avatar,
-        email: user.email,
+        email: user.email
       };
 
       const dbUser = await ctx.prisma.user.upsert({
         where: {
-          discordId: user.id,
+          discordId: user.id
         },
         create: temp,
-        update: temp,
+        update: temp
       });
 
       const jwtPayload: AccessTokenType = {
         dcToken: input.access_token,
         displayName: user.global_name || user.username,
         userId: dbUser.userId,
-        username: user.username,
+        username: user.username
       };
 
       const token = jwt.sign(jwtPayload, config.jwtSecretAccess, {
-        expiresIn: '5m',
+        expiresIn: '5m'
       });
 
       const refreshToken = jwt.sign(jwtPayload, config.jwtSecretRefresh);
@@ -64,46 +62,46 @@ export default router({
         data: {
           discordToken: input.access_token,
           token: refreshToken,
-          idUser: dbUser.userId,
-        },
+          idUser: dbUser.userId
+        }
       });
 
       return {
         accessToken: token,
         refreshToken: refreshToken,
-        expiresIn: 300,
+        expiresIn: 300
       };
     }),
-  refreshTokens: refreshProcedure.mutation(async ({ctx}) => {
+  refreshTokens: refreshProcedure.mutation(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
       where: {
-        userId: ctx.decodedJwt.userId,
+        userId: ctx.decodedJwt.userId
       },
       include: {
-        tokens: {where: {token: ctx.token}},
-      },
+        tokens: { where: { token: ctx.token } }
+      }
     });
     const userToken = user?.tokens?.at(0);
     if (!user || !userToken)
       throw new TRPCError({
         code: 'UNAUTHORIZED',
-        message: 'Invalid token',
+        message: 'Invalid token'
       });
 
     const jwtPayload: AccessTokenType = {
       dcToken: userToken.discordToken,
       displayName: user.globalName || user.username,
       userId: user.userId,
-      username: user.username,
+      username: user.username
     };
 
     const token = jwt.sign(jwtPayload, config.jwtSecretAccess, {
-      expiresIn: '5m',
+      expiresIn: '5m'
     });
 
     return {
       accessToken: token,
-      expiresIn: 300,
+      expiresIn: 300
     };
-  }),
+  })
 });

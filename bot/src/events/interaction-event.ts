@@ -1,9 +1,9 @@
-import {CacheType, Interaction} from 'discord.js';
-import {DiscordEvent} from '../structures/discord-events';
+import { CacheType, Interaction } from 'discord.js';
+import { DiscordEvent } from '../structures/discord-events';
 
 export default class InteractionEvent extends DiscordEvent {
   constructor() {
-    super({eventName: 'interactionCreate'});
+    super({ eventName: 'interactionCreate' });
   }
 
   async run(interaction: Interaction<CacheType>): Promise<void> {
@@ -19,13 +19,11 @@ export default class InteractionEvent extends DiscordEvent {
           case 'tictactoe':
             {
               if (!interaction.message.interaction?.id) return;
-              const tictactoe = this.echidna.ticTacToeManager.get(
-                interaction.message.interaction.id,
-              );
+              const tictactoe = this.echidna.ticTacToeManager.get(interaction.message.interaction.id);
               if (!tictactoe) {
                 interaction.reply({
                   content: 'No game found',
-                  ephemeral: true,
+                  ephemeral: true
                 });
                 return;
               }
@@ -48,14 +46,12 @@ export default class InteractionEvent extends DiscordEvent {
     } catch (error: any) {
       if (interaction.isMessageComponent()) {
         interaction.message.reply({
-          content: error?.message || 'Internal error, try again later.',
+          content: error?.message || 'Internal error, try again later.'
         });
 
         return;
       }
-      interaction.channel?.send(
-        error?.message || 'Internal error, try again later.',
-      );
+      interaction.channel?.send(error?.message || 'Internal error, try again later.');
     }
   }
 }

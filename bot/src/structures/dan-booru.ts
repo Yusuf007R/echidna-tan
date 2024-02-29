@@ -1,7 +1,7 @@
-import {EmbedBuilder} from '@discordjs/builders';
-import {CacheType, CommandInteraction, TextChannel} from 'discord.js';
-import {DanBooruError, DanBooruPost} from '../interfaces/dan-booru';
-import {danBooruAPI} from '../utils/request';
+import { EmbedBuilder } from '@discordjs/builders';
+import { CacheType, CommandInteraction, TextChannel } from 'discord.js';
+import { DanBooruError, DanBooruPost } from '../interfaces/dan-booru';
+import { danBooruAPI } from '../utils/request';
 
 export type getImageProps = {
   tags?: string[];
@@ -15,7 +15,7 @@ export default class DanBooru {
   constructor() {}
 
   async querySinglePost(props: getImageProps) {
-    const {tags = [], random = true, nsfw = false} = props;
+    const { tags = [], random = true, nsfw = false } = props;
     if (!nsfw) tags.push('rating:safe');
     if (this.safeMode) tags.push('rating:safe');
     let url = '/posts.json?';
@@ -45,19 +45,16 @@ export default class DanBooru {
       .setTitle(`Post #${post.id}`)
       .setImage(post.file_url)
       .setTimestamp()
-      .setFooter({text: `Artist:${post.tag_string_artist}`});
+      .setFooter({ text: `Artist:${post.tag_string_artist}` });
   }
 
-  async sendMessage(
-    interaction: CommandInteraction<CacheType>,
-    post: DanBooruPost,
-  ) {
+  async sendMessage(interaction: CommandInteraction<CacheType>, post: DanBooruPost) {
     if (post.rating != 's' && !this.isNsfwAlowed(interaction)) {
       interaction.editReply('NSFW is not allowed in this channel.');
       return;
     }
     const embed = this.makeEmbed(post);
-    await interaction.editReply({embeds: [embed]});
+    await interaction.editReply({ embeds: [embed] });
   }
 
   isNsfwAlowed(interaction: CommandInteraction<CacheType>) {

@@ -39,6 +39,6 @@ const config = {
   waifuGeneratorEndpoint,
   danbooruEndpoint,
   jwtSecretAccess,
-  jwtSecretRefresh,
+  jwtSecretRefresh
 };
 export default config;

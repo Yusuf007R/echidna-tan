@@ -13,4 +13,4 @@ type RefreshTokenType = {
   test: string;
 };
 
-export {AccessTokenType, RefreshTokenType};
+export { AccessTokenType, RefreshTokenType };

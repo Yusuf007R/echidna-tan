@@ -1,19 +1,19 @@
 import createContext from '@Api/context';
-import {router} from '@Api/trpc';
+import { router } from '@Api/trpc';
 import authrouter from '@ApiRouters/auth-router';
 import musicRouter from '@ApiRouters/music-router';
-import {createHTTPServer} from '@trpc/server/adapters/standalone';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
 
 const appRouter = router({
   music: musicRouter,
-  auth: authrouter,
+  auth: authrouter
 });
 
 const server = createHTTPServer({
   middleware: cors(),
   router: appRouter,
-  createContext,
+  createContext
 });
 
 // const wss = new ws.Server({

@@ -1,6 +1,6 @@
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
 import GetChoices from '../utils/get-choices';
-import {CommandValidator} from './command-validator';
+import { CommandValidator } from './command-validator';
 import EchidnaSingleton from './echidna-singleton';
 
 export type options =
@@ -81,17 +81,12 @@ export abstract class Command extends EchidnaSingleton {
     this.cmdType = configs.cmdType || 'GUILD';
   }
 
-  abstract run(
-    _interaction: CommandInteraction<CacheType>,
-    ..._rest: unknown[]
-  ): Promise<void>;
+  abstract run(_interaction: CommandInteraction<CacheType>, ..._rest: unknown[]): Promise<void>;
 
   async _run(interaction: CommandInteraction<CacheType>) {
-    const validators = this.validators.map(validator =>
-      new validator().validate(interaction),
-    );
+    const validators = this.validators.map((validator) => new validator().validate(interaction));
 
-    if (!(await Promise.all(validators)).every(validator => validator)) return;
+    if (!(await Promise.all(validators)).every((validator) => validator)) return;
     if (this.shouldDefer) await interaction.deferReply();
     this.choices = new GetChoices(interaction.options);
     await this.run(interaction, this.choices);

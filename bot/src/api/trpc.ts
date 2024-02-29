@@ -1,5 +1,5 @@
 import createContext from '@Api/context';
-import {initTRPC} from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
 /**
  * Initialization of tRPC backend

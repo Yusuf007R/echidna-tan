@@ -1,4 +1,4 @@
-import {CommandValidator} from './command-validator';
+import { CommandValidator } from './command-validator';
 
 type eventOptionsConfig = {
   validators?: Array<new () => CommandValidator>;

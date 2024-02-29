@@ -1,6 +1,6 @@
-import {Command} from '@Structures/command';
+import { Command } from '@Structures/command';
 import GifResize from '@Structures/gif-resize';
-import {CacheType, CommandInteraction} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
 
 export default class GifResizeCommand extends Command {
   constructor() {
@@ -13,16 +13,16 @@ export default class GifResizeCommand extends Command {
           name: 'width',
           description: 'The width of the gif',
           required: true,
-          min: 1,
+          min: 1
         },
         {
           type: 'int',
           name: 'height',
           description: 'The height of the gif',
-          min: 1,
-        },
+          min: 1
+        }
       ],
-      cmdType: 'BOTH',
+      cmdType: 'BOTH'
     });
   }
 
@@ -32,6 +32,6 @@ export default class GifResizeCommand extends Command {
     const width = this.choices.getNumber('width', true);
     const height = this.choices.getNumber('height', false);
 
-    await gifResized.manageInteraction(interaction, {width, height});
+    await gifResized.manageInteraction(interaction, { width, height });
   }
 }

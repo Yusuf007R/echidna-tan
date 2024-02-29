@@ -1,4 +1,4 @@
-import {ClientEvents} from 'discord.js';
+import { ClientEvents } from 'discord.js';
 import EchidnaSingleton from './echidna-singleton';
 
 export type discordEventConfig = {

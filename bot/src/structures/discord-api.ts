@@ -1,4 +1,4 @@
-import {APIUser, REST, Routes} from 'discord.js';
+import { APIUser, REST, Routes } from 'discord.js';
 import EchidnaSingleton from './echidna-singleton';
 
 export default class DiscordAPI extends EchidnaSingleton {
@@ -9,9 +9,7 @@ export default class DiscordAPI extends EchidnaSingleton {
 
   async getUserInfo(userId?: string) {
     if (!this._token) throw new Error('No token provided');
-    return (await new REST()
-      .setToken(this._token)
-      .get(Routes.user(userId))) as APIUser;
+    return (await new REST().setToken(this._token).get(Routes.user(userId))) as APIUser;
   }
 
   get token() {

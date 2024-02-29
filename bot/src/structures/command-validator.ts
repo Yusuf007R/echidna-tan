@@ -1,4 +1,4 @@
-import {BaseInteraction, CacheType} from 'discord.js';
+import { BaseInteraction, CacheType } from 'discord.js';
 import EchidnaSingleton from './echidna-singleton';
 
 type CommandValidatorConfig = {
@@ -23,10 +23,7 @@ export class CommandValidator extends EchidnaSingleton {
     this.message = configs.message || '';
   }
 
-  async isValid(
-    _interaction: BaseInteraction<CacheType>,
-    _next: CommandValidatorNext,
-  ) {
+  async isValid(_interaction: BaseInteraction<CacheType>, _next: CommandValidatorNext) {
     return;
   }
 
