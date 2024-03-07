@@ -21,6 +21,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          file: ./bot/Dockerfile
+          context: "{{defaultContext}}:bot"
           push: true
           tags: yusuf007r/echidna-tan:latest
