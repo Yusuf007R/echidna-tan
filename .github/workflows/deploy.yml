@@ -24,3 +24,6 @@ jobs:
           context: "{{defaultContext}}:bot"
           push: true
           tags: yusuf007r/echidna-tan:latest
+      - name: Send Webhook Request
+        run: |
+          curl -X POST ${{ secrets.WEBHOOK_URL }}
