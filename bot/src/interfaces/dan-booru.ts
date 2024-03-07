@@ -49,7 +49,7 @@ export interface DanBooruPost {
 export enum Rating {
   E = 'e',
   Q = 'q',
-  S = 's',
+  S = 's'
 }
 
 export interface DanBooruError {

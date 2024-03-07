@@ -1,20 +1,20 @@
-import {create} from 'apisauce';
+import { create } from 'apisauce';
 import config from '../config';
 
 const danBooruAPI = create({
-  baseURL: config.danbooruEndpoint,
+  baseURL: config.danbooruEndpoint
 });
 
 const waifuGeneratorAPI = create({
   baseURL: config.waifuGeneratorEndpoint,
   headers: {
-    Authorization: `Bearer ${config.runpodToken}`,
-  },
+    Authorization: `Bearer ${config.runpodToken}`
+  }
 });
 
-const baseAPI = create({baseURL: ''});
+const baseAPI = create({ baseURL: '' });
 
-waifuGeneratorAPI.axiosInstance.interceptors.request.use(config => {
+waifuGeneratorAPI.axiosInstance.interceptors.request.use((config) => {
   const url = config.url?.toString();
   const method = config.method?.toString();
   config.url = '';
@@ -23,11 +23,11 @@ waifuGeneratorAPI.axiosInstance.interceptors.request.use(config => {
     input: {
       method,
       endpoint: url,
-      data: config.data,
-    },
+      data: config.data
+    }
   };
 
   return config;
 });
 
-export {baseAPI, danBooruAPI, waifuGeneratorAPI};
+export { baseAPI, danBooruAPI, waifuGeneratorAPI };

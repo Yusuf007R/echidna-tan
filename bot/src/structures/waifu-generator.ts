@@ -1,8 +1,8 @@
-import {EmbedBuilder} from '@discordjs/builders';
-import {AttachmentBuilder, Message} from 'discord.js';
+import { EmbedBuilder } from '@discordjs/builders';
+import { AttachmentBuilder, Message } from 'discord.js';
 
-import {RunpodRes, Txt2img} from '../interfaces/waifu-generator';
-import {waifuGeneratorAPI} from '../utils/request';
+import { RunpodRes, Txt2img } from '../interfaces/waifu-generator';
+import { waifuGeneratorAPI } from '../utils/request';
 import milisecondsToReadable from '../utils/seconds-to-minutes';
 
 export type getImageProps = {
@@ -30,8 +30,7 @@ export default class WaifuGenerator {
       hr_scale: 2,
       hr_second_pass_steps: 10,
       n_iter: 1,
-      negative_prompt:
-        '(worst quality, low quality:1.4), (zombie, sketch, interlocked fingers, comic)',
+      negative_prompt: '(worst quality, low quality:1.4), (zombie, sketch, interlocked fingers, comic)',
       override_settings: null,
       override_settings_restore_afterwards: true,
       prompt: '',
@@ -54,18 +53,18 @@ export default class WaifuGenerator {
       styles: null,
       subseed: -1,
       subseed_strength: 0,
-      tiling: false,
+      tiling: false
     };
   }
 
   getConfigs(configs: Partial<typeof this.defaultConfigs>) {
-    return {...this.defaultConfigs, ...configs};
+    return { ...this.defaultConfigs, ...configs };
   }
 
   makeEmbed(res: RunpodRes<Txt2img>) {
     const image = res.output.images[0];
     const attachment = new AttachmentBuilder(Buffer.from(image, 'base64'), {
-      name: 'image.png',
+      name: 'image.png'
     });
     const info = JSON.parse(res.output.info);
     const fieldsToDisplay = {
@@ -73,22 +72,22 @@ export default class WaifuGenerator {
       sampler_name: 'Sampler',
       steps: 'Steps',
       negative_prompt: 'Negative Prompt',
-      seed: 'Seed',
+      seed: 'Seed'
     } as const;
     const embed = new EmbedBuilder()
       .setTitle('Waifu Generator')
       .setImage('attachment://image.png')
       .setFooter({
-        text: this.getFooter(res.executionTime),
+        text: this.getFooter(res.executionTime)
       })
       .addFields(
         Object.entries(fieldsToDisplay).map(([field, name]) => ({
           name,
-          value: info[field].toString(),
-        })),
+          value: info[field].toString()
+        }))
       );
 
-    return {embed, attachment, info};
+    return { embed, attachment, info };
   }
 
   async upscaleImage(message: Message<boolean>, info: any) {
@@ -97,36 +96,24 @@ export default class WaifuGenerator {
     configs.enable_hr = true;
     const res = await this.getImage(configs);
     const embed = message.embeds[0];
-    const newEmbed = new EmbedBuilder(embed.data)
-      .setImage('attachment://image.png')
-      .setFooter({
-        text: this.getFooter(res.executionTime),
-      });
-    const newAttachment = new AttachmentBuilder(
-      Buffer.from(res.output.images[0], 'base64'),
-      {
-        name: 'image.png',
-      },
-    );
+    const newEmbed = new EmbedBuilder(embed.data).setImage('attachment://image.png').setFooter({
+      text: this.getFooter(res.executionTime)
+    });
+    const newAttachment = new AttachmentBuilder(Buffer.from(res.output.images[0], 'base64'), {
+      name: 'image.png'
+    });
 
-    await message.edit({embeds: [newEmbed], files: [newAttachment]});
+    await message.edit({ embeds: [newEmbed], files: [newAttachment] });
     await reply.delete();
   }
 
   getFooter(ms: number) {
-    return `Execution time: ${milisecondsToReadable(ms)} | Cost: ${(
-      (ms / 1000) *
-      0.0002
-    ).toFixed(4)}$`;
+    return `Execution time: ${milisecondsToReadable(ms)} | Cost: ${((ms / 1000) * 0.0002).toFixed(4)}$`;
   }
 
   async getImage(configs: Partial<typeof this.defaultConfigs>) {
-    const response = await waifuGeneratorAPI.post<RunpodRes<Txt2img>>(
-      'sdapi/v1/txt2img',
-      configs,
-    );
-    if (!response.ok || !response?.data?.output?.images)
-      throw new Error('Internal error, try again later.');
+    const response = await waifuGeneratorAPI.post<RunpodRes<Txt2img>>('sdapi/v1/txt2img', configs);
+    if (!response.ok || !response?.data?.output?.images) throw new Error('Internal error, try again later.');
     return response.data;
   }
 }

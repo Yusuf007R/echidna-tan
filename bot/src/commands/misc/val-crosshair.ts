@@ -1,5 +1,5 @@
-import {CacheType, CommandInteraction} from 'discord.js';
-import {Command} from '../../structures/command';
+import { CacheType, CommandInteraction } from 'discord.js';
+import { Command } from '../../structures/command';
 import ValCrosshair from '../../structures/val-crosshair';
 
 export default class ValCrosshairCommand extends Command {
@@ -12,9 +12,9 @@ export default class ValCrosshairCommand extends Command {
           type: 'string',
           name: 'crosshair-id',
           description: 'The ID of the crosshair to generate',
-          required: true,
-        },
-      ],
+          required: true
+        }
+      ]
     });
   }
 

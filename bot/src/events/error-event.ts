@@ -1,8 +1,8 @@
-import {DiscordEvent} from '../structures/discord-events';
+import { DiscordEvent } from '../structures/discord-events';
 
 export default class ErrorEvent extends DiscordEvent {
   constructor() {
-    super({eventName: 'error'});
+    super({ eventName: 'error' });
   }
 
   async run(error: Error): Promise<void> {

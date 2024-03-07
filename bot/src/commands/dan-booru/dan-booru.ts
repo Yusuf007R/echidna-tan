@@ -1,5 +1,5 @@
-import {CacheType, CommandInteraction} from 'discord.js';
-import {Command} from '../../structures/command';
+import { CacheType, CommandInteraction } from 'discord.js';
+import { Command } from '../../structures/command';
 
 export default class DanbooruCommand extends Command {
   constructor() {
@@ -11,19 +11,19 @@ export default class DanbooruCommand extends Command {
         {
           type: 'string',
           name: 'tags',
-          description: 'Tags to search for',
+          description: 'Tags to search for'
         },
         {
           type: 'int',
           name: 'post-id',
-          description: 'Post ID to search for',
+          description: 'Post ID to search for'
         },
         {
           type: 'bool',
           name: 'nsfw',
-          description: 'Whether to search for NSFW posts',
-        },
-      ],
+          description: 'Whether to search for NSFW posts'
+        }
+      ]
     });
   }
 
@@ -40,7 +40,7 @@ export default class DanbooruCommand extends Command {
       if (tags) {
         const post = await this.echidna.danbooru.querySinglePost({
           tags: tags.split(' '),
-          nsfw: !!nsfw,
+          nsfw: !!nsfw
         });
         this.echidna.danbooru.sendMessage(interaction, post);
         return;
@@ -51,15 +51,13 @@ export default class DanbooruCommand extends Command {
         return;
       }
     } catch (error: any) {
-      interaction.editReply(
-        error.message ?? 'Internal error, try again later.',
-      );
+      interaction.editReply(error.message ?? 'Internal error, try again later.');
       console.log(error);
       return;
     }
     const post = await this.echidna.danbooru.querySinglePost({
       tags: ['order:rank'],
-      nsfw: !!nsfw,
+      nsfw: !!nsfw
     });
     await this.echidna.danbooru.sendMessage(interaction, post);
   }

@@ -1,14 +1,7 @@
 import wait from '@Utils/wait';
-import {
-  AttachmentBuilder,
-  CacheType,
-  Collection,
-  CommandInteraction,
-  EmbedType,
-  Message,
-} from 'discord.js';
-import {Readable, Stream} from 'stream';
-import z, {ZodError} from 'zod';
+import { AttachmentBuilder, CacheType, Collection, CommandInteraction, EmbedType, Message } from 'discord.js';
+import { Readable, Stream } from 'stream';
+import z, { ZodError } from 'zod';
 
 import getImageUrl from '@Utils/get-image-from-url';
 import ffmpegStatic from 'ffmpeg-static';
@@ -34,10 +27,7 @@ type gifResizeOptions = {
 export default class GifResize {
   constructor() {}
 
-  async manageInteraction(
-    interaction: CommandInteraction<CacheType>,
-    options: gifResizeOptions,
-  ) {
+  async manageInteraction(interaction: CommandInteraction<CacheType>, options: gifResizeOptions) {
     interaction.reply('Please provide a gif to resize');
 
     const dmChannel = await interaction.user.createDM();
@@ -47,7 +37,7 @@ export default class GifResize {
         max: 1,
         time: 60000,
         errors: ['time'],
-        filter: m => m.author.id === interaction.user.id,
+        filter: (m) => m.author.id === interaction.user.id
       });
       const message = collected.first();
       if (!message) throw new Error('Internal error, try again later.');
@@ -60,10 +50,10 @@ export default class GifResize {
       const gifBuffer = await this.resize(gif, options);
 
       const file = new AttachmentBuilder(gifBuffer, {
-        name: 'resized.gif',
+        name: 'resized.gif'
       });
 
-      dmChannel.send({files: [file]});
+      dmChannel.send({ files: [file] });
     } catch (error) {
       if (error instanceof ZodError) {
         throw new Error('Not a valid GIF');
@@ -77,10 +67,7 @@ export default class GifResize {
     }
   }
 
-  async getGifUrl(
-    message: Message<boolean>,
-    deepness: number,
-  ): Promise<gifTypeContent | undefined> {
+  async getGifUrl(message: Message<boolean>, deepness: number): Promise<gifTypeContent | undefined> {
     if (deepness > 4) return undefined;
 
     const attachment = message.attachments.first();
@@ -88,7 +75,7 @@ export default class GifResize {
       return {
         url: attachment.proxyURL,
         type: 'gif',
-        aspectRatio: (attachment.height ?? 1) / (attachment.width ?? 1),
+        aspectRatio: (attachment.height ?? 1) / (attachment.width ?? 1)
       };
     }
 
@@ -105,19 +92,19 @@ export default class GifResize {
       if (!validTypes.includes(type)) return undefined;
 
       if (type === 'image' && embed.data.thumbnail?.proxy_url) {
-        const {proxy_url, height, width} = embed.data.thumbnail;
+        const { proxy_url, height, width } = embed.data.thumbnail;
         return {
           url: proxy_url,
           type: 'gif',
-          aspectRatio: (height ?? 1) / (width ?? 1),
+          aspectRatio: (height ?? 1) / (width ?? 1)
         };
       }
       if (type === 'gifv' && embed.data.video?.proxy_url) {
-        const {proxy_url, height, width} = embed.data.video;
+        const { proxy_url, height, width } = embed.data.video;
         return {
           url: proxy_url,
           type: 'mp4',
-          aspectRatio: (height ?? 1) / (width ?? 1),
+          aspectRatio: (height ?? 1) / (width ?? 1)
         };
       }
 
@@ -136,13 +123,13 @@ export default class GifResize {
     const readebleStream = Readable.from(data);
     const bufferStream = new Stream.PassThrough();
 
-    const {width} = options;
+    const { width } = options;
     const height = options.height ?? Math.floor(width * gif.aspectRatio);
 
     return new Promise((resolve, _) => {
       Ffmpeg(readebleStream)
         .complexFilter(
-          ` [0:v] scale=${width}:${height}:flags=lanczos,split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`,
+          ` [0:v] scale=${width}:${height}:flags=lanczos,split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`
         )
         .toFormat('gif')
         .writeToStream(bufferStream);

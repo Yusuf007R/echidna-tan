@@ -5,7 +5,7 @@ const milisecondsToReadable = (miliseconds: number) => {
   const time = [minutes, seconds % 60];
   if (hours >= 1) time.unshift(hours);
 
-  return time.map(val => `0${Math.floor(val)}`.slice(-2)).join(':');
+  return time.map((val) => `0${Math.floor(val)}`.slice(-2)).join(':');
 };
 
 export default milisecondsToReadable;
