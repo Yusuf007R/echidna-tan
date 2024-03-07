@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4
+    container_name: lavalink
+    restart: unless-stopped
+    environment:
+      - _JAVA_OPTIONS=-Xmx3G
+      - SERVER_PORT=2333
+      - LAVALINK_SERVER_PASSWORD=${LAVA_LINK_PASSWORD}
+    volumes:
+      - ./application.yml:/opt/Lavalink/application.yml
+      - ./plugins/:/opt/Lavalink/plugins/
+    expose:
+      - 2333
+  db:
+    image: postgres:15.4-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    expose:
+      - 5432
+    volumes:
+      - db:/var/lib/postgresql/data
+  echidna:
+    image: yusuf007r/echidna-tan:latest
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_BOT_CLIENT_ID=${DISCORD_BOT_CLIENT_ID}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - RUNPOD_TOKEN=${RUNPOD_TOKEN}
+      - WAIFU_GENERATOR_ENDPOINT=${WAIFU_GENERATOR_ENDPOINT}
+      - DANBOORU_ENDPOINT=${DANBOORU_ENDPOINT}
+      - DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}"
+      - JWT_SECRET_ACCESS=${JWT_SECRET_ACCESS}
+      - JWT_SECRET_REFRESH=${JWT_SECRET_REFRESH}
+      - LAVA_LINK_PASSWORD=${LAVA_LINK_PASSWORD}
+      - LAVA_LINK_HOST=lavalink
+    depends_on:
+      - db
+      - lavalink
+    ports:
+      - 3069:3069
+networks:
+  lavalink:
+    name: lavalink
+volumes:
+  db:
+    driver: local

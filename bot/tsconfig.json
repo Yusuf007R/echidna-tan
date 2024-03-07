@@ -1,0 +1,43 @@
+{
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"],
+  "ts-node": {
+    "transpileOnly": true,
+    "files": true,
+    "require": ["tsconfig-paths/register"]
+  },
+  "compilerOptions": {
+    "composite": false,
+    "lib": ["es2021"],
+    "module": "Node16",
+    "target": "es2021",
+    "declaration": false,
+    "declarationMap": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "outDir": "dist/",
+    "typeRoots": ["./node_modules/@types", "src/interfaces"],
+    "baseUrl": ".",
+    "moduleResolution": "Node16",
+    "paths": {
+      "@Configs": ["./src/config"],
+      "@Interfaces/*": ["./src/interfaces/*"],
+      "@Commands/*": ["./src/commands/*"],
+      "@Events/*": ["./src/events/*"],
+      "@Utils/*": ["./src/utils/*"],
+      "@Structures/*": ["./src/structures/*"],
+      "@Api/*": ["./src/api/*"],
+      "@ApiUtils/*": ["./src/api/utils/*"],
+      "@ApiInterfaces/*": ["./src/api/interfaces/*"],
+      "@ApiRouters/*": ["./src/api/routers/*"],
+      "@ApiMiddlewares/*": ["./src/api/middlewares/*"]
+    }
+  }
+}
