@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   lavalink:
@@ -6,14 +6,14 @@ services:
     container_name: lavalink
     restart: unless-stopped
     environment:
-      - _JAVA_OPTIONS=-Xmx3G 
+      - _JAVA_OPTIONS=-Xmx3G
       - SERVER_PORT=2333
       - LAVALINK_SERVER_PASSWORD=${LAVA_LINK_PASSWORD}
     volumes:
-      - ./application.yml:/opt/Lavalink/application.yml 
+      - ./application.yml:/opt/Lavalink/application.yml
       - ./plugins/:/opt/Lavalink/plugins/
     expose:
-      - 2333 
+      - 2333
   db:
     image: postgres:15.4-alpine
     restart: always
@@ -40,8 +40,6 @@ services:
       - JWT_SECRET_REFRESH=${JWT_SECRET_REFRESH}
       - LAVA_LINK_PASSWORD=${LAVA_LINK_PASSWORD}
       - LAVA_LINK_HOST=lavalink
-    env_file:
-      - .env
     depends_on:
       - db
       - lavalink
