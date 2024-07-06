@@ -3,7 +3,7 @@ import GetChoices from '../utils/get-choices';
 import { CommandValidator } from './command-validator';
 import EchidnaSingleton from './echidna-singleton';
 
-export type options =
+export type Options =
   | {
       type: 'string';
       name: string;
@@ -29,7 +29,7 @@ export type options =
       type: 'sub-command';
       name: string;
       description: string;
-      options?: options[];
+      options?: Options[];
     }
   | {
       type: 'user';
@@ -49,7 +49,7 @@ export type CmdType = 'GUILD' | 'DM' | 'BOTH';
 export type commandConfigs = {
   name: string;
   description: string;
-  options?: options[];
+  options?: Options[];
   voiceChannelOnly?: boolean;
   shouldDefer?: boolean;
   validators?: Array<new () => CommandValidator>;
@@ -61,15 +61,17 @@ export abstract class Command extends EchidnaSingleton {
 
   readonly description: string;
 
-  options?: options[];
+  readonly options?: Options[];
 
-  shouldDefer?: boolean;
+  readonly shouldDefer?: boolean;
 
   readonly validators: Array<new () => CommandValidator>;
+  readonly cmdType!: CmdType;
+  private _choices!: GetChoices;
 
-  choices!: GetChoices;
-
-  cmdType!: CmdType;
+  get choices() {
+    return this._choices;
+  }
 
   constructor(configs: commandConfigs) {
     super();
@@ -88,7 +90,7 @@ export abstract class Command extends EchidnaSingleton {
 
     if (!(await Promise.all(validators)).every((validator) => validator)) return;
     if (this.shouldDefer) await interaction.deferReply();
-    this.choices = new GetChoices(interaction.options);
+    this._choices = new GetChoices(interaction.options);
     await this.run(interaction, this.choices);
     return;
   }

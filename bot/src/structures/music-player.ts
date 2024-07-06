@@ -165,6 +165,7 @@ export default class MusicPlayer extends Poru {
       //!FIX THIS basically here if player doenst exist probably the interaction has not been sent or deferred, need to make some utils for this.
       if (!player) return interaction?.editReply('No player found');
       const { currentTrack } = player;
+      if (!currentTrack) return interaction?.editReply('There is no track playing');
       const { title, uri, artworkUrl, length } = currentTrack.info;
       const requester = currentTrack.info.requester as User;
       const minutes = milisecondsToReadable(length);
@@ -229,6 +230,7 @@ export default class MusicPlayer extends Poru {
 
   async getTrackDominantColor(player: Player): Promise<[number, number, number]> {
     const { currentTrack } = player;
+    if (!currentTrack) throw new Error('No track found');
     const { artworkUrl: image } = currentTrack.info;
     if (!image) return [0, 0, 0];
     if (!player.data['image-url-cache']) player.data['image-url-cache'] = {};

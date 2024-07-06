@@ -1,4 +1,4 @@
-import { CacheType, CommandInteraction } from 'discord.js';
+import { BaseInteraction, CacheType, CommandInteraction } from 'discord.js';
 
 type R<K, T> = T extends true ? K : K | undefined;
 class GetChoices {
@@ -35,6 +35,12 @@ class GetChoices {
     const option = this.get(key, required);
     if (option !== undefined && typeof option !== 'boolean') throw new Error(`Option ${key} is not a boolean`);
     return option as R<boolean, B>;
+  }
+
+  getUser<B extends boolean>(key: string, required = false as B) {
+    const option = this.get(key, required);
+    if (option !== undefined && !option) throw new Error(`Option ${key} is not a user`);
+    return option as R<BaseInteraction<CacheType>['user'], B>;
   }
 }
 

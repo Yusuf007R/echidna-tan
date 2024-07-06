@@ -4,7 +4,7 @@ import { CacheType, Collection, CommandInteraction, REST, Routes } from 'discord
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import configs from '../config';
-import { CmdType, Command, options } from '../structures/command';
+import { CmdType, Command, Options } from '../structures/command';
 import EventOptions from '../structures/event-options';
 
 export default class CommandManager {
@@ -83,6 +83,7 @@ export default class CommandManager {
     try {
       await cmd.command._run(interaction);
     } catch (error) {
+      console.log(error);
       interaction.editReply('An error occured while executing the command.');
     }
   }
@@ -100,7 +101,7 @@ export default class CommandManager {
       });
   }
 
-  async optionBuilder(options: options[], slash: SlashCommandBuilder | SlashCommandSubcommandBuilder) {
+  async optionBuilder(options: Options[], slash: SlashCommandBuilder | SlashCommandSubcommandBuilder) {
     options.forEach((element) => {
       switch (element.type) {
         case 'string':

@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4.0.5
+    container_name: lavalink
+    restart: unless-stopped
+    environment:
+      - _JAVA_OPTIONS=-Xmx3G
+      - SERVER_PORT=2333
+      - LAVALINK_SERVER_PASSWORD=${LAVA_LINK_PASSWORD}
+    volumes:
+      - ./application.yml:/opt/Lavalink/application.yml
+      - ./plugins/:/opt/Lavalink/plugins/
+    ports:
+      - 2333:2333
+  db:
+    image: postgres:15.4-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - 5432:5432
+    volumes:
+      - db:/var/lib/postgresql/data
+networks:
+  lavalink:
+    name: lavalink
+volumes:
+  db:
+    driver: local

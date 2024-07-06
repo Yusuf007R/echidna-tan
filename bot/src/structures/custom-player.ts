@@ -5,7 +5,7 @@ import EchidnaSingleton from './echidna-singleton';
 
 export type playerMethods = ExtractMethods<Player>;
 export type playerMethodsKey = keyof playerMethods;
-const PLAYER_METHODS_TO_LISTEN: playerMethodsKey[] = ['play', 'pause', 'stop', 'seekTo', 'setVolume', 'setLoop'];
+const PLAYER_METHODS_TO_LISTEN: playerMethodsKey[] = ['play', 'pause', 'seekTo', 'setVolume', 'setLoop'];
 export type Queue = Player['queue'];
 
 export type playerData = {
@@ -14,7 +14,7 @@ export type playerData = {
   isConnected: boolean;
   loop: 'NONE' | 'TRACK' | 'QUEUE';
   position: number;
-  timestamp: number;
+  timestamp: number | null;
   volume: number;
   queue: Queue;
 };
