@@ -17,10 +17,10 @@ export default router({
           name: z.literal('pause'),
           input: z.boolean().optional()
         }),
-        z.object({
-          name: z.literal('stop'),
-          input: z.undefined()
-        }),
+        // z.object({
+        //   name: z.literal('stop'),
+        //   input: z.undefined()
+        // }),
         z.object({
           name: z.literal('seekTo'),
           input: z.number()

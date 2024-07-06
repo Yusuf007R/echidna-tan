@@ -69,7 +69,6 @@ export default class GifResize {
 
   async getGifUrl(message: Message<boolean>, deepness: number): Promise<gifTypeContent | undefined> {
     if (deepness > 4) return undefined;
-
     const attachment = message.attachments.first();
     if (attachment && attachment.contentType === 'image/gif') {
       return {
@@ -118,31 +117,50 @@ export default class GifResize {
 
   async resize(gif: gifTypeContent, options: gifResizeOptions) {
     const gifBuffer = await getImageUrl(gif.url);
+
     if (!gifBuffer.data) throw new Error('Gif not found');
     const data = gifBuffer.data;
-    const readebleStream = Readable.from(data);
+    const readableStream = Readable.from(data);
     const bufferStream = new Stream.PassThrough();
 
     const { width } = options;
     const height = options.height ?? Math.floor(width * gif.aspectRatio);
 
-    return new Promise((resolve, _) => {
-      Ffmpeg(readebleStream)
+    return new Promise((resolve, reject) => {
+      Ffmpeg(readableStream)
         .complexFilter(
           ` [0:v] scale=${width}:${height}:flags=lanczos,split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`
         )
-        .toFormat('gif')
-        .writeToStream(bufferStream);
+        .inputFormat(gif.type)
+        .outputFormat('gif')
+        .output(bufferStream, {
+          end: false
+        })
+        .on('stderr', function (stderrLine) {
+          console.log('Stderr output: ' + stderrLine);
+        })
+        .on('error', function (err) {
+          console.log('An error occurred: ' + err.message);
+        })
+        .on('end', () => {
+          bufferStream.end();
+        });
 
       const buffers: any[] = [];
 
       bufferStream.on('data', function (buf) {
         buffers.push(buf);
       });
+      bufferStream.on('error', function (err) {
+        console.log('An error occurred: ' + err.message);
+        bufferStream.destroy();
+        reject('Error while resizing gif');
+      });
 
       bufferStream.on('end', function () {
-        resolve(Buffer.concat(buffers));
+        console.log(buffers.length);
         bufferStream.destroy();
+        resolve(Buffer.concat(buffers));
       });
     }) as Promise<Buffer>;
   }

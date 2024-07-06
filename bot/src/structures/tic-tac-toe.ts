@@ -9,6 +9,7 @@ import {
   User
 } from 'discord.js';
 
+import GetChoices from '@Utils/get-choices';
 import TicTacToeUtils from '../utils/tic-tac-toe-utils';
 import wait from '../utils/wait';
 import EchidnaSingleton from './echidna-singleton';
@@ -80,7 +81,8 @@ export default class TicTacToe {
 
   static async initGame(interaction: CommandInteraction<CacheType>) {
     const player1 = interaction.user;
-    const player2 = interaction.options.getUser('user');
+    const choices = new GetChoices(interaction.options);
+    const player2 = choices.getUser('user', false);
     await interaction.deferReply({ ephemeral: !player2 });
     if (player2) {
       if (player1.id === player2.id) {
