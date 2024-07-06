@@ -1,5 +1,6 @@
 {
   "yaml.schemas": {
     "https://json.schemastore.org/github-workflow.json": "file:///home/yusuf/code/echidna-tan/.github/workflows/deploy.yml"
-  }
+  },
+  "cSpell.enabled": false
 }
