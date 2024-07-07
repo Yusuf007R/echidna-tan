@@ -3,26 +3,26 @@ FROM node:20 as builder
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json package-lock.json ./
 
 RUN apt-get update \
     && apt-get install -y build-essential \
-    && yarn --pure-lockfile 
+    && npm ci
 
 COPY . .
 
-RUN yarn prisma generate && yarn build
+RUN npx prisma generate && npm run build
 
 # Production Stage
 FROM node:20 as production
 
 WORKDIR /app
 
-COPY --from=builder /app/package.json /app/yarn.lock ./
+COPY --from=builder /app/package.json /app/package-lock.json ./
 
 RUN apt-get update \
     && apt-get install -y build-essential \
-    && yarn --pure-lockfile --production
+    && npm ci --production
 
 # Runtime Stage
 FROM node:20-slim as runtime

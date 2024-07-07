@@ -25,7 +25,8 @@ services:
     volumes:
       - db:/var/lib/postgresql/data
   echidna:
-    image: yusuf007r/echidna-tan:latest
+    build: .
+    # image: yusuf007r/echidna-tan:latest
     restart: unless-stopped
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
