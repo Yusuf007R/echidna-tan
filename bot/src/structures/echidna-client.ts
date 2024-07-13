@@ -12,7 +12,7 @@ import WaifuGenerator from './waifu-generator';
 export default class EchidnaClient extends Client {
   clientSingleton = new EchidnaSingleton(this);
 
-  musicPlayer = new MusicPlayer();
+  musicPlayer = new MusicPlayer(this);
 
   ticTacToeManager = new Collection<string, TicTacToe>();
 

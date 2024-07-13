@@ -1,17 +1,16 @@
 import { CacheType, CommandInteraction } from 'discord.js';
-import { MusicCommand } from './[options]';
+import { MusicCommand } from './[wrapper]';
 
 export default class Shuffle extends MusicCommand {
   constructor() {
     super({
       name: 'shuffle',
-      description: 'Shuffle the queue.',
-      voiceChannelOnly: true
+      description: 'Shuffle the queue.'
     });
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    this.player?.queue.shuffle();
+    this.player?.toggleShuffle();
     await interaction.reply({ content: 'Shuffled the queue.' });
   }
 }

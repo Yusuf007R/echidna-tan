@@ -50,7 +50,6 @@ export type commandConfigs = {
   name: string;
   description: string;
   options?: Options[];
-  voiceChannelOnly?: boolean;
   shouldDefer?: boolean;
   validators?: Array<new () => CommandValidator>;
   cmdType?: CmdType;
@@ -73,7 +72,7 @@ export abstract class Command extends EchidnaSingleton {
     return this._choices;
   }
 
-  constructor(configs: commandConfigs) {
+  constructor(readonly configs: commandConfigs) {
     super();
     this.name = configs.name;
     this.description = configs.description;
@@ -93,9 +92,5 @@ export abstract class Command extends EchidnaSingleton {
     this._choices = new GetChoices(interaction.options);
     await this.run(interaction, this.choices);
     return;
-  }
-
-  pushValidator(validators: Array<new () => CommandValidator>): void {
-    this.validators.push(...validators);
   }
 }

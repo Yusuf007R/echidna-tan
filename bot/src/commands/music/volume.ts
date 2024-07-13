@@ -1,12 +1,11 @@
 import { CacheType, CommandInteraction } from 'discord.js';
-import { MusicCommand } from './[options]';
+import { MusicCommand } from './[wrapper]';
 
 export default class Volume extends MusicCommand {
   constructor() {
     super({
       name: 'volume',
       description: 'Set the volume of the music player. (0-100)',
-      voiceChannelOnly: true,
       options: [
         {
           type: 'int',
@@ -22,7 +21,7 @@ export default class Volume extends MusicCommand {
 
   async run(interaction: CommandInteraction<CacheType>) {
     const volume = this.choices.getNumber('volume', true);
-    this.player?.setVolume(volume);
+    this.player?.node.setVolume(volume);
     await interaction.reply({ content: `Volume set to \`${volume}\`` });
   }
 }

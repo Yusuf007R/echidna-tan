@@ -1,12 +1,12 @@
 import { CacheType, CommandInteraction } from 'discord.js';
-import { MusicCommand } from './[options]';
+import { MusicCommand } from './[wrapper]';
 
 export default class Seek extends MusicCommand {
   constructor() {
     super({
       name: 'seek',
       description: 'Seek to a specific time in the current song.',
-      voiceChannelOnly: true,
+
       options: [
         {
           type: 'int',
@@ -21,7 +21,7 @@ export default class Seek extends MusicCommand {
 
   async run(interaction: CommandInteraction<CacheType>) {
     const seekTime = this.choices.getNumber('time', true);
-    this.player?.seekTo(seekTime);
+    this.player?.node.seek(seekTime);
     await interaction.reply({ content: `Seeked to \`${seekTime}\`` });
   }
 }
