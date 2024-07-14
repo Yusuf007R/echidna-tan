@@ -10,6 +10,7 @@ import {
 } from 'discord.js';
 
 import GetChoices from '@Utils/get-choices';
+import ButtonComponent from 'src/components/button';
 import TicTacToeUtils from '../utils/tic-tac-toe-utils';
 import wait from '../utils/wait';
 import EchidnaSingleton from './echidna-singleton';
@@ -50,6 +51,8 @@ export default class TicTacToe {
 
   private turn: TurnEnum = TurnEnum.X;
 
+  private gameID: string;
+
   private currentInteraction: CommandInteraction<CacheType>;
 
   private player1: User | null = null;
@@ -60,7 +63,8 @@ export default class TicTacToe {
 
   private timeOut: NodeJS.Timeout | null = null;
 
-  constructor(interaction: CommandInteraction<CacheType>, player1: User, player2: User | null = null) {
+  constructor(interaction: CommandInteraction<CacheType>, id: string, player1: User, player2: User | null = null) {
+    this.gameID = id;
     this.player1 = player1;
     this.player2 = player2;
     this.currentInteraction = interaction;
@@ -79,7 +83,7 @@ export default class TicTacToe {
     this.resetTimeout();
   }
 
-  static async initGame(interaction: CommandInteraction<CacheType>) {
+  static async initGame(interaction: CommandInteraction<CacheType>, id: string) {
     const player1 = interaction.user;
     const choices = new GetChoices(interaction.options);
     const player2 = choices.getUser('user', false);
@@ -94,7 +98,7 @@ export default class TicTacToe {
         return;
       }
     }
-    return new TicTacToe(interaction, player1, player2);
+    return new TicTacToe(interaction, id, player1, player2);
   }
 
   async startGame(interaction: ButtonInteraction<CacheType>, value: string) {
@@ -118,12 +122,28 @@ export default class TicTacToe {
   }
 
   private async sendGameRequest() {
+    const options = ['yes', 'no'];
     await this.currentInteraction.editReply({
       content: `${this.player1?.toString()} has challenged you to a game of Tic Tac Toe. Do you accept?`,
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder().setCustomId('tictactoe-request-yes').setLabel('Accept').setStyle(ButtonStyle.Primary),
-          new ButtonBuilder().setCustomId('tictactoe-request-no').setLabel('Decline').setStyle(ButtonStyle.Danger)
+          options.map((opt) => {
+            const isYes = opt === 'yes';
+            return ButtonComponent({
+              interaction: this.currentInteraction,
+              shouldValidateUser: false,
+              onSelect: (inter)=>{
+                this.startGame(inter, opt)
+              },
+              onError:async(reason) =>{
+                console.log(reason);
+                await this.currentInteraction.editReply('Internal Error')
+              },
+              custom_id: `${this.gameID}-request-${opt}`,
+              label: isYes ? 'Accept' : 'Decline',
+              style: isYes ? ButtonStyle.Primary : ButtonStyle.Danger
+            });
+          })
         )
       ]
     });
@@ -147,25 +167,41 @@ export default class TicTacToe {
   }
 
   private async drawTable(finished = false) {
-    const table = [...this.table];
-
     const rows = [
-      ...[...new Array(3).fill(0).map(() => table.splice(0, 3))].map((colum, columIndex) =>
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
-          ...colum.map((row, rowIndex) => {
-            const button = new ButtonBuilder()
-              .setLabel(row === TurnEnum.X ? 'X' : row === TurnEnum.O ? 'O' : '-')
-              .setCustomId(`tictactoe-game-${rowIndex + columIndex * 3}`)
-              .setStyle(ButtonStyle.Secondary);
-            if (!Number.isInteger(row)) {
-              button.setDisabled(true);
-              if (row === TurnEnum.X) button.setStyle(ButtonStyle.Primary);
-              if (row === TurnEnum.O) button.setStyle(ButtonStyle.Danger);
-            }
-            if (finished) button.setDisabled(true);
-            return button;
-          })
-        )
+      ...[...new Array(3).fill(0).map((_, vecIndex) => this.table.slice(vecIndex * 3, vecIndex * 3 + 3))].map(
+        (row, rowIndex) =>
+          new ActionRowBuilder<ButtonBuilder>().addComponents(
+            ...row.map((column, columnIndex) => {
+              const isEmpty = Number.isInteger(column);
+              const getButtonStyle = () => {
+                if (isEmpty) return ButtonStyle.Secondary;
+                return column === TurnEnum.X ? ButtonStyle.Primary : ButtonStyle.Danger;
+              };
+              const pos = rowIndex * 3 + columnIndex;
+              const buttonId = `${this.gameID}-${pos}`;
+              const button = ButtonComponent({
+                label: column === TurnEnum.X ? 'X' : column === TurnEnum.O ? 'O' : '-',
+                custom_id: buttonId,
+                style: getButtonStyle(),
+                disabled: finished || !isEmpty,
+                filter: (inter) => {
+                  if (inter.customId !== buttonId) return false;
+                  if (![this.player1?.id, this.player2?.id].includes(inter.user.id)) return false;
+                  return true;
+                },
+                onSelect: (inter) => {
+                  this.handleClick(inter, pos);
+                },
+                interaction: this.currentInteraction,
+                onError: (error) => {
+                  console.log(error);
+                  this.currentInteraction.editReply('Internal Error');
+                }
+              });
+
+              return button;
+            })
+          )
       )
     ];
 
@@ -187,13 +223,6 @@ export default class TicTacToe {
 
   private checkIfCorrectUser(interaction: ButtonInteraction<CacheType>) {
     const { user } = interaction;
-    if (!(user.id === this.player1?.id || user.id === this.player2?.id)) {
-      interaction.reply({
-        content: 'You are not a part of this game.',
-        ephemeral: true
-      });
-      return false;
-    }
     if (user.id === this.player1?.id && this.turn === TurnEnum.O) {
       interaction.reply({ content: 'It is not your turn.', ephemeral: true });
       return false;
@@ -205,12 +234,12 @@ export default class TicTacToe {
     return true;
   }
 
-  async handleClick(interaction: ButtonInteraction<CacheType>, pos: string) {
+  async handleClick(interaction: ButtonInteraction<CacheType>, pos: number) {
     if (this.currentInteraction.id !== interaction.message.interaction?.id) return;
     if (!this.checkIfCorrectUser(interaction)) return;
     interaction.deferUpdate();
     this.resetTimeout();
-    this.makeMove(Number(pos));
+    this.makeMove(pos);
     if (!(await this.didGameEnd())) {
       this.switchTurn();
       if (!this.player2 || !this.player1) this.AiMakeMove();

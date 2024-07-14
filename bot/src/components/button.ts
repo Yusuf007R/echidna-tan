@@ -1,17 +1,17 @@
-import { StringSelectMenuBuilder } from '@discordjs/builders';
+import { ButtonBuilder } from '@discordjs/builders';
 import {
-  APIStringSelectComponent,
+  APIButtonComponentWithCustomId,
   AwaitMessageCollectorOptionsParams,
   BaseInteraction,
+  ButtonInteraction,
   CacheType,
-  ComponentType,
-  StringSelectMenuInteraction
+  ComponentType
 } from 'discord.js';
 
-type FilterType = AwaitMessageCollectorOptionsParams<ComponentType.StringSelect, true>['filter'];
+type FilterType = AwaitMessageCollectorOptionsParams<ComponentType.Button, true>['filter'];
 
-type StringSelectComponentOptions = Omit<Partial<APIStringSelectComponent>, 'type'> & {
-  onSelect: (interaction: StringSelectMenuInteraction<CacheType>) => void;
+type ButtonComponentOptions = Omit<Partial<APIButtonComponentWithCustomId>, 'type'> & {
+  onSelect: (interaction: ButtonInteraction<CacheType>) => void;
   interaction: BaseInteraction<CacheType>;
   filter?: FilterType;
   timeout?: number;
@@ -19,7 +19,7 @@ type StringSelectComponentOptions = Omit<Partial<APIStringSelectComponent>, 'typ
   shouldValidateUser?: boolean;
 };
 
-export default function StringSelectComponent({
+export default function ButtonComponent({
   onSelect,
   onError,
   interaction,
@@ -27,18 +27,18 @@ export default function StringSelectComponent({
   timeout,
   shouldValidateUser = true,
   ...options
-}: StringSelectComponentOptions) {
+}: ButtonComponentOptions) {
   if (!interaction.channel) throw new Error('channel not found');
-  const stringSelect = new StringSelectMenuBuilder(options);
+  const button = new ButtonBuilder(options);
 
   const defaultFilter: FilterType = (inter) => {
     if (inter.customId !== options.custom_id) return false;
     if (shouldValidateUser && interaction.user.id !== inter.user.id) return false;
     return true;
   };
-  interaction.channel
+ interaction.channel
     .awaitMessageComponent({
-      componentType: ComponentType.StringSelect,
+      componentType: ComponentType.Button,
       filter: filter ?? defaultFilter,
       time: timeout ?? 60 * 1000
     })
@@ -47,5 +47,5 @@ export default function StringSelectComponent({
     })
     .catch(onError);
 
-  return stringSelect;
+  return button;
 }
