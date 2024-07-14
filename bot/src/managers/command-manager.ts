@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from '@discordjs/builders';
+import EchidnaSingleton from '@Structures/echidna-singleton';
 import { CacheType, Collection, CommandInteraction, REST, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import { join } from 'path';
@@ -41,12 +42,13 @@ export default class CommandManager {
     console.log('Commands loaded');
   }
 
-  async registerCommands(guilds: string[]) {
+  async registerCommands() {
+    const guilds = await EchidnaSingleton.echidna.guilds.fetch();
     const slashCommmandsGuild = this.filterMapCmds(['GUILD', 'BOTH']);
     const slashCommmandsDM = this.filterMapCmds(['DM', 'BOTH']);
     try {
-      const requests = guilds.map((guildId) =>
-        new REST().setToken(configs.token).put(Routes.applicationGuildCommands(configs.clientId, guildId), {
+      const requests = guilds.map((guild) =>
+        new REST().setToken(configs.token).put(Routes.applicationGuildCommands(configs.clientId, guild.id), {
           body: slashCommmandsGuild
         })
       );
