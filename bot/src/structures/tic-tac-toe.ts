@@ -20,9 +20,11 @@ export enum TurnEnum {
   O = 'o'
 }
 
-export type tableType = (TurnEnum | number)[];
+export type TableItemType = { mark: TurnEnum; round: number } | number;
 
-const TABLE: tableType = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+export type TableType = TableItemType[];
+
+const TABLE: TableType = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 export const WIN_COMBINATIONS = [
   [0, 1, 2],
@@ -47,7 +49,7 @@ export enum TicTacToeStatus {
 }
 
 export default class TicTacToe {
-  private table: tableType;
+  private table: TableType;
 
   private turn: TurnEnum = TurnEnum.X;
 
@@ -62,6 +64,8 @@ export default class TicTacToe {
   private status: TicTacToeStatus = TicTacToeStatus.Waiting;
 
   private timeOut: NodeJS.Timeout | null = null;
+
+  private round = 0;
 
   constructor(interaction: CommandInteraction<CacheType>, id: string, player1: User, player2: User | null = null) {
     this.gameID = id;
@@ -132,12 +136,12 @@ export default class TicTacToe {
             return ButtonComponent({
               interaction: this.currentInteraction,
               shouldValidateUser: false,
-              onSelect: (inter)=>{
-                this.startGame(inter, opt)
+              onSelect: (inter) => {
+                this.startGame(inter, opt);
               },
-              onError:async(reason) =>{
+              onError: async (reason) => {
                 console.log(reason);
-                await this.currentInteraction.editReply('Internal Error')
+                await this.currentInteraction.editReply('Internal Error');
               },
               custom_id: `${this.gameID}-request-${opt}`,
               label: isYes ? 'Accept' : 'Decline',
@@ -159,7 +163,8 @@ export default class TicTacToe {
 
   private makeMove(pos: number) {
     if (!Number.isInteger(this.table[pos])) return;
-    this.table[pos] = this.turn;
+    this.round++;
+    this.table[pos] = { mark: this.turn, round: this.round };
   }
 
   private switchTurn() {
@@ -172,16 +177,18 @@ export default class TicTacToe {
         (row, rowIndex) =>
           new ActionRowBuilder<ButtonBuilder>().addComponents(
             ...row.map((column, columnIndex) => {
-              const isEmpty = Number.isInteger(column);
+              const isEmpty = typeof column === 'number';
+              const isMarkByX = isEmpty ? false : column.mark === TurnEnum.X;
               const getButtonStyle = () => {
                 if (isEmpty) return ButtonStyle.Secondary;
-                return column === TurnEnum.X ? ButtonStyle.Primary : ButtonStyle.Danger;
+                return isMarkByX ? ButtonStyle.Primary : ButtonStyle.Danger;
               };
               const pos = rowIndex * 3 + columnIndex;
-              const buttonId = `${this.gameID}-${pos}`;
+              const buttonId = `${this.gameID}-${pos}-${this.round}`;
               const button = ButtonComponent({
-                label: column === TurnEnum.X ? 'X' : column === TurnEnum.O ? 'O' : '-',
+                label: isEmpty ? '-' : isMarkByX ? 'X' : 'O',
                 custom_id: buttonId,
+                timeout: TIMEOUT_TIME + 5,
                 style: getButtonStyle(),
                 disabled: finished || !isEmpty,
                 filter: (inter) => {
@@ -189,14 +196,15 @@ export default class TicTacToe {
                   if (![this.player1?.id, this.player2?.id].includes(inter.user.id)) return false;
                   return true;
                 },
-                onSelect: (inter) => {
-                  this.handleClick(inter, pos);
+                onSelect: async (inter) => {
+                  try {
+                    await this.handleClick(inter, pos);
+                  } catch (error) {
+                    console.log('test', error);
+                  }
                 },
                 interaction: this.currentInteraction,
-                onError: (error) => {
-                  console.log(error);
-                  this.currentInteraction.editReply('Internal Error');
-                }
+                onError: console.log
               });
 
               return button;
@@ -237,7 +245,7 @@ export default class TicTacToe {
   async handleClick(interaction: ButtonInteraction<CacheType>, pos: number) {
     if (this.currentInteraction.id !== interaction.message.interaction?.id) return;
     if (!this.checkIfCorrectUser(interaction)) return;
-    interaction.deferUpdate();
+    await interaction.deferUpdate();
     this.resetTimeout();
     this.makeMove(pos);
     if (!(await this.didGameEnd())) {
@@ -269,7 +277,8 @@ export default class TicTacToe {
         break;
       case TicTacToeStatus.GameTimeout:
         content = `Game timed out. ${
-          this.turn === TurnEnum.X ? this.player2?.toString() : this.player1?.toString()
+          (this.turn === TurnEnum.X ? this.player2?.toString() : this.player1?.toString()) ??
+          this.currentInteraction.client.user.toString()
         } won.`;
         break;
       case TicTacToeStatus.RequestTimeout:
@@ -319,7 +328,7 @@ export default class TicTacToe {
 
   async AiMakeMove() {
     await wait(100);
-    this.makeMove(TicTacToeUtils.getBestMove(this.table, this.turn));
+    this.makeMove(TicTacToeUtils.getBestMove(this.table, this.turn, this.round));
     if (await this.didGameEnd()) return;
     this.switchTurn();
     await this.drawTable();
