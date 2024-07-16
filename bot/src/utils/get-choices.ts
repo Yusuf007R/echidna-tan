@@ -1,3 +1,4 @@
+import EchidnaSingleton from '@Structures/echidna-singleton';
 import { BaseInteraction, CacheType, CommandInteraction } from 'discord.js';
 
 type R<K, T> = T extends true ? K : K | undefined;
@@ -37,10 +38,12 @@ class GetChoices {
     return option as R<boolean, B>;
   }
 
-  getUser<B extends boolean>(key: string, required = false as B) {
+  async getUser<B extends boolean>(key: string, required = false as B) {
     const option = this.get(key, required);
     if (option !== undefined && !option) throw new Error(`Option ${key} is not a user`);
-    return option as R<BaseInteraction<CacheType>['user'], B>;
+    if (!option || typeof option !== 'string') return undefined;
+    const user = await EchidnaSingleton.echidna.users.fetch(option);
+    return user as R<BaseInteraction<CacheType>['user'], B>;
   }
 }
 

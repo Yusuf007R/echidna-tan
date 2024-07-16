@@ -14,13 +14,18 @@ export default class TicTacToeCommand extends Command {
           type: 'user',
           name: 'user',
           description: 'The user to play with'
+        },
+        {
+          type: 'bool',
+          name: 'ultimate',
+          description: 'To play TicTacToe Ultimate (there cannot be more than 3 marks per player)'
         }
       ]
     });
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const id = randomBytes(6).toString('hex')
+    const id = randomBytes(6).toString('hex');
     const tictactoe = await TicTacToe.initGame(interaction, id);
     if (!tictactoe) return;
 

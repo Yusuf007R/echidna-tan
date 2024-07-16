@@ -5,7 +5,7 @@ import { ActionRowBuilder, EmbedBuilder, StringSelectMenuBuilder } from '@discor
 import { GuildQueue, Player, Playlist, QueueRepeatMode, Track } from 'discord-player';
 import { BaseInteraction, CacheType, CommandInteraction, GuildMember, StringSelectMenuInteraction } from 'discord.js';
 import sharp from 'sharp';
-import StringSelectComponent from 'src/components/string-select';
+import StringSelectComponent from '../components/string-select';
 import EchidnaClient from './echidna-client';
 
 export type QueueMetadata = {
@@ -60,22 +60,30 @@ export default class MusicPlayer extends Player {
 
     const firstFiveTracks = searchResult.tracks.slice(0, 5);
 
-    const stringSelectComponent = StringSelectComponent({
-      custom_id: 'music',
+    const customId = interaction.id;
+
+    const stringSelectComponent = new StringSelectComponent({
+      custom_id: `${customId}-music`,
       interaction,
       options: firstFiveTracks.map((item, index) => ({
         label: item.title,
         value: index.toString()
-      })),
-      onSelect: async (interaction) => await this.selectMusic(interaction, firstFiveTracks),
-      onError: (error) => {
+      }))
+    })
+      .onFilter((inter) => {
+        return StringSelectComponent.filterByCustomID(inter, customId);
+      })
+      .onAction(async (interaction) => {
+        await this.selectMusic(interaction, firstFiveTracks);
+      })
+      .onError((error) => {
         console.log(error);
         interaction.editReply({
           content: 'No song was selected.',
           components: []
         });
-      }
-    });
+      })
+      .build();
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(stringSelectComponent);
 

@@ -1,51 +1,6 @@
-import { StringSelectMenuBuilder } from '@discordjs/builders';
-import {
-  APIStringSelectComponent,
-  AwaitMessageCollectorOptionsParams,
-  BaseInteraction,
-  CacheType,
-  ComponentType,
-  StringSelectMenuInteraction
-} from 'discord.js';
+import { ComponentType } from 'discord.js';
+import BaseComponent from './base';
 
-type FilterType = AwaitMessageCollectorOptionsParams<ComponentType.StringSelect, true>['filter'];
-
-type StringSelectComponentOptions = Omit<Partial<APIStringSelectComponent>, 'type'> & {
-  onSelect: (interaction: StringSelectMenuInteraction<CacheType>) => void;
-  interaction: BaseInteraction<CacheType>;
-  filter?: FilterType;
-  timeout?: number;
-  onError: (reason: any) => void;
-  shouldValidateUser?: boolean;
-};
-
-export default function StringSelectComponent({
-  onSelect,
-  onError,
-  interaction,
-  filter,
-  timeout,
-  shouldValidateUser = true,
-  ...options
-}: StringSelectComponentOptions) {
-  if (!interaction.channel) throw new Error('channel not found');
-  const stringSelect = new StringSelectMenuBuilder(options);
-
-  const defaultFilter: FilterType = (inter) => {
-    if (inter.customId !== options.custom_id) return false;
-    if (shouldValidateUser && interaction.user.id !== inter.user.id) return false;
-    return true;
-  };
-  interaction.channel
-    .awaitMessageComponent({
-      componentType: ComponentType.StringSelect,
-      filter: filter ?? defaultFilter,
-      time: timeout ?? 60 * 1000
-    })
-    .then((interaction) => {
-      onSelect(interaction);
-    })
-    .catch(onError);
-
-  return stringSelect;
+export default class StringSelectComponent extends BaseComponent<ComponentType.StringSelect> {
+  type = ComponentType.StringSelect as const;
 }
