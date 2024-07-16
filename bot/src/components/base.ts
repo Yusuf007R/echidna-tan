@@ -9,6 +9,7 @@ import {
   MentionableSelectMenuBuilder,
   MessageComponentType,
   RoleSelectMenuBuilder,
+  User,
   UserSelectMenuBuilder
 } from 'discord.js';
 
@@ -42,8 +43,13 @@ export default abstract class BaseComponent<T extends MessageComponentType> {
 
   constructor(protected readonly opts: ComponentOpt<T>) {}
 
-  static filterByUser = (actionInter: CollectedInteraction, baseInter: BaseInteraction) => {
-    return baseInter.user.id === actionInter.user.id;
+  static filterByUser = (actionInter: CollectedInteraction, userResolvable: BaseInteraction | User) => {
+    let user: User | undefined;
+    if (userResolvable instanceof BaseInteraction) user = userResolvable.user;
+    if (userResolvable instanceof User) user = userResolvable;
+
+    if (!user) throw new Error('internal error user not found');
+    return actionInter.user.id === user.id;
   };
 
   static filterByCustomID = (actionInter: CollectedInteraction, customID: string) => {

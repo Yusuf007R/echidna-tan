@@ -114,12 +114,6 @@ export default class TicTacToe extends EchidnaSingleton {
   async startGame(interaction: ButtonInteraction<CacheType>, value: string) {
     if (!this.player2) return;
 
-    if (interaction.user.id !== this.player2.id) {
-      return interaction.reply({
-        content: `You are not ${this.player2.toString()}`,
-        ephemeral: true
-      });
-    }
     interaction.deferUpdate();
     if (value === 'yes') {
       this.status = TicTacToeStatus.Playing;
@@ -147,7 +141,10 @@ export default class TicTacToe extends EchidnaSingleton {
               label: isYes ? 'Accept' : 'Decline',
               style: isYes ? ButtonStyle.Primary : ButtonStyle.Danger
             })
-              .onFilter((inter) => ButtonComponent.filterByCustomID(inter, customId))
+              .onFilter(
+                (inter) =>
+                  ButtonComponent.filterByCustomID(inter, customId) && ButtonComponent.filterByUser(inter, this.player2)
+              )
               .onAction(async (inter) => {
                 await this.startGame(inter, opt);
               })
