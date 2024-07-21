@@ -13,7 +13,6 @@ export default class ReadyEvent extends DiscordEvent {
     });
     this.echidna.user?.setStatus('online');
 
-    this.echidna.musicPlayer.loadExtractors();
     console.log(`Logged in as ${this.echidna.user?.tag}`);
 
     this.echidna.commandManager.loadCommands();
