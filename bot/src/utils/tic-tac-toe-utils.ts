@@ -18,7 +18,10 @@ class TicTacToeUtils {
 
   static didWin(table: TableType, turn: TurnEnum): boolean {
     return WIN_COMBINATIONS.some((combo) =>
-      combo.every((pos) => typeof table[pos] !== 'number' && table[pos].mark === turn)
+      combo.every((pos) => {
+        const cell = table[pos];
+        return typeof cell !== 'number' && cell.mark === turn;
+      })
     );
   }
 
