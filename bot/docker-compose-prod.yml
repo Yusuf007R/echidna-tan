@@ -1,29 +1,29 @@
 version: '3.8'
 
 services:
-  lavalink:
-    image: ghcr.io/lavalink-devs/lavalink:4.0.5
-    container_name: lavalink
-    restart: unless-stopped
-    environment:
-      - _JAVA_OPTIONS=-Xmx3G
-      - SERVER_PORT=2333
-      - LAVALINK_SERVER_PASSWORD=${LAVA_LINK_PASSWORD}
-    volumes:
-      - ./application.yml:/opt/Lavalink/application.yml
-      - ./plugins/:/opt/Lavalink/plugins/
-    expose:
-      - 2333
-  db:
-    image: postgres:15.4-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    expose:
-      - 5432
-    volumes:
-      - db:/var/lib/postgresql/data
+  # lavalink:
+  #   image: ghcr.io/lavalink-devs/lavalink:4.0.5
+  #   container_name: lavalink
+  #   restart: unless-stopped
+  #   environment:
+  #     - _JAVA_OPTIONS=-Xmx3G
+  #     - SERVER_PORT=2333
+  #     - LAVALINK_SERVER_PASSWORD=${LAVA_LINK_PASSWORD}
+  #   volumes:
+  #     - ./application.yml:/opt/Lavalink/application.yml
+  #     - ./plugins/:/opt/Lavalink/plugins/
+  #   expose:
+  #     - 2333
+  # db:
+  #   image: postgres:15.4-alpine
+  #   restart: always
+  #   environment:
+  #     - POSTGRES_USER=${DB_USER}
+  #     - POSTGRES_PASSWORD=${DB_PASSWORD}
+  #   expose:
+  #     - 5432
+  #   volumes:
+  #     - db:/var/lib/postgresql/data
   echidna:
     build: .
     # image: yusuf007r/echidna-tan:latest
@@ -46,9 +46,9 @@ services:
       - lavalink
     ports:
       - 3069:3069
-networks:
-  lavalink:
-    name: lavalink
-volumes:
-  db:
-    driver: local
+# networks:
+#   lavalink:
+#     name: lavalink
+# volumes:
+#   db:
+#     driver: local
