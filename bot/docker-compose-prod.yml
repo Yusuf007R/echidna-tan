@@ -41,9 +41,9 @@ services:
       - JWT_SECRET_REFRESH=${JWT_SECRET_REFRESH}
       - LAVA_LINK_PASSWORD=${LAVA_LINK_PASSWORD}
       - LAVA_LINK_HOST=lavalink
-    depends_on:
-      - db
-      - lavalink
+    # depends_on:
+    #   - db
+    #   - lavalink
     ports:
       - 3069:3069
 # networks:
