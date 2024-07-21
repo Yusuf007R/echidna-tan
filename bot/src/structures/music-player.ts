@@ -1,240 +1,197 @@
-import { EmbedBuilder, SelectMenuBuilder } from '@discordjs/builders';
-import {
-  ActionRowBuilder,
-  CacheType,
-  CommandInteraction,
-  ComponentType,
-  GuildMember,
-  StringSelectMenuInteraction,
-  User
-} from 'discord.js';
-import { Player, Poru } from 'poru';
+import capitalize from '@Utils/capitalize';
+import getImageUrl from '@Utils/get-image-from-url';
+import milisecondsToReadable from '@Utils/seconds-to-minutes';
+import { ActionRowBuilder, EmbedBuilder, StringSelectMenuBuilder } from '@discordjs/builders';
+import { GuildQueue, Player, Playlist, QueueRepeatMode, Track } from 'discord-player';
+import { BaseInteraction, CacheType, CommandInteraction, GuildMember, StringSelectMenuInteraction } from 'discord.js';
 import sharp from 'sharp';
-import { EventEmitter } from 'tseep';
-import configs from '../config';
-import capitalize from '../utils/capitalize';
-import getImageUrl from '../utils/get-image-from-url';
-import milisecondsToReadable from '../utils/seconds-to-minutes';
-import CustomPlayer from './custom-player';
-import EchidnaSingleton from './echidna-singleton';
+import StringSelectComponent from '../components/string-select';
+import EchidnaClient from './echidna-client';
 
-export default class MusicPlayer extends Poru {
-  players: Map<string, CustomPlayer> = new Map();
-  methodEmitter = new EventEmitter();
-  constructor() {
-    super(
-      EchidnaSingleton.echidna,
-      [
-        {
-          name: 'local-node',
-          host: configs.lavaLinkHost,
-          port: 2333,
-          password: configs.lavaLinkPassword
-        }
-      ],
-      { library: 'discord.js', customPlayer: CustomPlayer }
-    );
-    this.on('trackStart', (player) => {
-      const channel = EchidnaSingleton.echidna.channels.cache.get(player.textChannel);
-      if (!channel || !channel.isTextBased()) return;
-      return this.nowPlaying(player.guildId);
+export type QueueMetadata = {
+  interaction: BaseInteraction<CacheType>;
+  'image-url-cache': Record<string, any>;
+};
+
+export default class MusicPlayer extends Player {
+  constructor(echidna: EchidnaClient) {
+    super(echidna);
+    this.init();
+  }
+
+  init() {
+    this.loadExtractors();
+    this.listenForEvents();
+  }
+
+  async loadExtractors() {
+    await this.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
+  }
+
+  listenForEvents() {
+    // the arrow function is needed so `newPlaying` doesn't get the event scope
+    this.events.on('playerStart', (queue) => this.nowPlaying(queue));
+    this.on('debug', async (message) => {
+      console.log(`General player debug event: ${message}`);
+    });
+
+    this.events.on('debug', async (queue, message) => {
+      console.log(`Player debug event: ${message} - ${queue.guild.name}`);
     });
   }
 
-  get(guildId: string): CustomPlayer {
-    return super.get(guildId) as CustomPlayer;
-  }
-
-  async play(interaction: CommandInteraction<CacheType>, query: string) {
-    const guildMember = interaction?.member as GuildMember;
-
-    if (!guildMember || !guildMember.voice.channelId || !interaction.guild)
-      return interaction.editReply('No voice channel found');
-    let player = this.players.get(interaction.guildId!);
-    if (!player) {
-      const temp = interaction as any;
-      player = this.createConnection({
-        guildId: temp.guild.id,
-        voiceChannel: temp?.member?.voice?.channelId,
-        textChannel: temp?.channel?.id,
-        deaf: true,
-        mute: false
-      }) as CustomPlayer;
+  async playCmd(interaction: CommandInteraction<CacheType>, query: string) {
+    if (!this.getVoiceChannel(interaction)) {
+      await interaction.editReply('You are not connected to a voice channel!');
+      return;
     }
-    const res = await this.resolve({
-      query,
-      source: 'ytsearch',
-      requester: interaction.member
+
+    const searchResult = await this.search(query, { requestedBy: interaction.user });
+
+    if (!searchResult.hasTracks()) {
+      await interaction.editReply('No tracks found');
+      return;
+    }
+
+    if (searchResult.tracks.length === 1) {
+      const track = searchResult.tracks[0];
+      this.addTrack(track, interaction);
+    }
+
+    const firstFiveTracks = searchResult.tracks.slice(0, 5);
+
+    const customId = interaction.id;
+
+    const stringSelectComponent = new StringSelectComponent({
+      custom_id: `${customId}-music`,
+      interaction,
+      options: firstFiveTracks.map((item, index) => ({
+        label: item.title,
+        value: index.toString()
+      }))
+    })
+      .onFilter((inter) => {
+        return StringSelectComponent.filterByCustomID(inter, customId);
+      })
+      .onAction(async (interaction) => {
+        await this.selectMusic(interaction, firstFiveTracks);
+      })
+      .onError((error) => {
+        console.log(error);
+        interaction.editReply({
+          content: 'No song was selected.',
+          components: []
+        });
+      })
+      .build();
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(stringSelectComponent);
+
+    await interaction.editReply({
+      content: 'Select a song!',
+      components: [row]
     });
-
-    switch (res.loadType) {
-      case 'error':
-        return interaction.editReply('Failed to load track.');
-      case 'empty':
-        return interaction.editReply('No source found!');
-      case 'playlist':
-        for (const track of res.tracks) {
-          track.info.requester = interaction.user;
-          player.queue.add(track);
-        }
-        interaction.editReply(`${res.playlistInfo.name} has been loaded with ${res.tracks.length}`);
-        break;
-      case 'track':
-        {
-          const track = res.tracks[0];
-          track.info.requester = interaction.user;
-          player.queue.add(track);
-          interaction.editReply({
-            content: `${track.info.title} added to the queue.`,
-            components: []
-          });
-        }
-        break;
-      case 'search':
-        {
-          const row = new ActionRowBuilder<SelectMenuBuilder>().setComponents(
-            new SelectMenuBuilder()
-              .setCustomId('music')
-              .setPlaceholder('Click here to select a music')
-              .addOptions(
-                res.tracks.slice(0, 5).map((item) => ({
-                  label: item.info.title,
-                  value: `${item.info.identifier}`
-                }))
-              )
-          );
-          await interaction.editReply({
-            content: 'Select a song!',
-            components: [row]
-          });
-
-          interaction.channel
-            ?.awaitMessageComponent({
-              componentType: ComponentType.StringSelect,
-              time: 60 * 1000,
-              filter: (i) => i.user.id === interaction.user.id
-            })
-            .then(async (inter) => {
-              await this.selectMusic(inter);
-            })
-            .catch(() => {
-              interaction.editReply({
-                content: 'No song was selected.',
-                components: []
-              });
-            });
-        }
-        break;
-      default:
-        break;
-    }
-    if (!player.isPlaying && player.isConnected && player.queue.length) player.play();
   }
 
-  async selectMusic(interaction: StringSelectMenuInteraction<CacheType>) {
+  async nowPlaying(queue: GuildQueue<QueueMetadata>): Promise<void> {
+    const currentTrack = queue.currentTrack;
+    if (!currentTrack) {
+      queue.channel?.send('Currently not playing a track');
+      return;
+    }
+    const { title, requestedBy, durationMS, url, thumbnail } = currentTrack;
+    const minutes = milisecondsToReadable(durationMS);
+
+    const gap = {
+      name: '\n',
+      value: '\n'
+    };
+    const embed = new EmbedBuilder()
+      .setTitle(`${title}`)
+      .setAuthor({ name: 'Now Playing: ' })
+      .setDescription('Player Info: ')
+      .setURL(url ?? '')
+      .addFields(
+        gap,
+        {
+          name: 'Volume',
+          value: `${queue.node.volume}%`,
+          inline: true
+        },
+        {
+          name: 'Loop mode',
+          value: `${capitalize(QueueRepeatMode[queue.repeatMode])}`,
+          inline: true
+        },
+        gap,
+        {
+          name: `Queue (${queue.tracks.size})`,
+          value: `${
+            queue.tracks
+              .map((track) => `[${track.title}](${track.url})`)
+              .slice(0, 5)
+              .join('\n') || 'Empty'
+          }`
+        }
+      );
+    if (requestedBy) {
+      embed.setFooter({
+        text: `Duration: ${minutes} - Requested by: ${requestedBy.displayName}`
+      });
+    }
+    if (thumbnail) {
+      embed.setImage(thumbnail);
+      embed.setColor(await this.getTrackDominantColor(queue));
+    }
+    queue.metadata.interaction.channel?.send({ embeds: [embed] });
+  }
+
+  async selectMusic(interaction: StringSelectMenuInteraction<CacheType>, tracks: Track<unknown>[]) {
     await interaction.deferUpdate();
     if (!interaction.values.length) return interaction.editReply('Nothing selected');
-    const id = interaction.values[0];
 
     try {
-      const res = await this.resolve({
-        query: id,
-        source: 'ytsearch',
-        requester: interaction.member
-      });
-      if (res.loadType === 'empty') return interaction.editReply('No source found');
-      const track = res.tracks[0];
-      const player = this.players.get(interaction.guildId!);
-      if (!player) return interaction.editReply('No player found');
-      track.info.requester = interaction.user;
-      player.queue.add(track);
+      const index = Number(interaction.values[0]);
+      const track = tracks[index];
+      this.addTrack(track, interaction);
       interaction.editReply({
-        content: `${track.info.title} added to the queue.`,
+        content: `${track.title} added to the queue.`,
         components: []
       });
-      if (!player.isPlaying && player.isConnected) player.play();
     } catch (error) {
       console.error(error);
       interaction.editReply('Failed to load track');
     }
   }
 
-  async nowPlaying(guildId: string, interaction?: CommandInteraction<CacheType>) {
-    try {
-      const player = this.players.get(guildId);
-      //!FIX THIS basically here if player doenst exist probably the interaction has not been sent or deferred, need to make some utils for this.
-      if (!player) return interaction?.editReply('No player found');
-      const { currentTrack } = player;
-      if (!currentTrack) return interaction?.editReply('There is no track playing');
-      const { title, uri, artworkUrl, length } = currentTrack.info;
-      const requester = currentTrack.info.requester as User;
-      const minutes = milisecondsToReadable(length);
-      const gap = {
-        name: '\n',
-        value: '\n'
-      };
-      const embed = new EmbedBuilder()
-        .setTitle(`${title}`)
-        .setAuthor({ name: 'Now Playing: ' })
-        .setDescription('Player Info: ')
-        .setFooter({
-          text: `Duration: ${minutes} - Requested by: ${requester.displayName}`
-        })
-        .setURL(uri ?? '')
-        .addFields(
-          gap,
-          {
-            name: 'Volume',
-            value: `${player.volume}%`,
-            inline: true
-          },
-          {
-            name: 'Loop mode',
-            value: `${capitalize(player.loop)}`,
-            inline: true
-          },
-          gap,
-          {
-            name: `Queue (${player.queue.length})`,
-            value: `${
-              player.queue
-                .map((track) => `[${track.info.title}](${track.info.uri})`)
-                .slice(0, 5)
-                .join('\n') || 'Empty'
-            }`
+  getVoiceChannel(interaction: BaseInteraction<CacheType>) {
+    const guildMember = interaction?.member as GuildMember;
+    return guildMember?.voice?.channel;
+  }
+
+  addTrack(track: Track | Track[] | Playlist, interaction: BaseInteraction<CacheType>) {
+    // we can assume guild is not null because music command can only be use from guilds
+    const queue = this.queues.get(interaction.guild!);
+    if (!queue) {
+      const voiceChannel = this.getVoiceChannel(interaction);
+      this.play(voiceChannel!, track, {
+        nodeOptions: {
+          metadata: {
+            interaction: interaction
           }
-        );
-
-      if (artworkUrl) {
-        embed.setImage(artworkUrl);
-        embed.setColor(await this.getTrackDominantColor(player));
-      }
-      if (interaction) {
-        interaction.reply({ embeds: [embed] });
-        return;
-      }
-      const channel = this.getTextChannel(guildId);
-      channel?.send({ embeds: [embed] });
-    } catch (error) {
-      console.error(error);
+        }
+      });
+      return;
     }
+    if (!queue.isPlaying()) return queue.play(track);
+    queue.addTrack(track);
   }
 
-  getTextChannel(guildId: string) {
-    const player = this.players.get(guildId);
-    if (!player) return;
-    const channel = EchidnaSingleton.echidna.channels.cache.get(player.textChannel);
-    if (!channel || !channel.isTextBased()) return;
-    return channel;
-  }
-
-  async getTrackDominantColor(player: Player): Promise<[number, number, number]> {
-    const { currentTrack } = player;
-    if (!currentTrack) throw new Error('No track found');
-    const { artworkUrl: image } = currentTrack.info;
+  async getTrackDominantColor(queue: GuildQueue<QueueMetadata>): Promise<[number, number, number]> {
+    const image = queue.currentTrack?.thumbnail;
     if (!image) return [0, 0, 0];
-    if (!player.data['image-url-cache']) player.data['image-url-cache'] = {};
-    const imageCache = player.data['image-url-cache'] as Record<string, any>;
+    if (!queue.metadata['image-url-cache']) queue.metadata['image-url-cache'] = {};
+    const imageCache = queue.metadata['image-url-cache'] as Record<string, any>;
     const imageDominantColorCache = imageCache[image];
     if (!imageDominantColorCache) {
       const res = await getImageUrl(image);

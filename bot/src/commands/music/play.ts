@@ -1,13 +1,11 @@
 import { CacheType, CommandInteraction } from 'discord.js';
-import { MusicCommand } from './[options]';
+import { MusicCommand } from './[wrapper]';
 
 export default class Play extends MusicCommand {
   constructor() {
     super({
       name: 'play',
       description: 'Play or search a song',
-      voiceChannelOnly: true,
-      shouldDefer: true,
       options: [
         {
           type: 'string',
@@ -20,6 +18,6 @@ export default class Play extends MusicCommand {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    await this.echidna.musicPlayer.play(interaction, this.choices.getString('query', true));
+    await this.echidna.musicPlayer.playCmd(interaction, this.choices.getString('query', true));
   }
 }

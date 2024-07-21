@@ -13,11 +13,9 @@ export default class ReadyEvent extends DiscordEvent {
     });
     this.echidna.user?.setStatus('online');
 
-    this.echidna.musicPlayer.init();
     console.log(`Logged in as ${this.echidna.user?.tag}`);
 
-    const guilds = this.echidna.guilds.cache.map((guild) => guild.id);
     this.echidna.commandManager.loadCommands();
-    this.echidna.commandManager.registerCommands(guilds);
+    this.echidna.commandManager.registerCommands();
   }
 }

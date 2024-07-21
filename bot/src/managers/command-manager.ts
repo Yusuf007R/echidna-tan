@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from '@discordjs/builders';
+import EchidnaSingleton from '@Structures/echidna-singleton';
 import { CacheType, Collection, CommandInteraction, REST, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import configs from '../config';
 import { CmdType, Command, Options } from '../structures/command';
-import EventOptions from '../structures/event-options';
 
 export default class CommandManager {
   commands: Collection<string, { category: string; command: Command }>;
@@ -17,19 +17,11 @@ export default class CommandManager {
   loadCommands() {
     const commandsRootFolder = join(__dirname, '../commands');
     const commands: { [key: string]: Command[] } = {};
-    const options: { [key: string]: EventOptions } = {};
     readdirSync(commandsRootFolder).flatMap((folder) => {
       const commandFolder = join(commandsRootFolder, folder);
       return readdirSync(commandFolder)
-        .filter((file) => file.endsWith('.ts') || file.endsWith('.js'))
+        .filter((file) => !RegExp(/\[.*\]/gm).test(file) && (file.endsWith('.ts') || file.endsWith('.js')))
         .map((file) => {
-          if (file.includes('options')) {
-            const optionsFile = join(commandFolder, file);
-            const Options = require(optionsFile).default;
-            const optObj = new Options();
-            options[commandFolder] = optObj;
-            return;
-          }
           const commandFile = join(commandFolder, file);
           const Command = require(commandFile).default;
           const cmdObj = new Command();
@@ -37,13 +29,7 @@ export default class CommandManager {
           commands[commandFolder].push(cmdObj);
         });
     });
-    Object.keys(options).forEach((key) => {
-      const option = options[key];
-      const command = commands[key];
-      command.forEach((cmd) => {
-        cmd.pushValidator(option.validators);
-      });
-    });
+
     Object.keys(commands).forEach((key) => {
       const command = commands[key];
       command.forEach((cmd) => {
@@ -56,12 +42,13 @@ export default class CommandManager {
     console.log('Commands loaded');
   }
 
-  async registerCommands(guilds: string[]) {
+  async registerCommands() {
+    const guilds = await EchidnaSingleton.echidna.guilds.fetch();
     const slashCommmandsGuild = this.filterMapCmds(['GUILD', 'BOTH']);
     const slashCommmandsDM = this.filterMapCmds(['DM', 'BOTH']);
     try {
-      const requests = guilds.map((guildId) =>
-        new REST().setToken(configs.token).put(Routes.applicationGuildCommands(configs.clientId, guildId), {
+      const requests = guilds.map((guild) =>
+        new REST().setToken(configs.token).put(Routes.applicationGuildCommands(configs.clientId, guild.id), {
           body: slashCommmandsGuild
         })
       );
