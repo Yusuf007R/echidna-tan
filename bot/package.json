@@ -5,13 +5,13 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon ./src/index.ts",
-    "start": "yarn run build && node ./dist/index.js ",
+    "start": "npm run build && node ./dist/index.js ",
     "dev-bun": "bun run --bun  ./src/index.ts",
     "build": "tsc && tsc-alias",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "prettier": "prettier --ignore-path .gitignore \"**/*.+(js|jsx|ts|tsx)\" --write",
-    "fix": "yarn run prettier && yarn run lint",
+    "fix": "npm run prettier && npm run lint",
     "prisma:migrate": "npx prisma migrate dev",
     "postinstall": "patch-package"
   },
