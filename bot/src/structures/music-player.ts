@@ -3,6 +3,7 @@ import getImageUrl from '@Utils/get-image-from-url';
 import milisecondsToReadable from '@Utils/seconds-to-minutes';
 import { ActionRowBuilder, EmbedBuilder, StringSelectMenuBuilder } from '@discordjs/builders';
 import { GuildQueue, Player, Playlist, QueueRepeatMode, Track } from 'discord-player';
+import { YoutubeiExtractor } from 'discord-player-youtubei';
 import { BaseInteraction, CacheType, CommandInteraction, GuildMember, StringSelectMenuInteraction } from 'discord.js';
 import sharp from 'sharp';
 import StringSelectComponent from '../components/string-select';
@@ -25,7 +26,8 @@ export default class MusicPlayer extends Player {
   }
 
   async loadExtractors() {
-    await this.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
+    // await this.extractors.loadDefault();
+    await this.extractors.register(YoutubeiExtractor, {});
   }
 
   listenForEvents() {
@@ -56,14 +58,15 @@ export default class MusicPlayer extends Player {
     if (searchResult.tracks.length === 1) {
       const track = searchResult.tracks[0];
       this.addTrack(track, interaction);
+      return;
     }
 
     const firstFiveTracks = searchResult.tracks.slice(0, 5);
 
-    const customId = interaction.id;
+    const customId = `${interaction.id}-music`;
 
     const stringSelectComponent = new StringSelectComponent({
-      custom_id: `${customId}-music`,
+      custom_id: customId,
       interaction,
       options: firstFiveTracks.map((item, index) => ({
         label: item.title,

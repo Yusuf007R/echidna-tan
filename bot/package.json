@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon ./src/index.ts",
     "start": "yarn run build && node ./dist/index.js ",
+    "dev-bun": "bun run --bun  ./src/index.ts",
     "build": "tsc && tsc-alias",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint \"src/**/*.ts\" --fix",
@@ -28,6 +29,7 @@
     "bufferutil": "^4.0.8",
     "cors": "^2.8.5",
     "discord-player": "^6.6.10",
+    "discord-player-youtubei": "^1.2.0-beta.3",
     "discord.js": "^14.15.2",
     "dotenv": "^16.3.1",
     "ffmpeg-static": "^5.2.0",
@@ -63,5 +65,5 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "5.3.3"
   },
-  "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
+  "packageManager": "npm@10.8.2+sha512.c7f0088c520a46596b85c6f8f1da943400199748a0f7ea8cb8df75469668dc26f6fb3ba26df87e2884a5ebe91557292d0f3db7d0929cdb4f14910c3032ac81fb"
 }
