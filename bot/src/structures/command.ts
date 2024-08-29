@@ -1,4 +1,4 @@
-import { CacheType, CommandInteraction } from 'discord.js';
+import { AutocompleteInteraction, CacheType, CommandInteraction } from 'discord.js';
 import GetChoices from '../utils/get-choices';
 import { CommandValidator } from './command-validator';
 import EchidnaSingleton from './echidna-singleton';
@@ -10,6 +10,7 @@ export type Options =
       description: string;
       required?: boolean;
       choices?: string[];
+      autocomplete?: boolean;
     }
   | {
       type: 'bool';
@@ -83,6 +84,10 @@ export abstract class Command extends EchidnaSingleton {
   }
 
   abstract run(_interaction: CommandInteraction<CacheType>, ..._rest: unknown[]): Promise<void>;
+
+  async HandleAutocomplete(interaction: AutocompleteInteraction<CacheType>) {
+    return Promise.resolve();
+  }
 
   async _run(interaction: CommandInteraction<CacheType>) {
     const validators = this.validators.map((validator) => new validator().validate(interaction));

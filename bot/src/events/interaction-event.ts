@@ -12,6 +12,11 @@ export default class InteractionEvent extends DiscordEvent {
         await this.echidna.commandManager.executeCommand(interaction);
         return;
       }
+
+      if (interaction.isAutocomplete()) {
+        await this.echidna.commandManager.executeAutocomplete(interaction);
+        return;
+      }
     } catch (error: any) {
       if (interaction.isMessageComponent()) {
         interaction.message.reply({

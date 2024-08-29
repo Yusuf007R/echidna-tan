@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from '@discordjs/builders';
 import EchidnaSingleton from '@Structures/echidna-singleton';
-import { CacheType, Collection, CommandInteraction, REST, Routes } from 'discord.js';
+import { AutocompleteInteraction, CacheType, Collection, CommandInteraction, REST, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import configs from '../config';
@@ -64,15 +64,36 @@ export default class CommandManager {
     }
   }
 
-  async executeCommand(interaction: CommandInteraction<CacheType>) {
+  getCmd(interaction: CommandInteraction<CacheType> | AutocompleteInteraction<CacheType>) {
     const cmd = this.commands.get(interaction.commandName);
-    if (!cmd) return interaction.reply('Command not found.');
+    if (!cmd) {
+      // console.log(`Cmd not found ${interaction.commandName}`)
+      // if (interaction.isRepliable()) interaction.reply('Command not found');
+      throw new Error(`Cmd not found ${interaction.commandName}`);
+    }
+    return cmd;
+  }
+
+
+  async executeCommand(interaction: CommandInteraction<CacheType>) {
     try {
+      const cmd = this.getCmd(interaction);
       await cmd.command._run(interaction);
     } catch (error) {
       console.log(error);
       interaction.editReply('An error occured while executing the command.');
     }
+  }
+
+
+  async executeAutocomplete(interaction: AutocompleteInteraction<CacheType>) {
+    try {
+      const cmd = this.getCmd(interaction);
+      await cmd.command.HandleAutocomplete(interaction);
+    } catch (error) {
+      interaction?.channel?.send('An error occured while executing the command.');
+    }
+
   }
 
   filterMapCmds(filters: CmdType[]) {
@@ -98,6 +119,7 @@ export default class CommandManager {
             if (element.choices?.length) {
               option.addChoices(...element.choices.map((e) => ({ name: e, value: e })));
             }
+            if (element.autocomplete) option.setAutocomplete(true);
             return option;
           });
           break;
