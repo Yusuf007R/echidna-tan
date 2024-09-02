@@ -91,7 +91,8 @@ export default class CommandManager {
       const cmd = this.getCmd(interaction);
       await cmd.command.HandleAutocomplete(interaction);
     } catch (error) {
-      interaction?.channel?.send('An error occured while executing the command.');
+      console.log(error);
+      interaction?.channel?.send('An error occured while executing the command autocomplete.');
     }
 
   }
