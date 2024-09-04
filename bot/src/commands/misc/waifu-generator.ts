@@ -26,22 +26,28 @@ export default class WaifuGeneratorCommand extends Command {
     );
     const message = await interaction.editReply({
       embeds: [embed],
-      files: [attachment]
+      files: [attachment],
+      options: {
+        fetchReply: true
+      }
     });
 
-    await message.react('⬆️');
-    const reactions = await message.awaitReactions({
-      filter: (reaction, user) => {
-        return reaction.emoji.name === '⬆️' && user.id === interaction.user.id && !user.bot;
-      },
-      time: 2400000,
-      max: 1,
-      errors: ['time']
-    });
+    const channel = message.channel || (await message.client.channels.fetch(message.channelId));
+    if (message && channel) {
+      await message.react('⬆️');
+      const reactions = await message.awaitReactions({
+        filter: (reaction, user) => {
+          return reaction.emoji.name === '⬆️' && user.id === interaction.user.id && !user.bot;
+        },
+        time: 2400000,
+        max: 1,
+        errors: ['time']
+      });
 
-    if (reactions.first()?.emoji.name === '⬆️') {
-      await this.echidna.waifuGenerator.upscaleImage(message, info);
-      await message.reactions.cache.find((r) => r.emoji.name === '⬆️')?.remove();
+      if (reactions.first()?.emoji.name === '⬆️') {
+        await this.echidna.waifuGenerator.upscaleImage(message, info);
+        await message.reactions.cache.find((r) => r.emoji.name === '⬆️')?.remove();
+      }
     }
   }
 }
