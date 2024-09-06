@@ -1,6 +1,6 @@
 
 import Anime from '@Structures/anime';
-import { CacheType, CommandInteraction } from 'discord.js';
+import { AutocompleteInteraction, CacheType, CommandInteraction } from 'discord.js';
 import { Command } from '../../structures/command';
 
 export default class SearchAnimeCommand extends Command {
@@ -9,17 +9,37 @@ export default class SearchAnimeCommand extends Command {
       name: 'search-anime',
       description: 'Search for an anime',
       cmdType: 'BOTH',
-      options: []
+      options: [{
+        name: 'anime-name',
+        autocomplete: true,
+        description: "Name of the anime you want to search for",
+        type: "string",
+        required: true
+      }]
     });
+  }
+
+  async HandleAutocomplete(interaction: AutocompleteInteraction<CacheType>): Promise<void> {
+    const focusedValue = interaction.options.getFocused();
+    const animeList = await Anime.searchForAnimeByTerm(focusedValue);
+    await interaction.respond(
+			animeList.map(anime => ({ name: anime.title.default, value: anime.id.toString() })),
+		);
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
     await interaction.deferReply();
 
     try {
-      const anime = await Anime.getRandomAnime();
-      const embed = Anime.getAnimeEmbed(anime);
+      const animeID = this.choices.getString("anime-name", true);
 
+      const anime = await Anime.getAnimeByID(animeID);
+      
+      if(!anime){
+        throw new Error("Internal Error");
+      }
+      const embed = Anime.getAnimeEmbed(anime);
+      
       await interaction.editReply({ embeds: [embed] });
     } catch (error: any) {
       console.error('Error fetching random anime:', error);

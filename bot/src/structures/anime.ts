@@ -4,10 +4,18 @@ import { APIEmbedField, EmbedBuilder, RestOrArray } from 'discord.js';
 
 export default class AnimeManager {
   static animeClient = new Jikan.Client();
-  constructor() {}
+  constructor() { }
 
   static async getRandomAnime() {
     return this.animeClient.anime.random();
+  }
+
+  static async searchForAnimeByTerm(term: string, maxCount = 8) {
+    return this.animeClient.anime.search(term, undefined, undefined, maxCount);
+  }
+
+  static async getAnimeByID(id: string | number) {
+    return this.animeClient.anime.get(Number(id));
   }
 
   static getAnimeEmbed(animeData: Jikan.Anime) {
