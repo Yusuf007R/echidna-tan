@@ -1,7 +1,7 @@
 import { ActivityType } from 'discord.js';
 import { DiscordEvent } from '../structures/discord-events';
 
-export default class ReadyEvent extends DiscordEvent {
+export default class ReadyEvent extends DiscordEvent<'ready'> {
   constructor() {
     super({ eventName: 'ready', eventType: 'once' });
   }

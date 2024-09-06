@@ -1,4 +1,4 @@
-import { Client, Collection, GatewayIntentBits } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js';
 
 import configs from '../config';
 import CommandManager from '../managers/command-manager';
@@ -31,8 +31,11 @@ export default class EchidnaClient extends Client {
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.DirectMessages
-      ]
+        GatewayIntentBits.DirectMessages, 
+        GatewayIntentBits.MessageContent, 
+        GatewayIntentBits.GuildMessages
+      ],
+      partials:[Partials.Channel]
     });
     this.init();
   }

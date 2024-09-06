@@ -85,7 +85,7 @@ export abstract class Command extends EchidnaSingleton {
 
   abstract run(_interaction: CommandInteraction<CacheType>, ..._rest: unknown[]): Promise<void>;
 
-  async HandleAutocomplete(interaction: AutocompleteInteraction<CacheType>) {
+  async HandleAutocomplete(_interaction: AutocompleteInteraction<CacheType>) {
     return Promise.resolve();
   }
 
