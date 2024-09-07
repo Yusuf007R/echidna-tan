@@ -7,8 +7,7 @@ export default class RandomAnimeCommand extends Command {
     super({
       name: 'random-anime',
       description: 'Get a random anime recommendation',
-      cmdType: 'BOTH',
-      options: []
+      cmdType: 'BOTH'
     });
   }
 

@@ -1,6 +1,6 @@
 import { DiscordEvent } from '../structures/discord-events';
 
-export default class ErrorEvent extends DiscordEvent {
+export default class ErrorEvent extends DiscordEvent<'error'> {
   constructor() {
     super({ eventName: 'error' });
   }

@@ -1,26 +1,28 @@
+import { OptionsBuilder } from '@Utils/options-builder';
 import { CacheType, CommandInteraction } from 'discord.js';
 import { MusicCommand } from './[wrapper]';
 
-export default class Seek extends MusicCommand {
+const options = new OptionsBuilder()
+  .addIntOption({
+    description: 'The time to seek to.',
+    name: 'time',
+    required: true,
+    min: 0
+  })
+  .build();
+
+export default class Seek extends MusicCommand<typeof options> {
   constructor() {
     super({
       name: 'seek',
       description: 'Seek to a specific time in the current song.',
 
-      options: [
-        {
-          type: 'int',
-          description: 'The time to seek to.',
-          name: 'time',
-          required: true,
-          min: 0
-        }
-      ]
+      options
     });
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    const seekTime = this.choices.getNumber('time', true);
+    const seekTime = this.options.time;
     this.player?.node.seek(seekTime);
     await interaction.reply({ content: `Seeked to \`${seekTime}\`` });
   }

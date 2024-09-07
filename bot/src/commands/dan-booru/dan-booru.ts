@@ -1,37 +1,37 @@
+import { OptionsBuilder } from '@Utils/options-builder';
 import { CacheType, CommandInteraction } from 'discord.js';
 import { Command } from '../../structures/command';
 
-export default class DanbooruCommand extends Command {
+const options = new OptionsBuilder()
+  .addStringOption({
+    name: 'tags',
+    description: 'Tags to search for'
+  })
+  .addIntOption({
+    name: 'post-id',
+    description: 'Post ID to search for'
+  })
+  .addBoolOption({
+    name: 'nsfw',
+    description: 'Whether to search for NSFW posts'
+  })
+  .build();
+
+export default class DanbooruCommand extends Command<typeof options> {
   constructor() {
     super({
       name: 'dan-booru',
       description: 'Dan booru commands',
       cmdType: 'BOTH',
-      options: [
-        {
-          type: 'string',
-          name: 'tags',
-          description: 'Tags to search for'
-        },
-        {
-          type: 'int',
-          name: 'post-id',
-          description: 'Post ID to search for'
-        },
-        {
-          type: 'bool',
-          name: 'nsfw',
-          description: 'Whether to search for NSFW posts'
-        }
-      ]
+      options
     });
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
     await interaction.deferReply();
-    const tags = this.choices.getString('tags');
-    const postId = this.choices.getNumber('post-id');
-    const nsfw = this.choices.getBoolean('nsfw');
+    const tags = this.options.tags;
+    const postId = this.options['post-id'];
+    const nsfw = this.options.nsfw;
     if (nsfw && !this.echidna.danbooru.isNsfwAlowed(interaction)) {
       interaction.editReply('NSFW is not allowed in this channel.');
       return;

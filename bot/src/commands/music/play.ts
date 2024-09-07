@@ -1,23 +1,25 @@
+import { OptionsBuilder } from '@Utils/options-builder';
 import { CacheType, CommandInteraction } from 'discord.js';
 import { MusicCommand } from './[wrapper]';
 
-export default class Play extends MusicCommand {
+const options = new OptionsBuilder()
+  .addStringOption({
+    name: 'query',
+    description: 'query to search or url to play',
+    required: true
+  })
+  .build();
+
+export default class Play extends MusicCommand<typeof options> {
   constructor() {
     super({
       name: 'play',
       description: 'Play or search a song',
-      options: [
-        {
-          type: 'string',
-          name: 'query',
-          description: 'query to search or url to play',
-          required: true
-        }
-      ]
+      options
     });
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    await this.echidna.musicPlayer.playCmd(interaction, this.choices.getString('query', true));
+    await this.echidna.musicPlayer.playCmd(interaction, this.options.query);
   }
 }

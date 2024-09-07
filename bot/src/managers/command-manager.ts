@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from '@discordjs/builders';
 import EchidnaSingleton from '@Structures/echidna-singleton';
+import { Option } from '@Utils/options-builder';
 import { AutocompleteInteraction, CacheType, Collection, CommandInteraction, REST, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import configs from '../config';
-import { CmdType, Command, Options } from '../structures/command';
+import { CmdType, Command } from '../structures/command';
 
 export default class CommandManager {
   commands: Collection<string, { category: string; command: Command }>;
@@ -74,7 +75,6 @@ export default class CommandManager {
     return cmd;
   }
 
-
   async executeCommand(interaction: CommandInteraction<CacheType>) {
     try {
       const cmd = this.getCmd(interaction);
@@ -85,16 +85,14 @@ export default class CommandManager {
     }
   }
 
-
   async executeAutocomplete(interaction: AutocompleteInteraction<CacheType>) {
     try {
       const cmd = this.getCmd(interaction);
-      await cmd.command.HandleAutocomplete(interaction);
+      await cmd.command.handleAutocomplete(interaction);
     } catch (error) {
       console.log(error);
       interaction?.channel?.send('An error occured while executing the command autocomplete.');
     }
-
   }
 
   filterMapCmds(filters: CmdType[]) {
@@ -103,14 +101,14 @@ export default class CommandManager {
       .map(({ command }) => {
         const slash = new SlashCommandBuilder().setName(command.name).setDescription(command.description);
 
-        if (command.options) {
-          this.optionBuilder(command.options, slash);
+        if (command._optionsArray) {
+          this.optionBuilder(command._optionsArray, slash);
         }
         return slash.toJSON();
       });
   }
 
-  async optionBuilder(options: Options[], slash: SlashCommandBuilder | SlashCommandSubcommandBuilder) {
+  async optionBuilder(options: Option[], slash: SlashCommandBuilder | SlashCommandSubcommandBuilder) {
     options.forEach((element) => {
       switch (element.type) {
         case 'string':

@@ -1,91 +1,61 @@
+import { Option } from '@Utils/options-builder';
 import { AutocompleteInteraction, CacheType, CommandInteraction } from 'discord.js';
-import GetChoices from '../utils/get-choices';
+import GetOptions, { OptionsArrayToObject } from '../utils/get-options';
 import { CommandValidator } from './command-validator';
 import EchidnaSingleton from './echidna-singleton';
 
-export type Options =
-  | {
-      type: 'string';
-      name: string;
-      description: string;
-      required?: boolean;
-      choices?: string[];
-      autocomplete?: boolean;
-    }
-  | {
-      type: 'bool';
-      name: string;
-      description: string;
-      required?: boolean;
-    }
-  | {
-      type: 'int';
-      name: string;
-      description: string;
-      required?: boolean;
-      min?: number;
-      max?: number;
-    }
-  | {
-      type: 'sub-command';
-      name: string;
-      description: string;
-      options?: Options[];
-    }
-  | {
-      type: 'user';
-      name: string;
-      description: string;
-      required?: boolean;
-    }
-  | {
-      type: 'attachment';
-      name: string;
-      description: string;
-      required?: boolean;
-    };
-
 export type CmdType = 'GUILD' | 'DM' | 'BOTH';
 
-export type commandConfigs = {
-  name: string;
-  description: string;
-  options?: Options[];
-  shouldDefer?: boolean;
-  validators?: Array<new () => CommandValidator>;
-  cmdType?: CmdType;
-};
+export type commandConfigs<O extends Option[] | undefined = undefined> = O extends undefined
+  ? {
+      name: string;
+      description: string;
+      shouldDefer?: boolean;
+      validators?: Array<new () => CommandValidator>;
+      cmdType?: CmdType;
+    }
+  : {
+      name: string;
+      description: string;
+      options: O;
+      shouldDefer?: boolean;
+      validators?: Array<new () => CommandValidator>;
+      cmdType?: CmdType;
+    };
 
-export abstract class Command extends EchidnaSingleton {
+export abstract class Command<O extends Option[] | undefined = undefined> extends EchidnaSingleton {
   readonly name: string;
 
   readonly description: string;
 
-  readonly options?: Options[];
+  readonly _optionsArray: O | null = null;
 
   readonly shouldDefer?: boolean;
 
   readonly validators: Array<new () => CommandValidator>;
   readonly cmdType!: CmdType;
-  private _choices!: GetChoices;
+  private _getOptionsInstance;
 
-  get choices() {
-    return this._choices;
+  get options(): OptionsArrayToObject<O> {
+    return this._getOptionsInstance.options as any;
   }
 
-  constructor(readonly configs: commandConfigs) {
+  constructor(readonly configs: commandConfigs<O>) {
     super();
     this.name = configs.name;
     this.description = configs.description;
-    this.options = configs.options;
+
+    //@ts-expect-error this is fine typescript is just being a crybaby
+    this._optionsArray = configs.options || null;
     this.shouldDefer = configs.shouldDefer;
     this.validators = configs.validators || [];
     this.cmdType = configs.cmdType || 'GUILD';
+    this._getOptionsInstance = new GetOptions(this._optionsArray ?? []);
   }
 
   abstract run(_interaction: CommandInteraction<CacheType>, ..._rest: unknown[]): Promise<void>;
 
-  async HandleAutocomplete(interaction: AutocompleteInteraction<CacheType>) {
+  async handleAutocomplete(_interaction: AutocompleteInteraction<CacheType>) {
     return Promise.resolve();
   }
 
@@ -94,8 +64,8 @@ export abstract class Command extends EchidnaSingleton {
 
     if (!(await Promise.all(validators)).every((validator) => validator)) return;
     if (this.shouldDefer) await interaction.deferReply();
-    this._choices = new GetChoices(interaction.options);
-    await this.run(interaction, this.choices);
+    this._getOptionsInstance.loadFromCommandInteraction(interaction);
+    await this.run(interaction);
     return;
   }
 }

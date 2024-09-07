@@ -9,7 +9,6 @@ import {
   User
 } from 'discord.js';
 
-import GetChoices from '@Utils/get-choices';
 import wait from '@Utils/wait';
 import ButtonComponent from '../components/button';
 import TicTacToeUtils from '../utils/tic-tac-toe-utils';
@@ -91,11 +90,13 @@ export default class TicTacToe extends EchidnaSingleton {
     this.resetTimeout();
   }
 
-  static async initGame(interaction: CommandInteraction<CacheType>, id: string) {
+  static async initGame(
+    interaction: CommandInteraction<CacheType>,
+    id: string,
+    player2: User | undefined,
+    ultimate: boolean | undefined
+  ) {
     const player1 = interaction.user;
-    const choices = new GetChoices(interaction.options);
-    const player2 = await choices.getUser('user', false);
-    const ultimate = choices.getBoolean('ultimate');
 
     await interaction.deferReply({ ephemeral: false });
     if (player2) {
