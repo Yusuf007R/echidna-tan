@@ -9,9 +9,9 @@ import {
   User
 } from 'discord.js';
 
+import ButtonComponent from '@Components/button';
+import TicTacToeUtils from '@Utils/tic-tac-toe-utils';
 import wait from '@Utils/wait';
-import ButtonComponent from '../components/button';
-import TicTacToeUtils from '../utils/tic-tac-toe-utils';
 import EchidnaSingleton from './echidna-singleton';
 
 export enum TurnEnum {

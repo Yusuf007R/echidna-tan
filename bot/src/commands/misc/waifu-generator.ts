@@ -1,7 +1,7 @@
 import WaifuGenerator from '@AiStructures/waifu-generator';
+import { Command } from '@Structures/command';
 import { OptionsBuilder } from '@Utils/options-builder';
 import { CacheType, CommandInteraction } from 'discord.js';
-import { Command } from '../../structures/command';
 
 const options = new OptionsBuilder()
   .addStringOption({

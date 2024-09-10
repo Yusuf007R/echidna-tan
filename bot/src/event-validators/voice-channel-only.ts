@@ -1,5 +1,5 @@
+import { CommandValidator, CommandValidatorNext } from '@Structures/command-validator';
 import { CacheType, GuildMember, Interaction } from 'discord.js';
-import { CommandValidator, CommandValidatorNext } from '../structures/command-validator';
 
 export default class VoiceChannelOnly extends CommandValidator {
   constructor() {

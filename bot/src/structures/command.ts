@@ -1,6 +1,6 @@
+import GetOptions, { OptionsArrayToObject } from '@Utils/get-options';
 import { Option } from '@Utils/options-builder';
 import { AutocompleteInteraction, CacheType, CommandInteraction } from 'discord.js';
-import GetOptions, { OptionsArrayToObject } from '../utils/get-options';
 import { CommandValidator } from './command-validator';
 import EchidnaSingleton from './echidna-singleton';
 

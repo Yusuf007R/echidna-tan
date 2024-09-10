@@ -1,5 +1,5 @@
+import { DiscordEvent } from '@Structures/discord-events';
 import { CacheType, Interaction } from 'discord.js';
-import { DiscordEvent } from '../structures/discord-events';
 
 export default class InteractionEvent extends DiscordEvent<'interactionCreate'> {
   constructor() {

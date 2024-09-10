@@ -1,9 +1,9 @@
 import { CacheType, CommandInteraction } from 'discord.js';
 
+import { Command } from '@Structures/command';
+import TicTacToe from '@Structures/tic-tac-toe';
 import { OptionsBuilder } from '@Utils/options-builder';
 import { randomBytes } from 'crypto';
-import { Command } from '../../structures/command';
-import TicTacToe from '../../structures/tic-tac-toe';
 
 const options = new OptionsBuilder()
   .addUserOption({

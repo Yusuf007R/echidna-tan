@@ -2,8 +2,8 @@ import config from '@Configs';
 import { OpenRouterModel } from '@Interfaces/open-router-model';
 import { Message, MessageType, TextChannel, ThreadChannel, User } from 'discord.js';
 
+import CacheManager from '@Structures/cache-manager';
 import OpenAI from 'openai';
-import CacheManager from '../../structures/cache-manager';
 
 type messageHistoryType = {
   author: 'user' | 'assistant' | 'system';

@@ -1,3 +1,4 @@
+import StringSelectComponent from '@Components/string-select';
 import capitalize from '@Utils/capitalize';
 import getImageUrl from '@Utils/get-image-from-url';
 import milisecondsToReadable from '@Utils/seconds-to-minutes';
@@ -6,7 +7,6 @@ import { GuildQueue, Player, Playlist, QueueRepeatMode, Track } from 'discord-pl
 import { YoutubeiExtractor } from 'discord-player-youtubei';
 import { BaseInteraction, CacheType, CommandInteraction, GuildMember, StringSelectMenuInteraction } from 'discord.js';
 import sharp from 'sharp';
-import StringSelectComponent from '../components/string-select';
 import EchidnaClient from './echidna-client';
 
 export type QueueMetadata = {

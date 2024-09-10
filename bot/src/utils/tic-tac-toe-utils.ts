@@ -1,4 +1,4 @@
-import { TableType, TurnEnum } from '../structures/tic-tac-toe';
+import { TableType, TurnEnum } from '@Structures/tic-tac-toe';
 
 export const WIN_COMBINATIONS = [
   [0, 1, 2],

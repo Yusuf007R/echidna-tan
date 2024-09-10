@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
+import configs from '@Configs';
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from '@discordjs/builders';
+import { CmdType, Command } from '@Structures/command';
 import EchidnaSingleton from '@Structures/echidna-singleton';
 import { Option } from '@Utils/options-builder';
 import { AutocompleteInteraction, CacheType, Collection, CommandInteraction, REST, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import { join } from 'path';
-import configs from '../config';
-import { CmdType, Command } from '../structures/command';
 
 export default class CommandManager {
   commands: Collection<string, { category: string; command: Command }>;

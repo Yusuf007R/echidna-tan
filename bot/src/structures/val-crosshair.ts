@@ -1,9 +1,9 @@
 import { EmbedBuilder } from '@discordjs/builders';
+import { baseAPI } from '@Utils/request';
 import { AttachmentBuilder, CacheType, CommandInteraction } from 'discord.js';
 import { readFileSync } from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import { baseAPI } from '../utils/request';
 
 export default class ValCrosshair {
   constructor() {}

@@ -1,7 +1,7 @@
+import { Command } from '@Structures/command';
+import ValCrosshair from '@Structures/val-crosshair';
 import { OptionsBuilder } from '@Utils/options-builder';
 import { CacheType, CommandInteraction } from 'discord.js';
-import { Command } from '../../structures/command';
-import ValCrosshair from '../../structures/val-crosshair';
 
 const options = new OptionsBuilder()
   .addStringOption({

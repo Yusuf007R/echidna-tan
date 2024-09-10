@@ -1,5 +1,5 @@
+import config from '@Configs';
 import { create } from 'apisauce';
-import config from '../config';
 
 const danBooruAPI = create({
   baseURL: config.danbooruEndpoint

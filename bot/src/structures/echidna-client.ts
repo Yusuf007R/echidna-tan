@@ -1,8 +1,8 @@
 import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js';
 
-import configs from '../config';
-import CommandManager from '../managers/command-manager';
-import EventManager from '../managers/event-manager';
+import configs from '@Configs';
+import CommandManager from '@Managers/command-manager';
+import EventManager from '@Managers/event-manager';
 import EchidnaSingleton from './echidna-singleton';
 import MusicPlayer from './music-player';
 import TicTacToe from './tic-tac-toe';

@@ -31,7 +31,10 @@
       "@Interfaces/*": ["./src/interfaces/*"],
       "@Commands/*": ["./src/commands/*"],
       "@Events/*": ["./src/events/*"],
+      "@EventsValidators/*": ["./src/event-validators/*"],
+      "@Components/*": ["./src/components/*"],
       "@Utils/*": ["./src/utils/*"],
+      "@Managers/*": ["./src/managers/*"],
       "@Structures/*": ["./src/structures/*"],
       "@AiStructures/*": ["./src/ai-stuff/structures/*"]
     }
