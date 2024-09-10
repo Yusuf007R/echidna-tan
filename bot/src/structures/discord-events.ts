@@ -8,7 +8,7 @@ export type discordEventConfig<Event extends keyof ClientEvents> = {
 
 export type eventType = 'once' | 'on';
 
-export abstract class DiscordEvent<Event extends keyof ClientEvents> extends EchidnaSingleton {
+export abstract class DiscordEvent<Event extends keyof ClientEvents = never> extends EchidnaSingleton {
   eventName: Event;
   eventType: eventType;
 

@@ -23,7 +23,7 @@ export type commandConfigs<O extends Option[] | undefined = undefined> = O exten
       cmdType?: CmdType;
     };
 
-export abstract class Command<O extends Option[] | undefined = undefined> extends EchidnaSingleton {
+export abstract class Command<O extends Option[] | undefined = undefined, E = any> extends EchidnaSingleton {
   readonly name: string;
 
   readonly description: string;
@@ -55,10 +55,11 @@ export abstract class Command<O extends Option[] | undefined = undefined> extend
 
   abstract run(_interaction: CommandInteraction<CacheType>, ..._rest: unknown[]): Promise<void>;
 
-  async handleAutocomplete(_interaction: AutocompleteInteraction<CacheType>) {
-    return Promise.resolve();
+  async handleAutocomplete(_interaction: AutocompleteInteraction<CacheType>): Promise<E> {
+    return Promise.resolve() as E;
   }
 
+  // async _handleAutocomplete(_interaction: AutocompleteInteraction<CacheType>): Promise<E> {}
   async _run(interaction: CommandInteraction<CacheType>) {
     const validators = this.validators.map((validator) => new validator().validate(interaction));
 

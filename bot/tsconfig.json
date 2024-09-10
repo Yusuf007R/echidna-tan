@@ -33,11 +33,7 @@
       "@Events/*": ["./src/events/*"],
       "@Utils/*": ["./src/utils/*"],
       "@Structures/*": ["./src/structures/*"],
-      "@Api/*": ["./src/api/*"],
-      "@ApiUtils/*": ["./src/api/utils/*"],
-      "@ApiInterfaces/*": ["./src/api/interfaces/*"],
-      "@ApiRouters/*": ["./src/api/routers/*"],
-      "@ApiMiddlewares/*": ["./src/api/middlewares/*"]
+      "@AiStructures/*": ["./src/ai-stuff/structures/*"]
     }
   }
 }

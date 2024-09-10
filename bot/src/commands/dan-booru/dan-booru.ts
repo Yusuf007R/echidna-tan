@@ -1,6 +1,7 @@
+import { Command } from '@Structures/command';
+import DanBooru from '@Structures/dan-booru';
 import { OptionsBuilder } from '@Utils/options-builder';
 import { CacheType, CommandInteraction } from 'discord.js';
-import { Command } from '../../structures/command';
 
 const options = new OptionsBuilder()
   .addStringOption({
@@ -28,26 +29,27 @@ export default class DanbooruCommand extends Command<typeof options> {
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
+    const danbooru = new DanBooru();
     await interaction.deferReply();
     const tags = this.options.tags;
     const postId = this.options['post-id'];
     const nsfw = this.options.nsfw;
-    if (nsfw && !this.echidna.danbooru.isNsfwAlowed(interaction)) {
+    if (nsfw && !danbooru.isNsfwAlowed(interaction)) {
       interaction.editReply('NSFW is not allowed in this channel.');
       return;
     }
     try {
       if (tags) {
-        const post = await this.echidna.danbooru.querySinglePost({
+        const post = await danbooru.querySinglePost({
           tags: tags.split(' '),
           nsfw: !!nsfw
         });
-        this.echidna.danbooru.sendMessage(interaction, post);
+        danbooru.sendMessage(interaction, post);
         return;
       }
       if (postId) {
-        const post = await this.echidna.danbooru.getPostById(postId);
-        this.echidna.danbooru.sendMessage(interaction, post);
+        const post = await danbooru.getPostById(postId);
+        danbooru.sendMessage(interaction, post);
         return;
       }
     } catch (error: any) {
@@ -55,10 +57,10 @@ export default class DanbooruCommand extends Command<typeof options> {
       console.log(error);
       return;
     }
-    const post = await this.echidna.danbooru.querySinglePost({
+    const post = await danbooru.querySinglePost({
       tags: ['order:rank'],
       nsfw: !!nsfw
     });
-    await this.echidna.danbooru.sendMessage(interaction, post);
+    await danbooru.sendMessage(interaction, post);
   }
 }

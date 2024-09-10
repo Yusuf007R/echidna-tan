@@ -1,3 +1,4 @@
+import WaifuGenerator from '@AiStructures/waifu-generator';
 import { OptionsBuilder } from '@Utils/options-builder';
 import { CacheType, CommandInteraction } from 'discord.js';
 import { Command } from '../../structures/command';
@@ -22,10 +23,9 @@ export default class WaifuGeneratorCommand extends Command<typeof options> {
 
   async run(interaction: CommandInteraction<CacheType>) {
     const prompt = this.options.prompt;
-    const config = this.echidna.waifuGenerator.getConfigs({ prompt });
-    const { embed, attachment, info } = this.echidna.waifuGenerator.makeEmbed(
-      await this.echidna.waifuGenerator.getImage(config)
-    );
+    const waifuGenerator = new WaifuGenerator();
+    const config = waifuGenerator.getConfigs({ prompt });
+    const { embed, attachment, info } = waifuGenerator.makeEmbed(await waifuGenerator.getImage(config));
     const message = await interaction.editReply({
       embeds: [embed],
       files: [attachment],
@@ -47,7 +47,7 @@ export default class WaifuGeneratorCommand extends Command<typeof options> {
       });
 
       if (reactions.first()?.emoji.name === '⬆️') {
-        await this.echidna.waifuGenerator.upscaleImage(message, info);
+        await waifuGenerator.upscaleImage(message, info);
         await message.reactions.cache.find((r) => r.emoji.name === '⬆️')?.remove();
       }
     }

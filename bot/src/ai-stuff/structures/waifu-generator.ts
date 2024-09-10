@@ -1,9 +1,9 @@
 import { EmbedBuilder } from '@discordjs/builders';
 import { AttachmentBuilder, Message } from 'discord.js';
 
-import { RunpodRes, Txt2img } from '../interfaces/waifu-generator';
-import { waifuGeneratorAPI } from '../utils/request';
-import milisecondsToReadable from '../utils/seconds-to-minutes';
+import { RunpodRes, Txt2img } from '@Interfaces/waifu-generator';
+import { waifuGeneratorAPI } from '@Utils/request';
+import milisecondsToReadable from '@Utils/seconds-to-minutes';
 
 export type getImageProps = {
   prompt: string;

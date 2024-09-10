@@ -29,6 +29,9 @@ if (!jwtSecretRefresh) throw new Error('No jwt secret found');
 const openRouterApiKey = process.env.OPENROUTER_API_KEY;
 if (!openRouterApiKey) throw new Error('No openRouter api key found');
 
+const openRouterURL = process.env.OPENROUTER_URL;
+if (!openRouterApiKey) throw new Error('No OpenRouter URL found');
+
 const config = {
   token,
   guildId,
@@ -39,6 +42,7 @@ const config = {
   danbooruEndpoint,
   jwtSecretAccess,
   jwtSecretRefresh,
-  openRouterApiKey
+  openRouterApiKey,
+  openRouterURL
 };
 export default config;

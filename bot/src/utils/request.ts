@@ -23,7 +23,8 @@ waifuGeneratorAPI.axiosInstance.interceptors.request.use((config) => {
     input: {
       method,
       endpoint: url,
-      data: config.data
+      data: config.data,
+      timeout: 60
     }
   };
 

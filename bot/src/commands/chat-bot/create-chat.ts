@@ -1,40 +1,60 @@
-import ChatBot from '@Structures/chat-bot';
+import ChatBot from '@AiStructures/chat-bot';
 import { Command } from '@Structures/command';
-import { CacheType, ChannelType, CommandInteraction } from 'discord.js';
+import { OptionsBuilder } from '@Utils/options-builder';
+import { AutocompleteInteraction, CacheType, ChannelType, ChatInputCommandInteraction } from 'discord.js';
 
-// const options = new OptionsBuilder()
-//   .addStringOption({
-//     name: 'mode',
-//     description: 'Name of the anime you want to search for',
-//     autocomplete: true,
-//     required: true
-//   })
-//   .build();
+const options = new OptionsBuilder()
+  .addStringOption({
+    name: 'model',
+    description: 'Name of the model',
+    required: false,
+    autocomplete: true
+  })
+  .build();
 
-export default class CreateChat extends Command {
+export default class CreateChatCommand extends Command<typeof options> {
   constructor() {
     super({
       name: 'create-chat',
       description: 'Create a chat instance with a bot',
       cmdType: 'BOTH',
-      shouldDefer: true
+      shouldDefer: true,
+      options
     });
   }
 
-  // async handleAutocomplete(interaction: AutocompleteInteraction<CacheType>): Promise<void> {
-  //   const focusedValue = interaction.options
-  //   const animeList = await Anime.searchForAnimeByTerm(focusedValue);
-  //   await interaction.respond(animeList.map((anime) => ({ name: anime.title.default, value: anime.id.toString() })));
-  // }
+  async handleAutocomplete(interaction: AutocompleteInteraction<CacheType>) {
+    const focusedValue = interaction.options.getFocused();
+    const modelList = await ChatBot.getModelList();
 
-  async run(interaction: CommandInteraction<CacheType>) {
+    const filtered = modelList
+      .filter((model) => {
+        if (!focusedValue) return true;
+        return JSON.stringify(model).toLowerCase().includes(focusedValue.toLowerCase());
+      })
+      .slice(0, 8);
+
+    try {
+      await interaction.respond(
+        filtered.map((model) => ({
+          name: model.name,
+          value: model.id
+        }))
+      );
+    } catch (error) {
+      console.log(error);
+    }
+    return filtered;
+  }
+
+  async run(interaction: ChatInputCommandInteraction<CacheType>) {
     const channel = interaction.channel;
     if (channel?.type !== ChannelType.GuildText) return;
     const thread = await channel.threads.create({
-      name: 'Chat'
+      name: this.options.model || 'chat'
     });
 
-    const chatbot = new ChatBot(thread.id, 'anthropic/claude-3.5-sonnet', interaction.user);
+    const chatbot = new ChatBot(thread, this.options.model ?? 'sao10k/l3.1-euryale-70b', interaction.user);
     const collector = thread.createMessageCollector();
 
     collector.on('collect', (m) => {

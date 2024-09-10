@@ -101,8 +101,8 @@ export default class CommandManager {
       .map(({ command }) => {
         const slash = new SlashCommandBuilder().setName(command.name).setDescription(command.description);
 
-        if (command._optionsArray) {
-          this.optionBuilder(command._optionsArray, slash);
+        if ((command._optionsArray as any)?.length) {
+          this.optionBuilder(command._optionsArray as any, slash);
         }
         return slash.toJSON();
       });
@@ -118,6 +118,7 @@ export default class CommandManager {
             if (element.choices?.length) {
               option.addChoices(...element.choices.map((e) => ({ name: e, value: e })));
             }
+
             if (element.autocomplete) option.setAutocomplete(true);
             return option;
           });

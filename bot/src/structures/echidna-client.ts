@@ -3,11 +3,9 @@ import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js';
 import configs from '../config';
 import CommandManager from '../managers/command-manager';
 import EventManager from '../managers/event-manager';
-import DanBooru from './dan-booru';
 import EchidnaSingleton from './echidna-singleton';
 import MusicPlayer from './music-player';
 import TicTacToe from './tic-tac-toe';
-import WaifuGenerator from './waifu-generator';
 
 export default class EchidnaClient extends Client {
   clientSingleton = new EchidnaSingleton(this);
@@ -18,10 +16,6 @@ export default class EchidnaClient extends Client {
 
   commandManager = new CommandManager();
 
-  danbooru = new DanBooru();
-
-  waifuGenerator = new WaifuGenerator();
-
   eventManager = new EventManager();
 
   constructor() {
@@ -31,11 +25,11 @@ export default class EchidnaClient extends Client {
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.DirectMessages, 
-        GatewayIntentBits.MessageContent, 
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMessages
       ],
-      partials:[Partials.Channel]
+      partials: [Partials.Channel]
     });
     this.init();
   }
