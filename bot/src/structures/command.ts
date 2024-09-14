@@ -1,4 +1,4 @@
-import GetOptions, { OptionsArrayToObject } from '@Utils/get-options';
+import GetOptions from '@Utils/get-options';
 import { Option } from '@Utils/options-builder';
 import { AutocompleteInteraction, CacheType, CommandInteraction } from 'discord.js';
 import { CommandValidator } from './command-validator';
@@ -34,10 +34,10 @@ export abstract class Command<O extends Option[] | undefined = undefined, E = an
 
   readonly validators: Array<new () => CommandValidator>;
   readonly cmdType!: CmdType;
-  private _getOptionsInstance;
+  private _getOptionsInstance: GetOptions<O>;
 
-  get options(): OptionsArrayToObject<O> {
-    return this._getOptionsInstance.options as any;
+  get options() {
+    return this._getOptionsInstance.options;
   }
 
   constructor(readonly configs: commandConfigs<O>) {
@@ -59,7 +59,11 @@ export abstract class Command<O extends Option[] | undefined = undefined, E = an
     return Promise.resolve() as E;
   }
 
-  // async _handleAutocomplete(_interaction: AutocompleteInteraction<CacheType>): Promise<E> {}
+  async _handleAutocomplete(_interaction: AutocompleteInteraction<CacheType>): Promise<E> {
+    this._getOptionsInstance.loadFromCommandInteraction(_interaction);
+    return this.handleAutocomplete(_interaction);
+  }
+
   async _run(interaction: CommandInteraction<CacheType>) {
     const validators = this.validators.map((validator) => new validator().validate(interaction));
 

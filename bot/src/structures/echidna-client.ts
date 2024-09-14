@@ -36,6 +36,6 @@ export default class EchidnaClient extends Client {
 
   init() {
     this.eventManager.init();
-    this.login(configs.token);
+    this.login(configs.DISCORD_TOKEN);
   }
 }

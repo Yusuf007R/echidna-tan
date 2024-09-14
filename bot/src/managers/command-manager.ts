@@ -49,12 +49,14 @@ export default class CommandManager {
     const slashCommmandsDM = this.filterMapCmds(['DM', 'BOTH']);
     try {
       const requests = guilds.map((guild) =>
-        new REST().setToken(configs.token).put(Routes.applicationGuildCommands(configs.clientId, guild.id), {
-          body: slashCommmandsGuild
-        })
+        new REST()
+          .setToken(configs.DISCORD_TOKEN)
+          .put(Routes.applicationGuildCommands(configs.DISCORD_BOT_CLIENT_ID, guild.id), {
+            body: slashCommmandsGuild
+          })
       );
 
-      await new REST().setToken(configs.token).put(Routes.applicationCommands(configs.clientId), {
+      await new REST().setToken(configs.DISCORD_TOKEN).put(Routes.applicationCommands(configs.DISCORD_BOT_CLIENT_ID), {
         body: slashCommmandsDM
       });
       await Promise.all(requests);
@@ -88,7 +90,7 @@ export default class CommandManager {
   async executeAutocomplete(interaction: AutocompleteInteraction<CacheType>) {
     try {
       const cmd = this.getCmd(interaction);
-      await cmd.command.handleAutocomplete(interaction);
+      await cmd.command._handleAutocomplete(interaction);
     } catch (error) {
       console.log(error);
       interaction?.channel?.send('An error occured while executing the command autocomplete.');

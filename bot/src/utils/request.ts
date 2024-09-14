@@ -2,13 +2,13 @@ import config from '@Configs';
 import { create } from 'apisauce';
 
 const danBooruAPI = create({
-  baseURL: config.danbooruEndpoint
+  baseURL: config.DANBOORU_ENDPOINT
 });
 
 const waifuGeneratorAPI = create({
-  baseURL: config.waifuGeneratorEndpoint,
+  baseURL: config.WAIFU_GENERATOR_ENDPOINT,
   headers: {
-    Authorization: `Bearer ${config.runpodToken}`
+    Authorization: `Bearer ${config.RUNPOD_TOKEN}`
   }
 });
 

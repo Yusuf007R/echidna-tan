@@ -1,48 +1,27 @@
 import 'dotenv/config';
-const token = process.env.DISCORD_TOKEN;
-if (!token) throw new Error('No token found');
 
-const guildId = process.env.DISCORD_GUILD_ID;
-if (!guildId) throw new Error('No guild id found');
+const requiredEnvVars = [
+  'DISCORD_TOKEN',
+  'DISCORD_GUILD_ID',
+  'DISCORD_OP_USER_ID',
+  'DISCORD_BOT_CLIENT_ID',
+  'RUNPOD_TOKEN',
+  'WAIFU_GENERATOR_ENDPOINT',
+  'DANBOORU_ENDPOINT',
+  'JWT_SECRET_ACCESS',
+  'JWT_SECRET_REFRESH',
+  'OPENROUTER_API_KEY',
+  'OPENROUTER_URL',
+  'DATABASE_URL'
+] as const;
 
-const discordOpUserID = process.env.DISCORD_OP_USER_ID;
-if (!discordOpUserID) throw new Error('No discord OP user id found');
+type EnvVarKey = typeof requiredEnvVars[number];
 
-const clientId = process.env.DISCORD_BOT_CLIENT_ID;
-if (!clientId) throw new Error('No client id found');
+const config = requiredEnvVars.reduce((acc, envVar) => {
+  const value = process.env[envVar];
+  if (!value) throw new Error(`No ${envVar} found`);
+  acc[envVar] = value;
+  return acc;
+}, {} as Record<EnvVarKey, string>);
 
-const runpodToken = process.env.RUNPOD_TOKEN;
-if (!runpodToken) throw new Error('No runpod token found');
-
-const waifuGeneratorEndpoint = process.env.WAIFU_GENERATOR_ENDPOINT;
-if (!waifuGeneratorEndpoint) throw new Error('No runpod endpoint found');
-
-const danbooruEndpoint = process.env.DANBOORU_ENDPOINT;
-if (!danbooruEndpoint) throw new Error('No danbooru endpoint found');
-
-const jwtSecretAccess = process.env.JWT_SECRET_ACCESS;
-if (!jwtSecretAccess) throw new Error('No jwt secret found');
-
-const jwtSecretRefresh = process.env.JWT_SECRET_REFRESH;
-if (!jwtSecretRefresh) throw new Error('No jwt secret found');
-
-const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-if (!openRouterApiKey) throw new Error('No openRouter api key found');
-
-const openRouterURL = process.env.OPENROUTER_URL;
-if (!openRouterApiKey) throw new Error('No OpenRouter URL found');
-
-const config = {
-  token,
-  guildId,
-  discordOpUserID,
-  clientId,
-  runpodToken,
-  waifuGeneratorEndpoint,
-  danbooruEndpoint,
-  jwtSecretAccess,
-  jwtSecretRefresh,
-  openRouterApiKey,
-  openRouterURL
-};
 export default config;

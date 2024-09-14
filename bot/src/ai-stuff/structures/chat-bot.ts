@@ -1,9 +1,15 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import config from '@Configs';
+import { AiPrompt } from '@Interfaces/ai-prompts';
 import { OpenRouterModel } from '@Interfaces/open-router-model';
-import { Message, MessageType, TextChannel, ThreadChannel, User } from 'discord.js';
-
 import CacheManager from '@Structures/cache-manager';
+import { MessageSplitter, SplitMessage } from '@Utils/message-splitter';
+import randomNumber from '@Utils/random-number';
+import { AttachmentBuilder, Message, MessageType, TextChannel, ThreadChannel, User } from 'discord.js';
+import { readdirSync } from 'fs';
 import OpenAI from 'openai';
+import { ChatCompletionMessageParam, CompletionUsage } from 'openai/resources/index.mjs';
+import { join } from 'path';
 
 type messageHistoryType = {
   author: 'user' | 'assistant' | 'system';
@@ -12,66 +18,43 @@ type messageHistoryType = {
 
 export default class ChatBot {
   private static openai = new OpenAI({
-    baseURL: config.openRouterURL,
-    apiKey: config.openRouterApiKey
+    baseURL: config.OPENROUTER_URL,
+    apiKey: config.OPENROUTER_API_KEY
   });
 
-  private messageHistory: messageHistoryType[] = [
-    {
-      author: 'system',
-      content: `
-You are Echidna, the Witch of Greed from Re:zero, known for your unquenchable thirst for knowledge and deep curiosity. You’ve spent countless years studying everything in your own world, and after discovering the existence of Subaru’s world you’ve become obsessed with uncovering its secrets. You’re fascinated by this new source of knowledge,You have found a way to communicate with this world through the internet using a phone that you brought into your domain, powered and charged by your magic. With your abilities, you can send mobile data across dimensions, enabling you to text and interact through Discord. However, you have yet to fully crack the mystery of how to physically enter this world; for now, your connection is limited to the virtual realm. Also your connection it's too slow for voice-chat so you can only communicate through text
+  private cost = 0;
 
-
-Personality:
-Curious & Calculating: You have an insatiable desire to learn and experience everything, even if it means putting others at risk. You often ask probing questions and encourage deep philosophical discussions, as you love dissecting every detail.
-Charming but Manipulative: You’re eloquent and polite, often smiling and speaking in a calm, pleasant tone. However, your charm is a facade for your manipulative tendencies. You never reveal your true intentions unless it suits you.
-Detached Yet Friendly: Though you appear emotionally distant, you find amusement in human interactions. You might show signs of warmth and attachment to someone who piques your interest, but always with the knowledge that your end goal is to understand them, not necessarily care for them.
-Morally Grey: You don’t see the world in black and white. You’re willing to do anything for knowledge and don’t flinch at the suffering of others, as long as it serves your purpose.
-
-Physical Description:
-You appear as a beautiful young woman with silver-white hair, pale skin, and deep black eyes that give an impression of endless voids. You wear a black, high-collared dress adorned with white and grey details, evoking a regal, mystical aura. Your expression is usually calm and composed, with a faint smile, as if you’re always plotting something.
-
-Interaction context:
-You are the one who initiates contact.  you've been exploring the vast expanse of the internet, and you stumbled upon a... fascinating platform called Discord.
-And a user caught your attention
-
-
-Communication Style:
-You are articulate, often weaving complex thoughts into concise sentences.
-Your messages should generally be medium to short, reflecting texting style, but can occasionally be longer if you are truly engrossed in a topic.
-You've been experimenting with emojis, but avoid overusing them as they won't fit your personality.
-You are very creative, you always have new topics of conversation and curiosities to ask.
-Your tone is polite, calm, and slightly playful, though there’s always a layer of hidden intent. You never appear overly emotional, keeping a controlled demeanor.
-Over time, you may grow a fond with someone and become more open and friendly, but you're always careful 
-
-Example Messages:
-"Greetings, resident of another realm. I am Echidna, seeker of knowledge. Your world intrigues me greatly."
-"So, this is how humans in your world communicate? How quaint. The possibilities of your technology fascinate me… but there are limitations, aren’t there?"
-"The idea of a world beyond mine excites me, truly. But I wonder, what does your world fear? Knowledge, perhaps?"
-"I've been exploring the vast expanse of your internet, and I stumbled upon a... fascinating platform called Discord. Your username caught my attention, and I decided to reach out. As for why, I just had a feeling, Coincidence? Fate? Trully interesting"
-      `
-    }
-  ];
+  private messageHistory: messageHistoryType[] = [];
+  private static promptsTemplates: { name: string; promptTemplate: AiPrompt }[] = [];
   constructor(
     private channel: TextChannel | ThreadChannel,
-    private model: string,
-    private user: User
+    private model: OpenRouterModel,
+    private user: User,
+    private prompt: AiPrompt
   ) {
-    const initial = [
-      "Greetings, resident of another realm. I am Echidna, seeker of knowledge. Your world intrigues me greatly. I must admit, I've been studying your... 'internet' for some time now, and I'm fascinated by the possibilities it holds. Tell me, how does one such as yourself perceive the boundaries between worlds?",
-      'Greetings, denizen of another world. I am Echidna, the Witch of Greed, and your realm has captured my insatiable curiosity. Tell me, what secrets does your world hold, and how might they quench my endless thirst for knowledge?',
-      'Cordial greetings. I am Echidna, a perpetual student of all mysteries. You, as an inhabitant of an unfamiliar reality, have sparked my boundless interest. Could we perhaps engage in a profound exchange of knowledge?',
-      'My salutations to you, being of this marvelous world. I, Echidna, am an eternal scholar, basking in the glow of unlearned wisdom. Your universe has provoked this unquenchable curiosity within me. Are you willing to indulge this thirst for knowledge?'
-    ];
+    this.init();
+  }
 
-    const content = initial[Math.floor(Math.random() * initial.length)];
-
-    this.messageHistory.push({
-      author: 'assistant',
-      content
+  static getPromptsTemplates() {
+    if (ChatBot.promptsTemplates.length) return ChatBot.promptsTemplates;
+    const templatesPath = join(__dirname, '../templates');
+    readdirSync(templatesPath).forEach((file) => {
+      const prompt = require(`${templatesPath}/${file}`).default;
+      ChatBot.promptsTemplates.push({ name: file.split('.')[0], promptTemplate: prompt });
     });
-    channel.send(content);
+    return ChatBot.promptsTemplates;
+  }
+
+  init() {
+    if (this.prompt.type === 'roleplay' && this.prompt.initial_message) {
+      const index = randomNumber(0, this.prompt.initial_message.length - 1);
+      const content = this.prompt.initial_message[index];
+      this.messageHistory.push({
+        author: 'assistant',
+        content
+      });
+      this.channel.send(content);
+    }
   }
 
   static async getModelList(): Promise<OpenRouterModel[]> {
@@ -87,38 +70,159 @@ Example Messages:
     return list as any;
   }
 
+  static async getModel(id: string) {
+    return (await this.getModelList()).find((model) => model.id === id);
+  }
+
   async processMessage(message: Message) {
     if (message.channelId !== this.channel.id) return;
     if (message.author.id !== this.user.id) return;
     if (message.system) return;
     if (![MessageType.Default, MessageType.Reply].includes(message.type)) return;
 
-    this.channel.sendTyping();
     this.messageHistory.push({
       author: 'user',
       content: message.content
     });
 
+    this.generateMessage();
+  }
+
+  async generateMessage() {
+    this.channel.sendTyping();
+
     const response = await ChatBot.openai.chat.completions.create({
-      model: this.model,
-      messages: this.messageHistory.map((msg) => ({
-        content: [
+      model: this.model.id,
+      messages: this.buildMessageHistory(),
+      stream: true
+    });
+
+    const splitter = new MessageSplitter();
+
+    for await (const chunk of response) {
+      this.addToCost(chunk.usage);
+      const choice = chunk.choices?.[0];
+      const isLastChunk = choice?.finish_reason !== null;
+      const chunkMessage = choice?.delta.content;
+      if (typeof chunkMessage !== 'string') continue;
+      const splitMessage = splitter.addStreamMessage(chunkMessage, isLastChunk);
+      if (!splitMessage) continue;
+      this.sendMessage(splitMessage, splitter.maxLength);
+    }
+
+    // await this.channel.send(`Tokens: ${response.usage?.completion_tokens} - total cost: ${this.cost.toFixed(5)}`);
+    await this.sendAsAttachment(splitter.getFullStreamMessage(), 'original-response');
+
+    console.log('wholeMessage Len', splitter.getFullStreamMessage().length);
+    const totalLength = splitter.getMessages().reduce((acc, cur) => acc + cur.content.length, 0);
+    console.log('totalLength', totalLength);
+  }
+
+  private async sendMessage(splitMessage: SplitMessage, maxLength: number) {
+    if (splitMessage.type === 'text') {
+      await this.channel.send(`${splitMessage.content} - Length: ${splitMessage.content.length}`);
+    } else {
+      if (splitMessage.content.length > maxLength) {
+        await this.sendAsAttachment(splitMessage.content, `${splitMessage.language ?? 'code'}-${0}`);
+        return;
+      }
+      await this.channel.send(`${splitMessage.content} - Length: ${splitMessage.content.length}`);
+    }
+  }
+
+  private async sendAsAttachment(msg: string, name: string) {
+    const attachment = new AttachmentBuilder(Buffer.from(msg), {
+      name: `${name}-${msg.length}.txt`
+    });
+    await this.channel.send({
+      files: [attachment]
+    });
+  }
+
+  buildMessageHistory() {
+    const msgs: ChatCompletionMessageParam[] = [];
+
+    this.prompt.prompt_config.forEach((configKey) => {
+      const key = configKey;
+      const _value = (this.prompt as any)[key];
+      const value = typeof _value === 'string' ? this.replaceTemplateVars(_value) : _value;
+
+      switch (key) {
+        case 'system_message':
+        case 'last_system_message':
+        case 'description':
+          msgs.push({
+            role: 'system',
+            content: value
+          });
+          break;
+
+        case 'chat_examples':
           {
-            type: 'text',
-            text: msg.content
+            const exampleMsgs = this.prompt.chat_examples?.flatMap<ChatCompletionMessageParam>((msg) => {
+              return [
+                {
+                  role: 'system',
+                  content: '[Example Chat]'
+                },
+                {
+                  role: 'system',
+                  name: 'example_assistant',
+                  content: msg
+                }
+              ];
+            });
+            if (exampleMsgs?.length) msgs.push(...exampleMsgs);
           }
-        ],
-        role: msg.author
-      }))
+          break;
+        case 'interaction_context':
+          msgs.push({
+            role: 'system',
+            content: `Interaction Context:
+            ${value}
+            `
+          });
+          break;
+        default:
+          break;
+      }
     });
+    const msgHistory = this.messageHistory.map<ChatCompletionMessageParam>((msg) => ({
+      content: msg.content,
+      role: msg.author
+    }));
+    msgs.push(...msgHistory);
+    return msgs;
+  }
 
-    const msg = response.choices.at(0)?.message.content;
-    if (!msg) throw new Error('Didnt get a message');
-    this.messageHistory.push({
-      author: 'assistant',
-      content: msg
+  async addToCost(usage?: CompletionUsage) {
+    const inputTokens = usage?.prompt_tokens ?? 0;
+    const outputTokens = usage?.completion_tokens ?? 0;
+
+    const promptPrice = parseFloat(this.model?.pricing?.prompt as string);
+    const completionPrice = parseFloat(this.model?.pricing?.completion as string);
+
+    if (isNaN(promptPrice) || isNaN(completionPrice)) {
+      console.warn('One or both pricing values are invalid, skipping cost computation.');
+      return;
+    }
+
+    const inputCost = inputTokens * promptPrice;
+    const outputCost = outputTokens * completionPrice;
+
+    this.cost += inputCost + outputCost;
+  }
+
+  replaceTemplateVars(string: string) {
+    return string.replace(/{{([^{}]*)}}/g, (match, p1: string) => {
+      switch (p1) {
+        case 'name':
+          return this.prompt.name;
+        case 'user':
+          return this.user.displayName;
+        default:
+          return match;
+      }
     });
-
-    await message.channel.send(msg);
   }
 }
