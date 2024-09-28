@@ -1,4 +1,5 @@
 import ChatBot from '@AiStructures/chat-bot';
+import ChatBotManager from '@Managers/chat-bot-manager';
 import { Command } from '@Structures/command';
 import { OptionsBuilder } from '@Utils/options-builder';
 import {
@@ -6,8 +7,12 @@ import {
   AutocompleteInteraction,
   CacheType,
   ChannelType,
-  ChatInputCommandInteraction
+  ChatInputCommandInteraction,
+  User
 } from 'discord.js';
+import { eq } from 'drizzle-orm';
+import db from 'src/drizzle';
+import { usersTable } from 'src/drizzle/schema';
 
 const options = new OptionsBuilder()
   .addStringOption({
@@ -23,6 +28,25 @@ const options = new OptionsBuilder()
     autocomplete: true
   })
   .build();
+
+const getUser = async (user: User) => {
+  const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.discordId, user.id)).limit(1);
+  if (!dbUser) {
+    const insertUser = (
+      await db
+        .insert(usersTable)
+        .values({
+          discordId: user.id,
+          displayName: user.displayName,
+          userName: user.username
+        })
+        .returning()
+    ).at(0);
+    if (!insertUser) throw new Error('Internal error, try again later.');
+    return insertUser;
+  }
+  return dbUser;
+};
 
 export default class CreateChatCommand extends Command<typeof options> {
   constructor() {
@@ -43,19 +67,14 @@ export default class CreateChatCommand extends Command<typeof options> {
     switch (option.name) {
       case 'model':
         {
-          const modelList = await ChatBot.getModelList();
-          const filtered = modelList
-            .filter((model) => {
-              if (!option.value) return true;
-              return JSON.stringify(model).toLowerCase().includes(option.value.toLowerCase());
-            })
-            .slice(0, 8);
-          choices.push(...filtered.map((model) => ({ name: model.name, value: model.id })));
+          const modelList = await ChatBotManager.getModelList(option.value);
+
+          choices.push(...modelList.slice(0, 8).map((model) => ({ name: model.name, value: model.id })));
         }
         break;
       case 'prompt':
         {
-          const prompts = ChatBot.getPromptsTemplates();
+          const prompts = ChatBotManager.getPromptsTemplates();
           const filtered = prompts
             .filter((prompt) => {
               if (!option.value) return true;
@@ -80,17 +99,22 @@ export default class CreateChatCommand extends Command<typeof options> {
   }
 
   async run(interaction: ChatInputCommandInteraction<CacheType>) {
+    const user = await getUser(interaction.user);
+    if (!user) throw new Error('Internal error, try again later.');
     const channel = interaction.channel;
 
-    if (channel?.type !== ChannelType.GuildText) return;
+    if (channel?.type !== ChannelType.GuildText) {
+      await interaction.editReply('This command can only be used in text channels.');
+      return;
+    }
     const modelId = this.options.model || 'google/gemini-flash-1.5';
-    const model = await ChatBot.getModel(modelId);
+    const model = await ChatBotManager.getModel(modelId);
 
     if (!model) throw new Error('model not found');
 
     const promptName = this.options.prompt || 'Assistant';
 
-    const prompt = ChatBot.getPromptsTemplates().find((prompt) => prompt.promptTemplate.name === promptName);
+    const prompt = ChatBotManager.getPromptsTemplates().find((prompt) => prompt.promptTemplate.name === promptName);
 
     if (!prompt) throw new Error('prompt not found');
 
@@ -98,7 +122,7 @@ export default class CreateChatCommand extends Command<typeof options> {
       name: model.name
     });
 
-    const chatbot = new ChatBot(thread, model, interaction.user, prompt.promptTemplate);
+    const chatbot = new ChatBot(thread, model, user, prompt.promptTemplate);
     const collector = thread.createMessageCollector();
 
     collector.on('collect', (m) => {

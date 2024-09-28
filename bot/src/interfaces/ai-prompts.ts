@@ -5,8 +5,10 @@ type AiPromptBase = {
   last_system_message?: string;
 };
 
-type WithPromptConfig<T> = T & {
-  prompt_config: (keyof T)[];
+type extraConfig = 'memory' | 'user_name' | 'current_date';
+
+type WithPromptConfig<T, A = undefined, X = keyof T | extraConfig> = T & {
+  prompt_config: A extends undefined ? X[] : (A | X)[];
 };
 
 type AiRpPromptBase = AiPromptBase & {

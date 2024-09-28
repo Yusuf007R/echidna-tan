@@ -1,15 +1,14 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import config from '@Configs';
 import { AiPrompt } from '@Interfaces/ai-prompts';
 import { OpenRouterModel } from '@Interfaces/open-router-model';
-import CacheManager from '@Structures/cache-manager';
 import { MessageSplitter, SplitMessage } from '@Utils/message-splitter';
 import randomNumber from '@Utils/random-number';
-import { AttachmentBuilder, Message, MessageType, TextChannel, ThreadChannel, User } from 'discord.js';
-import { readdirSync } from 'fs';
-import OpenAI from 'openai';
+import { openRouterAPI } from '@Utils/request';
+import { AttachmentBuilder, Message, MessageType, TextChannel, ThreadChannel } from 'discord.js';
+import { InferSelectModel } from 'drizzle-orm';
 import { ChatCompletionMessageParam, CompletionUsage } from 'openai/resources/index.mjs';
-import { join } from 'path';
+import { usersTable } from 'src/drizzle/schema';
+import MemoriesManager from './memories';
 
 type messageHistoryType = {
   author: 'user' | 'assistant' | 'system';
@@ -17,35 +16,28 @@ type messageHistoryType = {
 };
 
 export default class ChatBot {
-  private static openai = new OpenAI({
-    baseURL: config.OPENROUTER_URL,
-    apiKey: config.OPENROUTER_API_KEY
-  });
-
   private cost = 0;
-
+  private hasMemories = false;
   private messageHistory: messageHistoryType[] = [];
-  private static promptsTemplates: { name: string; promptTemplate: AiPrompt }[] = [];
+  private memoriesManager = new MemoriesManager(this.user);
+
   constructor(
     private channel: TextChannel | ThreadChannel,
     private model: OpenRouterModel,
-    private user: User,
+    private user: InferSelectModel<typeof usersTable>,
     private prompt: AiPrompt
   ) {
     this.init();
   }
 
-  static getPromptsTemplates() {
-    if (ChatBot.promptsTemplates.length) return ChatBot.promptsTemplates;
-    const templatesPath = join(__dirname, '../templates');
-    readdirSync(templatesPath).forEach((file) => {
-      const prompt = require(`${templatesPath}/${file}`).default;
-      ChatBot.promptsTemplates.push({ name: file.split('.')[0], promptTemplate: prompt });
-    });
-    return ChatBot.promptsTemplates;
+  lastMessage(filter?: messageHistoryType['author']) {
+    if (!filter) return this.messageHistory[this.messageHistory.length - 1];
+    return this.messageHistory.find((msg) => msg.author === filter);
   }
 
   init() {
+    this.hasMemories = this.prompt.prompt_config.includes('memory');
+    if (this.hasMemories) this.memoriesManager.loadMemories();
     if (this.prompt.type === 'roleplay' && this.prompt.initial_message) {
       const index = randomNumber(0, this.prompt.initial_message.length - 1);
       const content = this.prompt.initial_message[index];
@@ -57,26 +49,9 @@ export default class ChatBot {
     }
   }
 
-  static async getModelList(): Promise<OpenRouterModel[]> {
-    const cacheKey = 'open-router-model-list';
-
-    const cached = CacheManager.get(cacheKey);
-    if (cached) return cached as any;
-
-    const list = (await this.openai.models.list()).data;
-    CacheManager.set(cacheKey, list, {
-      ttl: CacheManager.TTL.oneDay
-    });
-    return list as any;
-  }
-
-  static async getModel(id: string) {
-    return (await this.getModelList()).find((model) => model.id === id);
-  }
-
   async processMessage(message: Message) {
     if (message.channelId !== this.channel.id) return;
-    if (message.author.id !== this.user.id) return;
+    if (message.author.id !== this.user.discordId) return;
     if (message.system) return;
     if (![MessageType.Default, MessageType.Reply].includes(message.type)) return;
 
@@ -86,18 +61,22 @@ export default class ChatBot {
     });
 
     this.generateMessage();
+    if (this.hasMemories) this.memoriesManager.memorySaver(message.content);
   }
 
   async generateMessage() {
     this.channel.sendTyping();
 
-    const response = await ChatBot.openai.chat.completions.create({
+    const response = await openRouterAPI.chat.completions.create({
       model: this.model.id,
       messages: this.buildMessageHistory(),
       stream: true
     });
 
-    const splitter = new MessageSplitter();
+    const splitter = new MessageSplitter({ isStream: true });
+    splitter.queue.on('message', async (msg) => {
+      await this.sendMessage(msg, splitter.maxLength);
+    });
 
     for await (const chunk of response) {
       this.addToCost(chunk.usage);
@@ -105,28 +84,26 @@ export default class ChatBot {
       const isLastChunk = choice?.finish_reason !== null;
       const chunkMessage = choice?.delta.content;
       if (typeof chunkMessage !== 'string') continue;
-      const splitMessage = splitter.addStreamMessage(chunkMessage, isLastChunk);
-      if (!splitMessage) continue;
-      this.sendMessage(splitMessage, splitter.maxLength);
+      splitter.addStreamMessage(chunkMessage, isLastChunk);
     }
 
     // await this.channel.send(`Tokens: ${response.usage?.completion_tokens} - total cost: ${this.cost.toFixed(5)}`);
-    await this.sendAsAttachment(splitter.getFullStreamMessage(), 'original-response');
-
-    console.log('wholeMessage Len', splitter.getFullStreamMessage().length);
+    // await this.sendAsAttachment(splitter.getFullStreamMessage(), 'original-response');
     const totalLength = splitter.getMessages().reduce((acc, cur) => acc + cur.content.length, 0);
-    console.log('totalLength', totalLength);
+    console.log(
+      `Total split message length: ${totalLength}, full message length: ${splitter.getFullStreamMessage().length}`
+    );
   }
 
   private async sendMessage(splitMessage: SplitMessage, maxLength: number) {
     if (splitMessage.type === 'text') {
-      await this.channel.send(`${splitMessage.content} - Length: ${splitMessage.content.length}`);
+      await this.channel.send(`${splitMessage.content}`);
     } else {
       if (splitMessage.content.length > maxLength) {
         await this.sendAsAttachment(splitMessage.content, `${splitMessage.language ?? 'code'}-${0}`);
         return;
       }
-      await this.channel.send(`${splitMessage.content} - Length: ${splitMessage.content.length}`);
+      await this.channel.send(`${splitMessage.content}`);
     }
   }
 
@@ -156,7 +133,27 @@ export default class ChatBot {
             content: value
           });
           break;
-
+        case 'user_name':
+          msgs.push({
+            role: 'user',
+            content: `User name is: ${this.user.displayName}`
+          });
+          break;
+        case 'memory':
+          msgs.push({
+            role: 'system',
+            content: `Current memories:\n${this.memoriesManager
+              .getMemories()
+              .map((mem) => mem.memory)
+              .join('\n')}`
+          });
+          break;
+        case 'current_date':
+          msgs.push({
+            role: 'system',
+            content: `Current date: ${new Date().toISOString().split('T')[0]}`
+          });
+          break;
         case 'chat_examples':
           {
             const exampleMsgs = this.prompt.chat_examples?.flatMap<ChatCompletionMessageParam>((msg) => {
@@ -178,9 +175,7 @@ export default class ChatBot {
         case 'interaction_context':
           msgs.push({
             role: 'system',
-            content: `Interaction Context:
-            ${value}
-            `
+            content: `Interaction Context:\n${value}`
           });
           break;
         default:

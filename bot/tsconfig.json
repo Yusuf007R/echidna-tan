@@ -1,5 +1,5 @@
 {
-  "include": ["src"],
+  "include": ["src", "drizzle.config.ts"],
   "exclude": ["node_modules", "dist"],
   "ts-node": {
     "transpileOnly": true,
@@ -8,7 +8,7 @@
   },
   "compilerOptions": {
     "composite": false,
-    "lib": ["es2021"],
+    "lib": ["ESNext"],
     "module": "Node16",
     "target": "es2021",
     "declaration": false,

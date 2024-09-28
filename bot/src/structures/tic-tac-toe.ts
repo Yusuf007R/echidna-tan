@@ -309,7 +309,8 @@ export default class TicTacToe extends EchidnaSingleton {
       this.switchTurn();
       this.status = TicTacToeStatus.Finished;
       await this.endGame();
-      if (embed) await this.currentInteraction.channel?.send({ embeds: [embed] });
+      if (embed && this.currentInteraction.inGuild() && this.currentInteraction.channel?.isTextBased())
+        await this.currentInteraction.channel?.send({ embeds: [embed] });
     }
     return isDraw || isWinner;
   }

@@ -25,7 +25,8 @@ export default class InteractionEvent extends DiscordEvent<'interactionCreate'> 
 
         return;
       }
-      interaction.channel?.send(error?.message || 'Internal error, try again later.');
+      if (interaction.inGuild() && interaction.channel?.isTextBased())
+        interaction.channel?.send(error?.message || 'Internal error, try again later.');
     }
   }
 }

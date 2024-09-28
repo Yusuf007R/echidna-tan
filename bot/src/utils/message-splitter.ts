@@ -1,3 +1,5 @@
+import SerialEventEmitter from './serial-event-emitter';
+
 type SplitMessageType = 'code' | 'text';
 
 export type SplitMessage = {
@@ -11,6 +13,8 @@ type SplitResult = {
   messages: SplitMessage[];
 };
 
+type SplitterOptions = { maxLength?: number; isStream?: boolean };
+
 export class MessageSplitter {
   private bufferMessage = '';
   private bufferStreamMessage = '';
@@ -19,8 +23,16 @@ export class MessageSplitter {
   private language = '';
   private fullStreamMessage = '';
   private messages: SplitMessage[] = [];
+  public maxLength: number;
+  public isStream: boolean;
+  public queue = new SerialEventEmitter<{
+    message: (msg: SplitMessage) => void;
+  }>();
 
-  constructor(public maxLength: number = 1800) {}
+  constructor({ maxLength = 1800, isStream = false }: SplitterOptions = {}) {
+    this.maxLength = maxLength;
+    this.isStream = isStream;
+  }
 
   getMessages() {
     return this.messages;
@@ -37,9 +49,7 @@ export class MessageSplitter {
       this.addLine(lines[i]);
     }
 
-    if (this.bufferMessage) {
-      this.pushMessage(this.isInCodeBlock ? 'code' : 'text', this.bufferMessage);
-    }
+    this.lineLeftOver();
 
     if (this.isInCodeBlock) {
       console.log('Bad code block');
@@ -53,17 +63,20 @@ export class MessageSplitter {
   }
 
   private pushMessage(type: SplitMessageType, content: string) {
-    this.messages.push({
+    const msg: SplitMessage = {
       type,
       content: content,
       language: type === 'code' ? this.language : undefined
-    });
+    };
+
+    this.messages.push(msg);
+    if (this.isStream) this.queue.emit('message', msg);
   }
 
   addStreamMessage(message: string, isLastChunk: boolean) {
+    console.log(isLastChunk);
     this.fullStreamMessage += message;
-    const messagesLength = this.messages.length;
-    if (!message.includes('\n')) {
+    if (!message.includes('\n') && !isLastChunk) {
       this.bufferStreamMessage += message;
       return;
     }
@@ -78,8 +91,8 @@ export class MessageSplitter {
       this.addLine(line);
     }
 
-    if (messagesLength !== this.messages.length) {
-      return this.messages.at(-1);
+    if (isLastChunk) {
+      this.lineLeftOver();
     }
   }
 
@@ -121,5 +134,11 @@ export class MessageSplitter {
     }
 
     this.bufferMessage += line + '\n';
+  }
+
+  lineLeftOver() {
+    if (this.bufferMessage) {
+      this.pushMessage(this.isInCodeBlock ? 'code' : 'text', this.bufferMessage);
+    }
   }
 }

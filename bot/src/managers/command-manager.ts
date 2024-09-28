@@ -93,7 +93,8 @@ export default class CommandManager {
       await cmd.command._handleAutocomplete(interaction);
     } catch (error) {
       console.log(error);
-      interaction?.channel?.send('An error occured while executing the command autocomplete.');
+      if (interaction.inGuild() && interaction.channel?.isTextBased())
+        interaction?.channel?.send('An error occured while executing the command autocomplete.');
     }
   }
 

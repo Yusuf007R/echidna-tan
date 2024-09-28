@@ -1,14 +1,10 @@
 import config from '@Configs';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Client } from 'pg';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from './schema';
 
-const client = new Client({
-  connectionString: config.DATABASE_URL
-});
+const queryClient = postgres(config.DATABASE_URL);
 
-const getDB = async () => {
-  await client.connect();
-  return drizzle(client);
-};
+const db = drizzle(queryClient, { schema });
 
-export default getDB;
+export default db;
