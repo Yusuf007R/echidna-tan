@@ -1,31 +1,20 @@
 import 'dotenv/config';
+import z from 'zod';
 
-const requiredEnvVars = [
-  'DISCORD_TOKEN',
-  'DISCORD_GUILD_ID',
-  'DISCORD_OP_USER_ID',
-  'DISCORD_BOT_CLIENT_ID',
-  'RUNPOD_TOKEN',
-  'WAIFU_GENERATOR_ENDPOINT',
-  'DANBOORU_ENDPOINT',
-  'JWT_SECRET_ACCESS',
-  'JWT_SECRET_REFRESH',
-  'OPENROUTER_API_KEY',
-  'OPENROUTER_URL',
-  'DATABASE_URL',
-  'OPENAI_API_KEY'
-] as const;
+const envSchema = z.object({
+  DISCORD_TOKEN: z.string(),
+  DISCORD_GUILD_ID: z.string(),
+  DISCORD_OP_USER_ID: z.string(),
+  DISCORD_BOT_CLIENT_ID: z.string(),
+  RUNPOD_TOKEN: z.string(),
+  WAIFU_GENERATOR_ENDPOINT: z.string(),
+  DANBOORU_ENDPOINT: z.string(),
+  JWT_SECRET_ACCESS: z.string(),
+  JWT_SECRET_REFRESH: z.string(),
+  OPENROUTER_API_KEY: z.string(),
+  OPENROUTER_URL: z.string(),
+  DATABASE_URL: z.string(),
+  OPENAI_API_KEY: z.string()
+})
 
-type EnvVarKey = (typeof requiredEnvVars)[number];
-
-const config = requiredEnvVars.reduce(
-  (acc, envVar) => {
-    const value = process.env[envVar];
-    if (!value) throw new Error(`No ${envVar} found`);
-    acc[envVar] = value;
-    return acc;
-  },
-  {} as Record<EnvVarKey, string>
-);
-
-export default config;
+export default envSchema.parse(process.env);

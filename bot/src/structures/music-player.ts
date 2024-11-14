@@ -33,6 +33,9 @@ export default class MusicPlayer extends Player {
   listenForEvents() {
     // the arrow function is needed so `newPlaying` doesn't get the event scope
     this.events.on('playerStart', (queue) => this.nowPlaying(queue));
+    this.events.on('playerFinish', (queue) => {
+      console.log('playerFinish', queue);
+    });
     this.on('debug', async (message) => {
       console.log(`General player debug event: ${message}`);
     });

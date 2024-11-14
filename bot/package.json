@@ -15,7 +15,8 @@
     "prettier": "prettier --ignore-path .gitignore \"**/*.+(js|jsx|ts|tsx)\" --write",
     "fix": "npm run prettier && npm run lint",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "author": "Yusuf Rawat",
   "license": "ISC",
