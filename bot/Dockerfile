@@ -12,7 +12,7 @@ RUN apt-get update \
 
 COPY . .
 
-RUN npx prisma generate && pnpm run build
+RUN pnpm run build
 
 # Production Stage
 FROM node:22 as production
@@ -35,6 +35,5 @@ COPY --from=builder /app/dist ./dist
 COPY --from=production /app/node_modules ./node_modules
 COPY --from=production /app/package.json ./package.json
 COPY assets ./assets 
-COPY prisma ./prisma
 
 CMD ["node", "dist/index.js"]
