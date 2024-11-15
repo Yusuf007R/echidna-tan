@@ -1,31 +1,33 @@
 # Builder Stage
-FROM node:20 as builder
+FROM node:22 as builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml ./
 
 RUN apt-get update \
     && apt-get install -y build-essential \
-    && npm ci
+    && corepack enable pnpm \
+    && pnpm install
 
 COPY . .
 
-RUN npx prisma generate && npm run build
+RUN npx prisma generate && pnpm run build
 
 # Production Stage
-FROM node:20 as production
+FROM node:22 as production
 
 WORKDIR /app
 
-COPY --from=builder /app/package.json /app/package-lock.json ./
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
 
 RUN apt-get update \
     && apt-get install -y build-essential \
-    && npm ci --production
+    && corepack enable pnpm \
+    && pnpm install --production
 
 # Runtime Stage
-FROM node:20-slim as runtime
+FROM node:22-slim as runtime
 
 WORKDIR /app
 
