@@ -1,11 +1,15 @@
+import { OptionsBuilder } from '@Utils/options-builder';
 import { CacheType, CommandInteraction } from 'discord.js';
 import { MusicCommand } from './[wrapper]';
 
-export default class Pause extends MusicCommand {
+const options = new OptionsBuilder().build();
+
+export default class Pause extends MusicCommand<typeof options> {
   constructor() {
     super({
       name: 'pause',
-      description: 'Pause the current song.'
+      description: 'Pause the current song.',
+      options
     });
   }
 

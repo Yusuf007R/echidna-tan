@@ -1,3 +1,4 @@
+import StringSelectComponent from '@Components/string-select';
 import capitalize from '@Utils/capitalize';
 import getImageUrl from '@Utils/get-image-from-url';
 import milisecondsToReadable from '@Utils/seconds-to-minutes';
@@ -6,7 +7,6 @@ import { GuildQueue, Player, Playlist, QueueRepeatMode, Track } from 'discord-pl
 import { YoutubeiExtractor } from 'discord-player-youtubei';
 import { BaseInteraction, CacheType, CommandInteraction, GuildMember, StringSelectMenuInteraction } from 'discord.js';
 import sharp from 'sharp';
-import StringSelectComponent from '../components/string-select';
 import EchidnaClient from './echidna-client';
 
 export type QueueMetadata = {
@@ -33,6 +33,9 @@ export default class MusicPlayer extends Player {
   listenForEvents() {
     // the arrow function is needed so `newPlaying` doesn't get the event scope
     this.events.on('playerStart', (queue) => this.nowPlaying(queue));
+    this.events.on('playerFinish', (queue) => {
+      console.log('playerFinish', queue);
+    });
     this.on('debug', async (message) => {
       console.log(`General player debug event: ${message}`);
     });
@@ -146,7 +149,12 @@ export default class MusicPlayer extends Player {
       embed.setImage(thumbnail);
       embed.setColor(await this.getTrackDominantColor(queue));
     }
-    queue.metadata.interaction.channel?.send({ embeds: [embed] });
+
+    const interaction = queue.metadata.interaction;
+
+    if (interaction.inGuild() && interaction.channel?.isTextBased()) {
+      interaction.channel?.send({ embeds: [embed] });
+    }
   }
 
   async selectMusic(interaction: StringSelectMenuInteraction<CacheType>, tracks: Track<unknown>[]) {

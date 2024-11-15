@@ -1,11 +1,15 @@
 import wait from '@Utils/wait';
 import { AttachmentBuilder, CacheType, Collection, CommandInteraction, EmbedType, Message } from 'discord.js';
-import { Readable, Stream } from 'stream';
+import fs from 'fs/promises';
+
 import z, { ZodError } from 'zod';
 
 import getImageUrl from '@Utils/get-image-from-url';
+import { randomUUID } from 'crypto';
 import ffmpegStatic from 'ffmpeg-static';
 import Ffmpeg from 'fluent-ffmpeg';
+import { tmpdir } from 'os';
+import { join } from 'path';
 
 if (ffmpegStatic === null) throw new Error('ffmpeg-static path not found');
 
@@ -117,51 +121,46 @@ export default class GifResize {
 
   async resize(gif: gifTypeContent, options: gifResizeOptions) {
     const gifBuffer = await getImageUrl(gif.url);
-
     if (!gifBuffer.data) throw new Error('Gif not found');
-    const data = gifBuffer.data;
-    const readableStream = Readable.from(data);
-    const bufferStream = new Stream.PassThrough();
+
+
 
     const { width } = options;
     const height = options.height ?? Math.floor(width * gif.aspectRatio);
 
-    return new Promise((resolve, reject) => {
-      Ffmpeg(readableStream)
-        .complexFilter(
-          ` [0:v] scale=${width}:${height}:flags=lanczos,split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`
-        )
-        .inputFormat(gif.type)
-        .outputFormat('gif')
-        .output(bufferStream, {
-          end: false
-        })
-        .on('stderr', function (stderrLine) {
-          console.log('Stderr output: ' + stderrLine);
-        })
-        .on('error', function (err) {
-          console.log('An error occurred: ' + err.message);
-        })
-        .on('end', () => {
-          bufferStream.end();
-        });
+    try {
+      // Create temporary files
+      const id = randomUUID();
+      const inputPath = join(tmpdir(), `input-${id}.gif`);
+      const outputPath = join(tmpdir(), `output-${id}.gif`);
+      console.log('inputPath', inputPath);
+      console.log('outputPath', outputPath);
+      // Write input file
+      await fs.writeFile(inputPath, gifBuffer.data);
 
-      const buffers: any[] = [];
-
-      bufferStream.on('data', function (buf) {
-        buffers.push(buf);
-      });
-      bufferStream.on('error', function (err) {
-        console.log('An error occurred: ' + err.message);
-        bufferStream.destroy();
-        reject('Error while resizing gif');
+      // Process using ffmpeg
+      await new Promise<void>((resolve, reject) => {
+        Ffmpeg(inputPath)
+          .complexFilter(
+            `[0:v] scale=${width}:${height}:flags=lanczos,split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`
+          )
+          .inputFormat(gif.type)
+          .outputFormat('gif')
+          .output(outputPath)
+          .on('end', () => resolve())
+          .on('error', (err) => reject(err))
+          .run();
       });
 
-      bufferStream.on('end', function () {
-        console.log(buffers.length);
-        bufferStream.destroy();
-        resolve(Buffer.concat(buffers));
-      });
-    }) as Promise<Buffer>;
+      // Read the output file
+      const resultBuffer = await fs.readFile(outputPath);
+      fs.unlink(outputPath);
+      fs.unlink(inputPath);
+      
+      return resultBuffer;
+    } catch (error) {
+      console.error('Error while resizing gif:', error);
+      throw new Error('Error while resizing gif');
+    }
   }
 }

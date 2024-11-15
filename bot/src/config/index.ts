@@ -1,36 +1,20 @@
 import 'dotenv/config';
-const token = process.env.DISCORD_TOKEN;
-if (!token) throw new Error('No token found');
+import z from 'zod';
 
-const guildId = process.env.DISCORD_GUILD_ID;
-if (!guildId) throw new Error('No guild id found');
+const envSchema = z.object({
+  DISCORD_TOKEN: z.string(),
+  DISCORD_GUILD_ID: z.string(),
+  DISCORD_OP_USER_ID: z.string(),
+  DISCORD_BOT_CLIENT_ID: z.string(),
+  RUNPOD_TOKEN: z.string(),
+  WAIFU_GENERATOR_ENDPOINT: z.string(),
+  DANBOORU_ENDPOINT: z.string(),
+  JWT_SECRET_ACCESS: z.string(),
+  JWT_SECRET_REFRESH: z.string(),
+  OPENROUTER_API_KEY: z.string(),
+  OPENROUTER_URL: z.string(),
+  DATABASE_URL: z.string(),
+  OPENAI_API_KEY: z.string()
+})
 
-const clientId = process.env.DISCORD_BOT_CLIENT_ID;
-if (!clientId) throw new Error('No client id found');
-
-const runpodToken = process.env.RUNPOD_TOKEN;
-if (!runpodToken) throw new Error('No runpod token found');
-
-const waifuGeneratorEndpoint = process.env.WAIFU_GENERATOR_ENDPOINT;
-if (!waifuGeneratorEndpoint) throw new Error('No runpod endpoint found');
-
-const danbooruEndpoint = process.env.DANBOORU_ENDPOINT;
-if (!danbooruEndpoint) throw new Error('No danbooru endpoint found');
-
-const jwtSecretAccess = process.env.JWT_SECRET_ACCESS;
-if (!jwtSecretAccess) throw new Error('No jwt secret found');
-
-const jwtSecretRefresh = process.env.JWT_SECRET_REFRESH;
-if (!jwtSecretRefresh) throw new Error('No jwt secret found');
-
-const config = {
-  token,
-  guildId,
-  clientId,
-  runpodToken,
-  waifuGeneratorEndpoint,
-  danbooruEndpoint,
-  jwtSecretAccess,
-  jwtSecretRefresh
-};
-export default config;
+export default envSchema.parse(process.env);

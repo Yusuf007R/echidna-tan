@@ -59,8 +59,9 @@ export default abstract class BaseComponent<T extends MessageComponentType> {
   onAction(cb: onActionCallBack<T>, timeout = 60 * 1000) {
     const { interaction } = this.opts;
     if (!this._onAction) {
+      if (!interaction.inGuild() || !interaction.channel?.isTextBased()) return this;
       interaction.channel
-        ?.awaitMessageComponent({
+        .awaitMessageComponent({
           componentType: this.type,
           filter: this._filter,
           time: timeout

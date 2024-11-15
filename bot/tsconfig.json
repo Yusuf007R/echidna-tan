@@ -1,5 +1,5 @@
 {
-  "include": ["src"],
+  "include": ["src", "drizzle.config.ts"],
   "exclude": ["node_modules", "dist"],
   "ts-node": {
     "transpileOnly": true,
@@ -8,7 +8,7 @@
   },
   "compilerOptions": {
     "composite": false,
-    "lib": ["es2021"],
+    "lib": ["ESNext"],
     "module": "Node16",
     "target": "es2021",
     "declaration": false,
@@ -31,13 +31,12 @@
       "@Interfaces/*": ["./src/interfaces/*"],
       "@Commands/*": ["./src/commands/*"],
       "@Events/*": ["./src/events/*"],
+      "@EventsValidators/*": ["./src/event-validators/*"],
+      "@Components/*": ["./src/components/*"],
       "@Utils/*": ["./src/utils/*"],
+      "@Managers/*": ["./src/managers/*"],
       "@Structures/*": ["./src/structures/*"],
-      "@Api/*": ["./src/api/*"],
-      "@ApiUtils/*": ["./src/api/utils/*"],
-      "@ApiInterfaces/*": ["./src/api/interfaces/*"],
-      "@ApiRouters/*": ["./src/api/routers/*"],
-      "@ApiMiddlewares/*": ["./src/api/middlewares/*"]
+      "@AiStructures/*": ["./src/ai-stuff/structures/*"]
     }
   }
 }

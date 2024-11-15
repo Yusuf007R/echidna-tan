@@ -1,18 +1,28 @@
+import config from '@Configs';
 import { create } from 'apisauce';
-import config from '../config';
+import OpenAI from 'openai';
 
 const danBooruAPI = create({
-  baseURL: config.danbooruEndpoint
+  baseURL: config.DANBOORU_ENDPOINT
 });
 
 const waifuGeneratorAPI = create({
-  baseURL: config.waifuGeneratorEndpoint,
+  baseURL: config.WAIFU_GENERATOR_ENDPOINT,
   headers: {
-    Authorization: `Bearer ${config.runpodToken}`
+    Authorization: `Bearer ${config.RUNPOD_TOKEN}`
   }
 });
 
 const baseAPI = create({ baseURL: '' });
+
+const openRouterAPI = new OpenAI({
+  baseURL: config.OPENROUTER_URL,
+  apiKey: config.OPENROUTER_API_KEY
+});
+
+const openAI = new OpenAI({
+  apiKey: config.OPENAI_API_KEY
+});
 
 waifuGeneratorAPI.axiosInstance.interceptors.request.use((config) => {
   const url = config.url?.toString();
@@ -23,11 +33,12 @@ waifuGeneratorAPI.axiosInstance.interceptors.request.use((config) => {
     input: {
       method,
       endpoint: url,
-      data: config.data
+      data: config.data,
+      timeout: 60
     }
   };
 
   return config;
 });
 
-export { baseAPI, danBooruAPI, waifuGeneratorAPI };
+export { baseAPI, danBooruAPI, openAI, openRouterAPI, waifuGeneratorAPI };

@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
+import configs from '@Configs';
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from '@discordjs/builders';
+import { CmdType, Command } from '@Structures/command';
 import EchidnaSingleton from '@Structures/echidna-singleton';
-import { CacheType, Collection, CommandInteraction, REST, Routes } from 'discord.js';
+import { Option } from '@Utils/options-builder';
+import { AutocompleteInteraction, CacheType, Collection, CommandInteraction, REST, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import { join } from 'path';
-import configs from '../config';
-import { CmdType, Command, Options } from '../structures/command';
 
 export default class CommandManager {
   commands: Collection<string, { category: string; command: Command }>;
@@ -48,12 +49,14 @@ export default class CommandManager {
     const slashCommmandsDM = this.filterMapCmds(['DM', 'BOTH']);
     try {
       const requests = guilds.map((guild) =>
-        new REST().setToken(configs.token).put(Routes.applicationGuildCommands(configs.clientId, guild.id), {
-          body: slashCommmandsGuild
-        })
+        new REST()
+          .setToken(configs.DISCORD_TOKEN)
+          .put(Routes.applicationGuildCommands(configs.DISCORD_BOT_CLIENT_ID, guild.id), {
+            body: slashCommmandsGuild
+          })
       );
 
-      await new REST().setToken(configs.token).put(Routes.applicationCommands(configs.clientId), {
+      await new REST().setToken(configs.DISCORD_TOKEN).put(Routes.applicationCommands(configs.DISCORD_BOT_CLIENT_ID), {
         body: slashCommmandsDM
       });
       await Promise.all(requests);
@@ -64,14 +67,34 @@ export default class CommandManager {
     }
   }
 
-  async executeCommand(interaction: CommandInteraction<CacheType>) {
+  getCmd(interaction: CommandInteraction<CacheType> | AutocompleteInteraction<CacheType>) {
     const cmd = this.commands.get(interaction.commandName);
-    if (!cmd) return interaction.reply('Command not found.');
+    if (!cmd) {
+      // console.log(`Cmd not found ${interaction.commandName}`)
+      // if (interaction.isRepliable()) interaction.reply('Command not found');
+      throw new Error(`Cmd not found ${interaction.commandName}`);
+    }
+    return cmd;
+  }
+
+  async executeCommand(interaction: CommandInteraction<CacheType>) {
     try {
+      const cmd = this.getCmd(interaction);
       await cmd.command._run(interaction);
     } catch (error) {
       console.log(error);
       interaction.editReply('An error occured while executing the command.');
+    }
+  }
+
+  async executeAutocomplete(interaction: AutocompleteInteraction<CacheType>) {
+    try {
+      const cmd = this.getCmd(interaction);
+      await cmd.command._handleAutocomplete(interaction);
+    } catch (error) {
+      console.log(error);
+      if (interaction.inGuild() && interaction.channel?.isTextBased())
+        interaction?.channel?.send('An error occured while executing the command autocomplete.');
     }
   }
 
@@ -81,14 +104,14 @@ export default class CommandManager {
       .map(({ command }) => {
         const slash = new SlashCommandBuilder().setName(command.name).setDescription(command.description);
 
-        if (command.options) {
-          this.optionBuilder(command.options, slash);
+        if ((command._optionsArray as any)?.length) {
+          this.optionBuilder(command._optionsArray as any, slash);
         }
         return slash.toJSON();
       });
   }
 
-  async optionBuilder(options: Options[], slash: SlashCommandBuilder | SlashCommandSubcommandBuilder) {
+  async optionBuilder(options: Option[], slash: SlashCommandBuilder | SlashCommandSubcommandBuilder) {
     options.forEach((element) => {
       switch (element.type) {
         case 'string':
@@ -98,6 +121,8 @@ export default class CommandManager {
             if (element.choices?.length) {
               option.addChoices(...element.choices.map((e) => ({ name: e, value: e })));
             }
+
+            if (element.autocomplete) option.setAutocomplete(true);
             return option;
           });
           break;

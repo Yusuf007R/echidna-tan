@@ -1,7 +1,7 @@
 import { EmbedBuilder } from '@discordjs/builders';
+import { danBooruAPI } from '@Utils/request';
 import { CacheType, CommandInteraction, TextChannel } from 'discord.js';
 import { DanBooruError, DanBooruPost } from '../interfaces/dan-booru';
-import { danBooruAPI } from '../utils/request';
 
 export type getImageProps = {
   tags?: string[];

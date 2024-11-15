@@ -9,10 +9,9 @@ import {
   User
 } from 'discord.js';
 
-import GetChoices from '@Utils/get-choices';
+import ButtonComponent from '@Components/button';
+import TicTacToeUtils from '@Utils/tic-tac-toe-utils';
 import wait from '@Utils/wait';
-import ButtonComponent from '../components/button';
-import TicTacToeUtils from '../utils/tic-tac-toe-utils';
 import EchidnaSingleton from './echidna-singleton';
 
 export enum TurnEnum {
@@ -91,11 +90,13 @@ export default class TicTacToe extends EchidnaSingleton {
     this.resetTimeout();
   }
 
-  static async initGame(interaction: CommandInteraction<CacheType>, id: string) {
+  static async initGame(
+    interaction: CommandInteraction<CacheType>,
+    id: string,
+    player2: User | undefined,
+    ultimate: boolean | undefined
+  ) {
     const player1 = interaction.user;
-    const choices = new GetChoices(interaction.options);
-    const player2 = await choices.getUser('user', false);
-    const ultimate = choices.getBoolean('ultimate');
 
     await interaction.deferReply({ ephemeral: false });
     if (player2) {
@@ -308,7 +309,8 @@ export default class TicTacToe extends EchidnaSingleton {
       this.switchTurn();
       this.status = TicTacToeStatus.Finished;
       await this.endGame();
-      if (embed) await this.currentInteraction.channel?.send({ embeds: [embed] });
+      if (embed && this.currentInteraction.inGuild() && this.currentInteraction.channel?.isTextBased())
+        await this.currentInteraction.channel?.send({ embeds: [embed] });
     }
     return isDraw || isWinner;
   }
