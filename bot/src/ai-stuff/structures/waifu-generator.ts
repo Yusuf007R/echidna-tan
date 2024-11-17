@@ -95,10 +95,16 @@ export default class WaifuGenerator {
     const reply = await message.reply('Upscaling image...');
     configs.enable_hr = true;
     const res = await this.getImage(configs);
-    const embed = message.embeds[0];
-    const newEmbed = new EmbedBuilder(embed.data).setImage('attachment://image.png').setFooter({
-      text: this.getFooter(res.executionTime)
-    });
+    const {
+      data: { type, ...embedData }
+    } = message.embeds[0];
+    const newEmbed = new EmbedBuilder({
+      ...embedData
+    })
+      .setImage('attachment://image.png')
+      .setFooter({
+        text: this.getFooter(res.executionTime)
+      });
     const newAttachment = new AttachmentBuilder(Buffer.from(res.output.images[0], 'base64'), {
       name: 'image.png'
     });

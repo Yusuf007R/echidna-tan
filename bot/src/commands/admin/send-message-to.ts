@@ -1,6 +1,6 @@
 // make a command that sends a message to a specific user
 
-import config from '@Configs';
+import IsAdmin from '@EventsValidators/isAdmin';
 import { Command } from '@Structures/command';
 import { OptionsBuilder } from '@Utils/options-builder';
 import { CacheType, CommandInteraction } from 'discord.js';
@@ -18,21 +18,18 @@ const options = new OptionsBuilder()
   })
   .build();
 
-export default class ValCrosshairCommand extends Command<typeof options> {
+export default class SendMessageToCommand extends Command<typeof options> {
   constructor() {
     super({
       name: 'send-message-to',
       description: 'Send a message to a specific user',
       options,
+      validators: [IsAdmin],
       cmdType: 'BOTH'
     });
   }
 
   async run(interaction: CommandInteraction<CacheType>) {
-    if (config.DISCORD_OP_USER_ID !== interaction.user.id) {
-      interaction.reply('You are not allowed to use this command');
-      return;
-    }
     try {
       await interaction.deferReply();
       const userId = this.options['user-id'];

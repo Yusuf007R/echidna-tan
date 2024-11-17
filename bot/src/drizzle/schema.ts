@@ -1,11 +1,24 @@
-import { date, index, integer, pgTable, serial, text, vector } from 'drizzle-orm/pg-core';
+
+import { boolean, date, index, integer, pgEnum, pgTable, serial, text, vector } from 'drizzle-orm/pg-core';
+
+
+export const echidnaStatus = pgEnum('echidna_status', ['online', 'idle', 'dnd', 'invisible']);
+
+export const echidnaTable = pgTable('echidna', {
+  id: serial('id').primaryKey(),
+  status: echidnaStatus('status').notNull().default('online'),
+  activity: text('activity'),
+  activityType: integer('activity_type').notNull().default(4),
+  state: text('state')
+});
 
 export const usersTable = pgTable('users', {
   discordId: text('discord_id').primaryKey(),
   displayName: text('display_name').notNull(),
   userName: text('user_name').notNull(),
   createdAt: date('created_at').notNull().defaultNow(),
-  updatedAt: date('updated_at').notNull().defaultNow()
+  updatedAt: date('updated_at').notNull().defaultNow(),
+  isAdmin: boolean('is_admin').notNull().default(false)
 });
 
 export const memoriesTable = pgTable('memories', {

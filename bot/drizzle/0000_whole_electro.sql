@@ -1,6 +1,11 @@
--- CreateExtension 
 CREATE EXTENSION IF NOT EXISTS vector;
 
+DO $$ BEGIN
+ CREATE TYPE "public"."echidna_status" AS ENUM('online', 'idle', 'dnd', 'invisible');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "chats" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
@@ -11,6 +16,14 @@ CREATE TABLE IF NOT EXISTS "chats" (
 	"prompt_template" text NOT NULL,
 	"created_at" date DEFAULT now() NOT NULL,
 	"updated_at" date DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "echidna" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"status" "echidna_status" DEFAULT 'online' NOT NULL,
+	"activity" text DEFAULT 'with onii-sama' NOT NULL,
+	"activity_type" integer DEFAULT -1 NOT NULL,
+	"state" text DEFAULT '' NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "memories" (
@@ -40,7 +53,8 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"display_name" text NOT NULL,
 	"user_name" text NOT NULL,
 	"created_at" date DEFAULT now() NOT NULL,
-	"updated_at" date DEFAULT now() NOT NULL
+	"updated_at" date DEFAULT now() NOT NULL,
+	"is_admin" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
 DO $$ BEGIN

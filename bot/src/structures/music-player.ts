@@ -1,6 +1,6 @@
 import StringSelectComponent from '@Components/string-select';
 import capitalize from '@Utils/capitalize';
-import getImageUrl from '@Utils/get-image-from-url';
+import getImageAsBuffer from '@Utils/get-image-from-url';
 import milisecondsToReadable from '@Utils/seconds-to-minutes';
 import { ActionRowBuilder, EmbedBuilder, StringSelectMenuBuilder } from '@discordjs/builders';
 import { GuildQueue, Player, Playlist, QueueRepeatMode, Track } from 'discord-player';
@@ -205,7 +205,7 @@ export default class MusicPlayer extends Player {
     const imageCache = queue.metadata['image-url-cache'] as Record<string, any>;
     const imageDominantColorCache = imageCache[image];
     if (!imageDominantColorCache) {
-      const res = await getImageUrl(image);
+      const res = await getImageAsBuffer(image);
       if (res && res.ok && res.data) {
         const { dominant } = await sharp(res.data).stats();
         imageCache[image] = Object.values(dominant);
