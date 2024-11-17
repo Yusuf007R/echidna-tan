@@ -6,6 +6,7 @@ import IsAdmin from '@EventsValidators/isAdmin';
 import { Command } from '@Structures/command';
 import getImageAsBuffer from '@Utils/get-image-from-url';
 import { OptionsBuilder } from '@Utils/options-builder';
+import { baseAPI } from '@Utils/request';
 import { ActivityType, CacheType, CommandInteraction } from 'discord.js';
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
@@ -47,7 +48,11 @@ export default class EchidnaInfoCommand extends Command<typeof options> {
         }
       }
 
-      
+      const ip = await baseAPI.get('https://icanhazip.com/');
+
+      console.log(ip.data);
+
+
       const embed = new EmbedBuilder()
         .setTitle(`${this.echidna.user?.username}'s Information`)
         .setThumbnail(image ?? null)
@@ -84,7 +89,10 @@ export default class EchidnaInfoCommand extends Command<typeof options> {
           name: 'Total Events',
           value: this.echidna.eventManager.events.size.toString()
         },
-        
+        {
+          name: 'IP',
+          value: ip.data as string ?? 'Unknown'
+        }
       ])
 
       interaction.editReply({ embeds: [embed] });

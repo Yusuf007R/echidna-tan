@@ -40,7 +40,7 @@ export default class EventManager extends EchidnaSingleton {
         try {
           await event.event.run(...args);
         } catch (error) {
-          console.error('Error executing event', error);
+          console.error(`[EventManager] [${event.event.eventName}] ${error}`);
         }
       });
     });

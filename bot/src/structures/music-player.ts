@@ -35,14 +35,13 @@ export default class MusicPlayer extends Player {
     this.events.on('playerStart', (queue) => this.nowPlaying(queue));
     this.events.on('playerFinish', (queue) => {
       console.log('playerFinish', queue);
-    });
-    this.on('debug', async (message) => {
-      console.log(`General player debug event: ${message}`);
-    });
+    });    // this.on('debug', async (message) => {
+    //   console.log(`General player debug event: ${message}`);
+    // });
 
-    this.events.on('debug', async (queue, message) => {
-      console.log(`Player debug event: ${message} - ${queue.guild.name}`);
-    });
+    // this.events.on('debug', async (queue, message) => {
+    //   console.log(`Player debug event: ${message} - ${queue.guild.name}`);
+    // });
   }
 
   async playCmd(interaction: CommandInteraction<CacheType>, query: string) {
@@ -146,14 +145,15 @@ export default class MusicPlayer extends Player {
       });
     }
     if (thumbnail) {
-      embed.setImage(thumbnail);
+      embed.setThumbnail(thumbnail);
+   
       embed.setColor(await this.getTrackDominantColor(queue));
     }
 
     const interaction = queue.metadata.interaction;
 
     if (interaction.inGuild() && interaction.channel?.isTextBased()) {
-      interaction.channel?.send({ embeds: [embed] });
+      interaction.channel?.send({ embeds: [embed], content: `${thumbnail}` });
     }
   }
 

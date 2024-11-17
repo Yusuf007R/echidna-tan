@@ -82,7 +82,7 @@ export default class CommandManager {
       const cmd = this.getCmd(interaction);
       await cmd.command._run(interaction);
     } catch (error) {
-      console.log(error);
+      console.log(`[CommandManager] [${interaction.commandName}] ${error}`);
       interaction.editReply('An error occured while executing the command.');
     }
   }
