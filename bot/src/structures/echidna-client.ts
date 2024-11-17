@@ -45,9 +45,9 @@ export default class EchidnaClient extends Client {
         status: echidna.status,
         activities: [
           {
-            name: echidna.activity,
+            name: echidna.activity ?? '',
             type: echidna.activityType,
-            state: echidna.state
+            state: echidna.state ?? undefined
           }
         ]
       });
