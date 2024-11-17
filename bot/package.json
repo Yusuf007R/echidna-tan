@@ -7,7 +7,7 @@
     "dev": "tsx watch ./src/index.ts",
     "debug": "tsx watch --inspect ./src/index.ts",
     "debug-brk": "tsx watch --inspect-brk ./src/index.ts",
-    "start": "npm run build && node ./dist/index.js ",
+    "start": "npm run build && node ./dist/src/index.js ",
     "dev-bun": "bun run --bun  ./src/index.ts",
     "build": "tsc && tsc-alias",
     "test": "echo \"Error: no test specified\" && exit 1",

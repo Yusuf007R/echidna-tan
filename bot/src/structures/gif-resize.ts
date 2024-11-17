@@ -8,11 +8,13 @@ import { execFile } from 'child_process';
 import { randomUUID } from 'crypto';
 import ffmpegStatic from 'ffmpeg-static';
 import Ffmpeg from 'fluent-ffmpeg';
-import gifsicle from 'gifsicle';
 
 import { tmpdir } from 'os';
 import { join } from 'path';
 import sharp from 'sharp';
+
+
+
 
 if (ffmpegStatic === null) throw new Error('ffmpeg-static path not found');
 
@@ -32,7 +34,18 @@ type gifResizeOptions = {
 };
 
 export default class GifResize {
-  constructor() {}
+  private gifsicle!: typeof import('gifsicle');
+
+  constructor() {
+  
+  }
+
+  async loadGifsicle() {
+    if (this.gifsicle) return;
+    const gifsicle = await import('gifsicle');
+    console.log('gifsicle', gifsicle);
+    this.gifsicle = gifsicle.default;
+  }
 
   async getGifs(message: Message<boolean>, deepness: number = 0): Promise<gifTypeContent[]> {
     if (deepness > 4) return [];
@@ -86,11 +99,12 @@ export default class GifResize {
   }
 
   async optimizeGif(inputPath: string, maxSizeMb: number = 10, compressionLevel: number = 30) {
+    await this.loadGifsicle();
     return new Promise<string>((resolve, reject) => {
       const outputPath = this.getTempPath();
 
       execFile(
-        gifsicle,
+        this.gifsicle,
         ['--optimize=3', `--lossy=${compressionLevel}`, inputPath, '-o', outputPath],
         async (error) => {
           console.log('error', error);
