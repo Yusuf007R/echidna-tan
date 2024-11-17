@@ -1,21 +1,24 @@
 import wait from '@Utils/wait';
-import { AttachmentBuilder, CacheType, Collection, CommandInteraction, EmbedType, Message } from 'discord.js';
+import { EmbedType, Message } from 'discord.js';
 import fs from 'fs/promises';
 
-import z, { ZodError } from 'zod';
-
 import getImageUrl from '@Utils/get-image-from-url';
+import { ApiResponse } from 'apisauce';
+import { execFile } from 'child_process';
 import { randomUUID } from 'crypto';
 import ffmpegStatic from 'ffmpeg-static';
 import Ffmpeg from 'fluent-ffmpeg';
+import gifsicle from 'gifsicle';
+
 import { tmpdir } from 'os';
 import { join } from 'path';
+import sharp from 'sharp';
 
 if (ffmpegStatic === null) throw new Error('ffmpeg-static path not found');
 
 Ffmpeg.setFfmpegPath(ffmpegStatic);
 
-type gifType = 'gif' | 'mp4';
+type gifType = 'gif' | 'mp4' | 'webp';
 
 type gifTypeContent = {
   url: string;
@@ -31,112 +34,127 @@ type gifResizeOptions = {
 export default class GifResize {
   constructor() {}
 
-  async manageInteraction(interaction: CommandInteraction<CacheType>, options: gifResizeOptions) {
-    interaction.reply('Please provide a gif to resize');
+  async getGifs(message: Message<boolean>, deepness: number = 0): Promise<gifTypeContent[]> {
+    if (deepness > 4) return [];
+    const gifs: gifTypeContent[] = [];
 
-    const dmChannel = await interaction.user.createDM();
-
-    try {
-      const collected = await dmChannel?.awaitMessages({
-        max: 1,
-        time: 60000,
-        errors: ['time'],
-        filter: (m) => m.author.id === interaction.user.id
-      });
-      const message = collected.first();
-      if (!message) throw new Error('Internal error, try again later.');
-
-      const gif = await this.getGifUrl(message, 0);
-
-      if (!gif) throw new Error('Gif Not Found');
-      dmChannel.sendTyping();
-
-      const gifBuffer = await this.resize(gif, options);
-
-      const file = new AttachmentBuilder(gifBuffer, {
-        name: 'resized.gif'
-      });
-
-      dmChannel.send({ files: [file] });
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new Error('Not a valid GIF');
+    // Handle attachments
+    message.attachments.forEach((attachment) => {
+      if (['image/gif', 'image/webp'].includes(attachment.contentType ?? '')) {
+        gifs.push({
+          url: attachment.contentType === 'image/webp' ? attachment.url : attachment.proxyURL,
+          type: attachment.contentType?.split('/')[1] as gifType,
+          aspectRatio: (attachment.height ?? 1) / (attachment.width ?? 1)
+        });
       }
+    });
 
-      if (error instanceof Collection) {
-        throw new Error('You took too long to send the GIF max 60 seconds');
-      }
-
-      throw new Error('Internal error, try again later.');
-    }
-  }
-
-  async getGifUrl(message: Message<boolean>, deepness: number): Promise<gifTypeContent | undefined> {
-    if (deepness > 4) return undefined;
-    const attachment = message.attachments.first();
-    if (attachment && attachment.contentType === 'image/gif') {
-      return {
-        url: attachment.proxyURL,
-        type: 'gif',
-        aspectRatio: (attachment.height ?? 1) / (attachment.width ?? 1)
-      };
-    }
-
-    if (!z.string().url().parse(message.content)) return undefined;
-
-    const embed = message?.embeds?.at(0);
-    if (embed) {
+    // Handle embeds
+    message.embeds.forEach((embed) => {
       const type = embed.data.type?.toString() as EmbedType | undefined;
-
-      if (!type) return undefined;
+      if (!type) return;
 
       const validTypes: `${EmbedType}`[] = ['gifv', 'image'];
+      if (!validTypes.includes(type)) return;
 
-      if (!validTypes.includes(type)) return undefined;
-
-      if (type === 'image' && embed.data.thumbnail?.proxy_url) {
-        const { proxy_url, height, width } = embed.data.thumbnail;
-        return {
-          url: proxy_url,
+      if (type === 'image' && embed.data.thumbnail?.url) {
+        const { url, height, width } = embed.data.thumbnail;
+        gifs.push({
+          url,
           type: 'gif',
           aspectRatio: (height ?? 1) / (width ?? 1)
-        };
+        });
       }
+
       if (type === 'gifv' && embed.data.video?.proxy_url) {
         const { proxy_url, height, width } = embed.data.video;
-        return {
+        gifs.push({
           url: proxy_url,
           type: 'mp4',
           aspectRatio: (height ?? 1) / (width ?? 1)
-        };
+        });
       }
+    });
 
-      return undefined;
+    if (gifs.length === 0) {
+      await wait(500);
+      const newMsg = await message.fetch(true);
+      return this.getGifs(newMsg, deepness + 1);
     }
-    await wait(200);
-    const newMsg = await message.fetch(true);
 
-    return this.getGifUrl(newMsg, deepness + 1);
+    return gifs;
+  }
+
+  async optimizeGif(inputPath: string, maxSizeMb: number = 10, compressionLevel: number = 30) {
+    return new Promise<string>((resolve, reject) => {
+      const outputPath = this.getTempPath();
+
+      execFile(
+        gifsicle,
+        ['--optimize=3', `--lossy=${compressionLevel}`, inputPath, '-o', outputPath],
+        async (error) => {
+          console.log('error', error);
+          if (error) {
+            reject(error);
+          }
+          const stats = await fs.stat(outputPath);
+          const sizeInMb = stats.size / 1024 / 1024;
+          if (sizeInMb > maxSizeMb) {
+            return await this.optimizeGif(outputPath, maxSizeMb, compressionLevel + 5);
+          }
+          resolve(outputPath);
+        }
+      );
+    });
+  }
+
+  async webpToGif(buffer: Buffer) {
+    const outputPath = this.getTempPath();
+    const inputPath = this.getTempPath();
+    await fs.writeFile(inputPath, buffer);
+    await sharp(inputPath, { animated: true, pages: -1 })
+      .gif({
+        delay: 80,
+
+        loop: 0
+      })
+      .toFile(outputPath);
+    fs.unlink(inputPath);
+    return outputPath;
+  }
+
+  async getGifTempPath(gifBuffer: ApiResponse<Buffer, Buffer>) {
+    let inputPath = '';
+    if (gifBuffer.headers?.['content-type'] === 'image/webp') {
+      inputPath = await this.webpToGif(gifBuffer.data!);
+    } else {
+      inputPath = this.getTempPath();
+      await fs.writeFile(inputPath, gifBuffer.data!);
+    }
+    return inputPath;
+  }
+
+  getTempPath() {
+    const id = randomUUID();
+    //create the folder if it doesn't exist
+    fs.mkdir(join(tmpdir(), 'echidna-temps'), { recursive: true });
+    return join(tmpdir(), 'echidna-temps', `temp-${id}.gif`);
   }
 
   async resize(gif: gifTypeContent, options: gifResizeOptions) {
     const gifBuffer = await getImageUrl(gif.url);
     if (!gifBuffer.data) throw new Error('Gif not found');
 
-
-
     const { width } = options;
     const height = options.height ?? Math.floor(width * gif.aspectRatio);
 
     try {
       // Create temporary files
-      const id = randomUUID();
-      const inputPath = join(tmpdir(), `input-${id}.gif`);
-      const outputPath = join(tmpdir(), `output-${id}.gif`);
+      const outputPath = this.getTempPath();
+      const inputPath = await this.getGifTempPath(gifBuffer);
       console.log('inputPath', inputPath);
       console.log('outputPath', outputPath);
       // Write input file
-      await fs.writeFile(inputPath, gifBuffer.data);
 
       // Process using ffmpeg
       await new Promise<void>((resolve, reject) => {
@@ -144,7 +162,7 @@ export default class GifResize {
           .complexFilter(
             `[0:v] scale=${width}:${height}:flags=lanczos,split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`
           )
-          .inputFormat(gif.type)
+          .inputFormat(gif.type === 'webp' ? 'gif' : gif.type)
           .outputFormat('gif')
           .output(outputPath)
           .on('end', () => resolve())
@@ -156,11 +174,28 @@ export default class GifResize {
       const resultBuffer = await fs.readFile(outputPath);
       fs.unlink(outputPath);
       fs.unlink(inputPath);
-      
+
       return resultBuffer;
     } catch (error) {
       console.error('Error while resizing gif:', error);
       throw new Error('Error while resizing gif');
     }
+  }
+
+  async optimize(gif: gifTypeContent) {
+    const gifBuffer = await getImageUrl(gif.url);
+    if (!gifBuffer.data) throw new Error('Gif not found');
+
+    const inputPath = await this.getGifTempPath(gifBuffer);
+
+    const optimizedPath = await this.optimizeGif(inputPath);
+
+    const optimizedBuffer = await fs.readFile(optimizedPath);
+
+    try {
+      fs.unlink(optimizedPath);
+      fs.unlink(inputPath);
+    } catch (error) {}
+    return optimizedBuffer;
   }
 }

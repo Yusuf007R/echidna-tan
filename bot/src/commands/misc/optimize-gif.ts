@@ -5,25 +5,13 @@ import { OptionsBuilder } from '@Utils/options-builder';
 import { AttachmentBuilder, CacheType, Collection, CommandInteraction } from 'discord.js';
 import { ZodError } from 'zod';
 
-const options = new OptionsBuilder()
-  .addIntOption({
-    name: 'width',
-    description: 'The width of the gif',
-    required: true,
-    min: 1
-  })
-  .addIntOption({
-    name: 'height',
-    description: 'The height of the gif',
-    min: 1
-  })
-  .build();
+const options = new OptionsBuilder().build();
 
 export default class GifResizeCommand extends Command<typeof options> {
   constructor() {
     super({
-      name: 'gif-resize',
-      description: 'Resize a gif',
+      name: 'gif-optimize',
+      description: 'Optimize a gif',
       options,
       cmdType: 'BOTH'
     });
@@ -32,10 +20,7 @@ export default class GifResizeCommand extends Command<typeof options> {
   async run(interaction: CommandInteraction<CacheType>) {
     const gifResized = new GifResize();
 
-    const width = this.options.width;
-    const height = this.options.height;
-
-    interaction.reply('Please provide a gif to resize');
+    interaction.reply('Please provide a gif to optimize');
 
     const dmChannel = await interaction.user.createDM();
 
@@ -47,6 +32,7 @@ export default class GifResizeCommand extends Command<typeof options> {
         filter: (m) => m.author.id === interaction.user.id
       });
       const message = collected.first();
+      
       const stopTyping = keepTyping(() => dmChannel.sendTyping());
       if (!message) throw new Error('Internal error, try again later.');
 
@@ -54,12 +40,14 @@ export default class GifResizeCommand extends Command<typeof options> {
 
       if (!gifs.length) throw new Error('Gif Not Found');
 
+
+
       await Promise.all(
         gifs.map(async (gif) => {
-          const gifBuffer = await gifResized.resize(gif, { width, height });
+          const gifBuffer = await gifResized.optimize(gif);
 
           const file = new AttachmentBuilder(gifBuffer, {
-            name: 'resized.gif'
+            name: 'optimized.gif'
           });
 
           dmChannel.send({ files: [file] });
@@ -68,6 +56,7 @@ export default class GifResizeCommand extends Command<typeof options> {
 
       stopTyping();
     } catch (error) {
+      console.log(error);
       if (error instanceof ZodError) {
         throw new Error('Not a valid GIF');
       }
