@@ -7,7 +7,7 @@ export const echidnaStatus = pgEnum('echidna_status', ['online', 'idle', 'dnd', 
 export const echidnaTable = pgTable('echidna', {
   id: serial('id').primaryKey(),
   status: echidnaStatus('status').notNull().default('online'),
-  activity: text('activity'),
+  activity: text('activity').notNull().default('N/A'),
   activityType: integer('activity_type').notNull().default(4),
   state: text('state')
 });

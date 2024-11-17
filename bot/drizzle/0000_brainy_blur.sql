@@ -1,5 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS vector;
-
 DO $$ BEGIN
  CREATE TYPE "public"."echidna_status" AS ENUM('online', 'idle', 'dnd', 'invisible');
 EXCEPTION
@@ -21,9 +19,9 @@ CREATE TABLE IF NOT EXISTS "chats" (
 CREATE TABLE IF NOT EXISTS "echidna" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"status" "echidna_status" DEFAULT 'online' NOT NULL,
-	"activity" text DEFAULT 'with onii-sama' NOT NULL,
-	"activity_type" integer DEFAULT -1 NOT NULL,
-	"state" text DEFAULT '' NOT NULL
+	"activity" text DEFAULT 'N/A' NOT NULL,
+	"activity_type" integer DEFAULT 4 NOT NULL,
+	"state" text
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "memories" (

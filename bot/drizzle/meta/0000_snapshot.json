@@ -1,5 +1,5 @@
 {
-  "id": "a7cdf797-5158-48c4-8a09-bc5591d09072",
+  "id": "89e6fdd6-fabf-4f15-92a6-726caaa0cc95",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -107,21 +107,20 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'with onii-sama'"
+          "default": "'N/A'"
         },
         "activity_type": {
           "name": "activity_type",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": -1
+          "default": 4
         },
         "state": {
           "name": "state",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "''"
+          "notNull": false
         }
       },
       "indexes": {},
