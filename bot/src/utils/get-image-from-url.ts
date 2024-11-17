@@ -1,6 +1,6 @@
 import { baseAPI } from './request';
 
-export default async function getImageUrl(url: string) {
+export default async function getImageAsBuffer(url: string) {
   return await baseAPI.get<Buffer>(
     url,
     {},

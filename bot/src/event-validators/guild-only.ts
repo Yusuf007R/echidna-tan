@@ -12,7 +12,7 @@ export default class GuildOnly extends CommandValidator {
 
   async isValid(interaction: Interaction<CacheType>, next: CommandValidatorNext) {
     if (!interaction.inGuild()) {
-      this.sendMessage(interaction);
+      return this.sendMessage(interaction);
     }
     next();
   }

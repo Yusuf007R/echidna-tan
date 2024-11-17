@@ -2,7 +2,7 @@ import wait from '@Utils/wait';
 import { EmbedType, Message } from 'discord.js';
 import fs from 'fs/promises';
 
-import getImageUrl from '@Utils/get-image-from-url';
+import getImageAsBuffer from '@Utils/get-image-from-url';
 import { ApiResponse } from 'apisauce';
 import { execFile } from 'child_process';
 import { randomUUID } from 'crypto';
@@ -142,7 +142,7 @@ export default class GifResize {
   }
 
   async resize(gif: gifTypeContent, options: gifResizeOptions) {
-    const gifBuffer = await getImageUrl(gif.url);
+    const gifBuffer = await getImageAsBuffer(gif.url);
     if (!gifBuffer.data) throw new Error('Gif not found');
 
     const { width } = options;
@@ -183,7 +183,7 @@ export default class GifResize {
   }
 
   async optimize(gif: gifTypeContent) {
-    const gifBuffer = await getImageUrl(gif.url);
+    const gifBuffer = await getImageAsBuffer(gif.url);
     if (!gifBuffer.data) throw new Error('Gif not found');
 
     const inputPath = await this.getGifTempPath(gifBuffer);

@@ -1,8 +1,11 @@
 import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js';
 
-import configs from '@Configs';
+import { default as config, default as configs } from '@Configs';
 import CommandManager from '@Managers/command-manager';
 import EventManager from '@Managers/event-manager';
+import { eq } from 'drizzle-orm';
+import db from 'src/drizzle';
+import { echidnaTable } from 'src/drizzle/schema';
 import EchidnaSingleton from './echidna-singleton';
 import MusicPlayer from './music-player';
 import TicTacToe from './tic-tac-toe';
@@ -32,6 +35,23 @@ export default class EchidnaClient extends Client {
       partials: [Partials.Channel]
     });
     this.init();
+  }
+
+
+  async updateEchidna() {
+    const echidna = await db.query.echidnaTable.findFirst({ where: eq(echidnaTable.id, config.DISCORD_DB_PROFILE) });
+    if (echidna) {
+      this.user?.setPresence({
+        status: echidna.status,
+        activities: [
+          {
+            name: echidna.activity ?? '',
+            type: echidna.activityType,
+            state: echidna.state ?? undefined
+          }
+        ]
+      });
+    }
   }
 
   init() {

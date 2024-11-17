@@ -1,5 +1,4 @@
 import { DiscordEvent } from '@Structures/discord-events';
-import { ActivityType } from 'discord.js';
 
 export default class ReadyEvent extends DiscordEvent<'ready'> {
   constructor() {
@@ -7,12 +6,8 @@ export default class ReadyEvent extends DiscordEvent<'ready'> {
   }
 
   async run(): Promise<void> {
-    this.echidna.user?.setActivity({
-      name: 'with onii-sama',
-      type: ActivityType.Competing
-    });
-    this.echidna.user?.setStatus('online');
-
+    await this.echidna.updateEchidna();
+    
     console.log(`Logged in as ${this.echidna.user?.tag}`);
 
     this.echidna.commandManager.loadCommands();

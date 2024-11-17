@@ -190,7 +190,7 @@ export default class ChatBot {
     return msgs;
   }
 
-  async addToCost(usage?: CompletionUsage) {
+  async addToCost(usage?: CompletionUsage | null) {
     const inputTokens = usage?.prompt_tokens ?? 0;
     const outputTokens = usage?.completion_tokens ?? 0;
 
