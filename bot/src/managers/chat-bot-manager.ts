@@ -3,8 +3,8 @@ import { AiPrompt } from '@Interfaces/ai-prompts';
 import { OpenRouterModel } from '@Interfaces/open-router-model';
 import CacheManager from '@Structures/cache-manager';
 import { openRouterAPI } from '@Utils/request';
-import { readdirSync } from 'fs';
-import { join } from 'path';
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 export default class ChatBotManager {
   private static chatBots: Map<string, ChatBot> = new Map();

@@ -1,5 +1,5 @@
 # Builder Stage
-FROM node:22 AS builder
+FROM node:23 AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY . .
 RUN pnpm run build
 
 # Runtime Stage
-FROM node:22 AS runtime
+FROM node:23 AS runtime
 
 WORKDIR /app
 

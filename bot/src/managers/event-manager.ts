@@ -2,8 +2,9 @@
 import { DiscordEvent, eventType } from '@Structures/discord-events';
 import EchidnaSingleton from '@Structures/echidna-singleton';
 import { Collection } from 'discord.js';
-import { readdirSync } from 'fs';
-import { join } from 'path';
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
+
 export default class EventManager extends EchidnaSingleton {
   events: Collection<string, { type: eventType; event: DiscordEvent }>;
 

@@ -5,8 +5,8 @@ import { CmdType, Command } from '@Structures/command';
 import EchidnaSingleton from '@Structures/echidna-singleton';
 import { Option } from '@Utils/options-builder';
 import { AutocompleteInteraction, CacheType, Collection, CommandInteraction, REST, Routes } from 'discord.js';
-import { readdirSync } from 'fs';
-import { join } from 'path';
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 export default class CommandManager {
   commands: Collection<string, { category: string; command: Command }>;

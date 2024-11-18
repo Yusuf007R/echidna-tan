@@ -1,20 +1,19 @@
 import wait from '@Utils/wait';
 import { EmbedType, Message } from 'discord.js';
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
 
 import getImageAsBuffer from '@Utils/get-image-from-url';
-import { ApiResponse } from 'apisauce';
+import type { ApiResponse } from 'apisauce';
 import { execFile } from 'child_process';
 import { randomUUID } from 'crypto';
 import ffmpegStatic from 'ffmpeg-static';
 import Ffmpeg from 'fluent-ffmpeg';
 
-import { tmpdir } from 'os';
-import { join } from 'path';
+import gifsicle from 'gifsicle';
+import { mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import sharp from 'sharp';
-
-
-
 
 if (ffmpegStatic === null) throw new Error('ffmpeg-static path not found');
 
@@ -34,19 +33,6 @@ type gifResizeOptions = {
 };
 
 export default class GifResize {
-  private gifsicle!: typeof import('gifsicle');
-
-  constructor() {
-  
-  }
-
-  async loadGifsicle() {
-    if (this.gifsicle) return;
-    const gifsicle = await import('gifsicle');
-    console.log('gifsicle', gifsicle);
-    this.gifsicle = gifsicle.default;
-  }
-
   async getGifs(message: Message<boolean>, deepness: number = 0): Promise<gifTypeContent[]> {
     if (deepness > 4) return [];
     const gifs: gifTypeContent[] = [];
@@ -99,12 +85,11 @@ export default class GifResize {
   }
 
   async optimizeGif(inputPath: string, maxSizeMb: number = 10, compressionLevel: number = 30) {
-    await this.loadGifsicle();
     return new Promise<string>((resolve, reject) => {
       const outputPath = this.getTempPath();
 
       execFile(
-        this.gifsicle,
+        gifsicle,
         ['--optimize=3', `--lossy=${compressionLevel}`, inputPath, '-o', outputPath],
         async (error) => {
           console.log('error', error);
@@ -128,8 +113,6 @@ export default class GifResize {
     await fs.writeFile(inputPath, buffer);
     await sharp(inputPath, { animated: true, pages: -1 })
       .gif({
-        delay: 80,
-
         loop: 0
       })
       .toFile(outputPath);
@@ -151,7 +134,7 @@ export default class GifResize {
   getTempPath() {
     const id = randomUUID();
     //create the folder if it doesn't exist
-    fs.mkdir(join(tmpdir(), 'echidna-temps'), { recursive: true });
+    mkdirSync(join(tmpdir(), 'echidna-temps'), { recursive: true });
     return join(tmpdir(), 'echidna-temps', `temp-${id}.gif`);
   }
 
