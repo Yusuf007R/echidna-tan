@@ -24,6 +24,4 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY assets ./assets 
 
-RUN ls && cd dist && ls
-
 CMD ["node", "dist/src/index.js"]

@@ -1,68 +1,76 @@
 {
-  "id": "89e6fdd6-fabf-4f15-92a6-726caaa0cc95",
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "a5ee947c-7dfb-4458-814b-6876d1571fc0",
   "prevId": "00000000-0000-0000-0000-000000000000",
-  "version": "7",
-  "dialect": "postgresql",
   "tables": {
-    "public.chats": {
+    "chats": {
       "name": "chats",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "integer",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": true
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "channel_id": {
           "name": "channel_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "guild_id": {
           "name": "guild_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "user_id": {
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "model_id": {
           "name": "model_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "prompt_template": {
           "name": "prompt_template",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "date",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(unixepoch())"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "date",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(unixepoch())"
         }
       },
       "indexes": {},
@@ -82,24 +90,25 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "public.echidna": {
+    "echidna": {
       "name": "echidna",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "integer",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": true
         },
         "status": {
           "name": "status",
-          "type": "echidna_status",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'online'"
         },
         "activity": {
@@ -107,6 +116,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'N/A'"
         },
         "activity_type": {
@@ -114,67 +124,92 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 4
         },
         "state": {
           "name": "state",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "public.memories": {
+    "memories": {
       "name": "memories",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "integer",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": true
         },
         "user_id": {
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "memory": {
           "name": "memory",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
-        "embed": {
-          "name": "embed",
-          "type": "vector(1536)",
+        "embeds": {
+          "name": "embeds",
+          "type": "F32_BLOB(1536)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "autoincrement": false
         },
         "memory_length": {
           "name": "memory_length",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "date",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(unixepoch())"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "date",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(unixepoch())"
         }
       },
       "indexes": {},
@@ -194,87 +229,79 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "public.messages": {
+    "messages": {
       "name": "messages",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "integer",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": true
         },
         "content": {
           "name": "content",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "author_id": {
           "name": "author_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "channel_id": {
           "name": "channel_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "chat_id": {
           "name": "chat_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "message_id": {
           "name": "message_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "embeds": {
           "name": "embeds",
-          "type": "vector(1536)",
+          "type": "F32_BLOB(1536)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "date",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(unixepoch())"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "date",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(unixepoch())"
         }
       },
-      "indexes": {
-        "embed_index": {
-          "name": "embed_index",
-          "columns": [
-            {
-              "expression": "embeds",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last",
-              "opclass": "vector_cosine_ops"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "hnsw",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "messages_chat_id_chats_id_fk": {
           "name": "messages_chat_id_chats_id_fk",
@@ -291,75 +318,73 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "public.users": {
+    "users": {
       "name": "users",
-      "schema": "",
       "columns": {
         "discord_id": {
           "name": "discord_id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "display_name": {
           "name": "display_name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "user_name": {
           "name": "user_name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "date",
-          "primaryKey": false,
           "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         },
         "is_admin": {
           "name": "is_admin",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     }
   },
-  "enums": {
-    "public.echidna_status": {
-      "name": "echidna_status",
-      "schema": "public",
-      "values": [
-        "online",
-        "idle",
-        "dnd",
-        "invisible"
-      ]
-    }
-  },
-  "schemas": {},
-  "sequences": {},
+  "views": {},
+  "enums": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
   }
 }

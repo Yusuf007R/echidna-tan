@@ -1,19 +1,31 @@
 {
-  "include": ["src", "drizzle.config.ts"],
-  "exclude": ["node_modules", "dist"],
+  "include": [
+    "src",
+    "drizzle.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
   "ts-node": {
     "transpileOnly": true,
     "files": true,
-    "require": ["tsconfig-paths/register"]
+    "require": [
+      "tsconfig-paths/register"
+    ]
   },
   "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "composite": false,
-    "lib": ["ESNext"],
-    "module": "Node16",
-    "target": "es2021",
+    "lib": [
+      "ESNext"
+    ],
     "declaration": false,
     "declarationMap": false,
-    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "inlineSources": false,
     "isolatedModules": true,
@@ -23,20 +35,42 @@
     "skipLibCheck": true,
     "strict": true,
     "outDir": "dist/",
-    "typeRoots": ["./node_modules/@types", "src/interfaces"],
+    "typeRoots": [
+      "./node_modules/@types",
+      "src/interfaces"
+    ],
     "baseUrl": ".",
-    "moduleResolution": "Node16",
     "paths": {
-      "@Configs": ["./src/config"],
-      "@Interfaces/*": ["./src/interfaces/*"],
-      "@Commands/*": ["./src/commands/*"],
-      "@Events/*": ["./src/events/*"],
-      "@EventsValidators/*": ["./src/event-validators/*"],
-      "@Components/*": ["./src/components/*"],
-      "@Utils/*": ["./src/utils/*"],
-      "@Managers/*": ["./src/managers/*"],
-      "@Structures/*": ["./src/structures/*"],
-      "@AiStructures/*": ["./src/ai-stuff/structures/*"]
+      "@Configs": [
+        "./src/config"
+      ],
+      "@Interfaces/*": [
+        "./src/interfaces/*"
+      ],
+      "@Commands/*": [
+        "./src/commands/*"
+      ],
+      "@Events/*": [
+        "./src/events/*"
+      ],
+      "@EventsValidators/*": [
+        "./src/event-validators/*"
+      ],
+      "@Components/*": [
+        "./src/components/*"
+      ],
+      "@Utils/*": [
+        "./src/utils/*"
+      ],
+      "@Managers/*": [
+        "./src/managers/*"
+      ],
+      "@Structures/*": [
+        "./src/structures/*"
+      ],
+      "@AiStructures/*": [
+        "./src/ai-stuff/structures/*"
+      ]
     }
   }
 }

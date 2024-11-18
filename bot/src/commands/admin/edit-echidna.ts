@@ -10,8 +10,6 @@ import { eq, InferInsertModel } from 'drizzle-orm';
 import db from 'src/drizzle';
 import { echidnaStatus, echidnaTable } from 'src/drizzle/schema';
 
-const echidnaStatusValues = Array.from(echidnaStatus.enumValues.values());
-
 const activityTypeValues = Object.entries(ActivityType)
   .filter(([key, value]) => typeof value === 'number')
   .map(([key, value]) => ({
@@ -32,7 +30,7 @@ const options = new OptionsBuilder()
   .addStringOption({
     name: 'status',
     description: 'The status of the echidna',
-    choices: echidnaStatusValues
+    choices: echidnaStatus
   })
   .addStringOption({
     name: 'activity-message',
@@ -87,13 +85,13 @@ export default class EditEchidnaCommand extends Command<typeof options> {
     }
     if (activityMessage) dbBody.activity = activityMessage;
     if (statusMessage) dbBody.state = statusMessage;
-    if (status) dbBody.status = status as (typeof echidnaStatusValues)[number];
+    if (status) dbBody.status = status as (typeof echidnaStatus)[number];
 
     if (Object.keys(dbBody).length) {
       await db.update(echidnaTable).set(dbBody).where(eq(echidnaTable.id, config.DISCORD_DB_PROFILE));
-      await this.echidna.updateEchidna();
     }
 
+    await this.echidna.updateEchidna();
     interaction.editReply('Echidna updated');
   }
 }

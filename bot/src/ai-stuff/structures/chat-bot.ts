@@ -6,7 +6,8 @@ import randomNumber from '@Utils/random-number';
 import { openRouterAPI } from '@Utils/request';
 import { AttachmentBuilder, Message, MessageType, TextChannel, ThreadChannel } from 'discord.js';
 import { InferSelectModel } from 'drizzle-orm';
-import { ChatCompletionMessageParam, CompletionUsage } from 'openai/resources/index.mjs';
+
+import { ChatCompletionMessageParam, CompletionUsage } from 'openai/resources';
 import { usersTable } from 'src/drizzle/schema';
 import MemoriesManager from './memories';
 
@@ -19,7 +20,7 @@ export default class ChatBot {
   private cost = 0;
   private hasMemories = false;
   private messageHistory: messageHistoryType[] = [];
-  private memoriesManager = new MemoriesManager(this.user);
+  private memoriesManager!: MemoriesManager;
 
   constructor(
     private channel: TextChannel | ThreadChannel,
@@ -27,6 +28,7 @@ export default class ChatBot {
     private user: InferSelectModel<typeof usersTable>,
     private prompt: AiPrompt
   ) {
+    this.memoriesManager = new MemoriesManager(this.user);
     this.init();
   }
 

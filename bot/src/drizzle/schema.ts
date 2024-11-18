@@ -1,40 +1,67 @@
+import { sql } from 'drizzle-orm';
 
-import { boolean, date, index, integer, pgEnum, pgTable, serial, text, vector } from 'drizzle-orm/pg-core';
+import { customType, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+
+export const echidnaStatus = ['online', 'idle', 'dnd', 'invisible'] as const;
 
 
-export const echidnaStatus = pgEnum('echidna_status', ['online', 'idle', 'dnd', 'invisible']);
-
-export const echidnaTable = pgTable('echidna', {
-  id: serial('id').primaryKey(),
-  status: echidnaStatus('status').notNull().default('online'),
-  activity: text('activity').notNull().default('N/A'),
-  activityType: integer('activity_type').notNull().default(4),
-  state: text('state')
+const float32Array = customType<{
+  data: number[];
+  config: { dimensions: number };
+  configRequired: true;
+  driverData: Buffer;
+}>({
+  dataType(config) {
+    return `F32_BLOB(${config.dimensions})`;
+  },
+  fromDriver(value: Buffer) {
+    return Array.from(new Float32Array(value.buffer));
+  },
+  toDriver(value: number[]) {
+    return sql`vector32(${JSON.stringify(value)})`;
+  },
 });
 
-export const usersTable = pgTable('users', {
+const baseDates = {
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`)
+    .$onUpdate(() => new Date())
+};
+
+export const echidnaTable = sqliteTable('echidna', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  status: text('status', { enum: echidnaStatus }).notNull().default('online'),
+  activity: text('activity').notNull().default('N/A'),
+  activityType: integer('activity_type').notNull().default(4),
+  state: text('state'),
+  ...baseDates
+});
+
+export const usersTable = sqliteTable('users', {
   discordId: text('discord_id').primaryKey(),
   displayName: text('display_name').notNull(),
   userName: text('user_name').notNull(),
-  createdAt: date('created_at').notNull().defaultNow(),
-  updatedAt: date('updated_at').notNull().defaultNow(),
-  isAdmin: boolean('is_admin').notNull().default(false)
+  isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
+  ...baseDates
 });
 
-export const memoriesTable = pgTable('memories', {
-  id: serial('id').primaryKey(),
+export const memoriesTable = sqliteTable('memories', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   userId: text('user_id')
     .notNull()
     .references(() => usersTable.discordId),
   memory: text('memory').notNull(),
-  embed: vector('embed', { dimensions: 1536 }).notNull(),
+  embeds: float32Array("embeds", { dimensions: 1536 }), 
   memoryLength: integer('memory_length').notNull(),
-  createdAt: date('created_at').notNull().defaultNow(),
-  updatedAt: date('updated_at').notNull().defaultNow()
+  ...baseDates
 });
 
-export const chatsTable = pgTable('chats', {
-  id: serial('id').primaryKey(),
+export const chatsTable = sqliteTable('chats', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   channelId: text('channel_id').notNull(),
   guildId: text('guild_id'),
@@ -43,24 +70,16 @@ export const chatsTable = pgTable('chats', {
     .references(() => usersTable.discordId),
   modelId: text('model_id').notNull(),
   promptTemplate: text('prompt_template').notNull(),
-  createdAt: date('created_at').notNull().defaultNow(),
-  updatedAt: date('updated_at').notNull().defaultNow()
+  ...baseDates
 });
 
-export const messagesTable = pgTable(
-  'messages',
-  {
-    id: serial('id').primaryKey(),
-    content: text('content').notNull(),
-    authorId: text('author_id').notNull(),
-    channelId: text('channel_id').notNull(),
-    chatId: integer('chat_id').references(() => chatsTable.id),
-    messageId: text('message_id').notNull(),
-    embeds: vector('embeds', { dimensions: 1536 }),
-    createdAt: date('created_at').notNull().defaultNow(),
-    updatedAt: date('updated_at').notNull().defaultNow()
-  },
-  (table) => ({
-    embedIndex: index('embed_index').using('hnsw', table.embeds.op('vector_cosine_ops'))
-  })
-);
+export const messagesTable = sqliteTable('messages', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  content: text('content').notNull(),
+  authorId: text('author_id').notNull(),
+  channelId: text('channel_id').notNull(),
+  chatId: integer('chat_id').references(() => chatsTable.id),
+  messageId: text('message_id').notNull(),
+  embeds: float32Array("embeds", { dimensions: 1536 }), 
+  ...baseDates
+});
