@@ -4,7 +4,7 @@ FROM node:22 AS builder
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y build-essential 
+    && apt-get install -y build-essential
 
 COPY package.json pnpm-lock.yaml ./
 
@@ -15,9 +15,11 @@ COPY . .
 RUN pnpm run build
 
 # Runtime Stage
-FROM node:22-slim AS runtime
+FROM node:22 AS runtime
 
 WORKDIR /app
+
+
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
