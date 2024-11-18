@@ -54,8 +54,10 @@ export default class EchidnaClient extends Client {
     }
   }
 
-  init() {
+  async init() {
     this.eventManager.init();
+    // sync local db with remote db
+    await db.$client.sync();
     this.login(configs.DISCORD_TOKEN);
   }
 }

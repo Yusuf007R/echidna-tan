@@ -4,10 +4,11 @@ import { drizzle } from 'drizzle-orm/libsql';
 import * as schema from './schema';
 
 const turso = createClient({
-  url: config.TURSO_DATABASE_URL,
+  url: "file:local.db",
+  syncUrl: config.TURSO_DATABASE_URL,
   authToken: config.TURSO_AUTH_TOKEN
 });
 
 const db = drizzle(turso, { schema });
 
-export default db;
+export default db
