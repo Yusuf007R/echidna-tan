@@ -1,10 +1,14 @@
-import config from '@Configs';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema';
+import config from "@Configs";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
+import * as schema from "./schema";
 
-const queryClient = postgres(config.DATABASE_URL);
+const turso = createClient({
+	url: "file:local.db",
+	syncUrl: config.TURSO_DATABASE_URL,
+	authToken: config.TURSO_AUTH_TOKEN,
+});
 
-const db = drizzle(queryClient, { schema });
+const db = drizzle(turso, { schema });
 
 export default db;

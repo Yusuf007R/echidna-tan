@@ -1,16 +1,16 @@
-import { DiscordEvent } from '@Structures/discord-events';
+import { DiscordEvent } from "@Structures/discord-events";
 
-export default class ReadyEvent extends DiscordEvent<'ready'> {
-  constructor() {
-    super({ eventName: 'ready', eventType: 'once' });
-  }
+export default class ReadyEvent extends DiscordEvent<"ready"> {
+	constructor() {
+		super({ eventName: "ready", eventType: "once" });
+	}
 
-  async run(): Promise<void> {
-    await this.echidna.updateEchidna();
-    
-    console.log(`Logged in as ${this.echidna.user?.tag}`);
+	async run(): Promise<void> {
+		await this.echidna.updateEchidna();
 
-    this.echidna.commandManager.loadCommands();
-    this.echidna.commandManager.registerCommands();
-  }
+		console.log(`Logged in as ${this.echidna.user?.tag}`);
+
+		await this.echidna.commandManager.loadCommands();
+		this.echidna.commandManager.registerCommands();
+	}
 }

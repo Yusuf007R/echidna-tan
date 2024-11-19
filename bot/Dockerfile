@@ -1,10 +1,10 @@
 # Builder Stage
-FROM node:22 AS builder
+FROM node:23 AS builder
 
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y build-essential 
+    && apt-get install -y build-essential
 
 COPY package.json pnpm-lock.yaml ./
 
@@ -15,15 +15,15 @@ COPY . .
 RUN pnpm run build
 
 # Runtime Stage
-FROM node:22-slim AS runtime
+FROM node:23 AS runtime
 
 WORKDIR /app
+
+
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY assets ./assets 
 
-RUN ls && cd dist && ls
-
-CMD ["node", "dist/src/index.js"]
+CMD ["node", "--enable-source-maps", "dist/index.js"]

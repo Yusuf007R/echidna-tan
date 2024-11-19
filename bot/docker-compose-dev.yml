@@ -1,9 +1,24 @@
-version: '3.8'
 
 services:
+  gluetun:
+    image: qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - SERVER_COUNTRIES=United States
+      - VPN_TYPE=openvpn
+      - OPENVPN_USER=${OPENVPN_USER}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      - FREE_ONLY=on
   echidna:
     build: .
     restart: unless-stopped
+    depends_on:
+      - gluetun
+    network_mode: service:gluetun
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_BOT_CLIENT_ID=${DISCORD_BOT_CLIENT_ID}
@@ -12,13 +27,9 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OPENROUTER_URL=${OPENROUTER_URL}
-      - LAVA_LINK_PASSWORD=${LAVA_LINK_PASSWORD}
-      - LAVA_LINK_HOST=${LAVA_LINK_HOST}
       - RUNPOD_TOKEN=${RUNPOD_TOKEN}
       - WAIFU_GENERATOR_ENDPOINT=${WAIFU_GENERATOR_ENDPOINT}
       - DANBOORU_ENDPOINT=${DANBOORU_ENDPOINT}
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET_ACCESS=${JWT_SECRET_ACCESS}
-      - JWT_SECRET_REFRESH=${JWT_SECRET_REFRESH}
-    ports:
-      - 3069:3069
+      - DISCORD_DB_PROFILE=${DISCORD_DB_PROFILE}
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
