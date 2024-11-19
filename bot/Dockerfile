@@ -26,4 +26,4 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY assets ./assets 
 
-CMD ["node", "dist/src/index.js"]
+CMD ["node", "--enable-source-maps", "dist/index.js"]
