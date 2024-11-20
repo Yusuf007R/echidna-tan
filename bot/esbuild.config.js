@@ -91,7 +91,6 @@ async function build() {
 			let nodeProcess = null;
 
 			const startNodeProcess = () => {
-				console.log("Starting Node.js process...");
 				nodeProcess?.kill();
 				nodeProcess = childProcess.spawn(
 					"node",
