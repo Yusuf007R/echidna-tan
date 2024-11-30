@@ -1,3 +1,4 @@
+import { mapTrack } from "@Api/utils/map-track";
 import StringSelectComponent from "@Components/string-select";
 import capitalize from "@Utils/capitalize";
 import getImageAsBuffer from "@Utils/get-image-from-url";
@@ -9,20 +10,23 @@ import {
 } from "@discordjs/builders";
 import {
 	type GuildQueue,
+	GuildQueueEvent,
 	Player,
 	type Playlist,
 	QueueRepeatMode,
 	type Track,
 } from "discord-player";
 import { YoutubeiExtractor } from "discord-player-youtubei";
-import type {
-	BaseInteraction,
-	CacheType,
-	CommandInteraction,
-	GuildMember,
-	StringSelectMenuInteraction,
+import {
+	type BaseInteraction,
+	type CacheType,
+	Collection,
+	type CommandInteraction,
+	type GuildMember,
+	type StringSelectMenuInteraction,
 } from "discord.js";
 import sharp from "sharp";
+import { EventEmitter } from "tseep";
 import type EchidnaClient from "./echidna-client";
 
 export type QueueMetadata = {
@@ -30,7 +34,27 @@ export type QueueMetadata = {
 	"image-url-cache": Record<string, any>;
 };
 
+const guildEvents = [
+	GuildQueueEvent.playerStart,
+	GuildQueueEvent.playerFinish,
+	GuildQueueEvent.playerSkip,
+	GuildQueueEvent.volumeChange,
+	GuildQueueEvent.emptyQueue,
+	GuildQueueEvent.audioTrackAdd,
+	GuildQueueEvent.audioTracksAdd,
+	GuildQueueEvent.audioTrackRemove,
+	GuildQueueEvent.audioTracksRemove,
+] as const;
+
+type GuildEmitter = {
+	update: (data: {
+		type: (typeof guildEvents)[number];
+		queue: GuildQueue<QueueMetadata>;
+	}) => void;
+};
+
 export default class MusicPlayer extends Player {
+	static guildEmiters = new Collection<string, EventEmitter<GuildEmitter>>();
 	constructor(echidna: EchidnaClient) {
 		super(echidna);
 		this.init();
@@ -38,7 +62,7 @@ export default class MusicPlayer extends Player {
 
 	init() {
 		this.loadExtractors();
-		this.listenForEvents();
+		this.initEvents();
 	}
 
 	async loadExtractors() {
@@ -46,18 +70,29 @@ export default class MusicPlayer extends Player {
 		await this.extractors.register(YoutubeiExtractor, {});
 	}
 
-	listenForEvents() {
-		// the arrow function is needed so `newPlaying` doesn't get the event scope
-		this.events.on("playerStart", (queue) => this.nowPlaying(queue));
-		this.events.on("playerFinish", (queue) => {
+	initEvents() {
+		this.events.on(GuildQueueEvent.playerStart, (queue) =>
+			this.nowPlaying(queue),
+		);
+		this.events.on(GuildQueueEvent.playerFinish, (queue) => {
 			console.log("playerFinish", queue);
-		}); // this.on('debug', async (message) => {
-		//   console.log(`General player debug event: ${message}`);
-		// });
+		});
 
-		// this.events.on('debug', async (queue, message) => {
-		//   console.log(`Player debug event: ${message} - ${queue.guild.name}`);
-		// });
+		for (const event of guildEvents) {
+			this.events.on(event, (queue: GuildQueue<QueueMetadata>) => {
+				MusicPlayer.guildEmiters.get(queue.guild.id)?.emit("update", {
+					type: event,
+					queue,
+				});
+			});
+		}
+	}
+
+	static getGuildEmitter(guildId: string) {
+		if (!MusicPlayer.guildEmiters.has(guildId)) {
+			MusicPlayer.guildEmiters.set(guildId, new EventEmitter<GuildEmitter>());
+		}
+		return MusicPlayer.guildEmiters.get(guildId)!;
 	}
 
 	async playCmd(interaction: CommandInteraction<CacheType>, query: string) {
@@ -202,6 +237,34 @@ export default class MusicPlayer extends Player {
 	getVoiceChannel(interaction: BaseInteraction<CacheType>) {
 		const guildMember = interaction?.member as GuildMember;
 		return guildMember?.voice?.channel;
+	}
+
+	static getPlayerStatus(musicQueue: GuildQueue<QueueMetadata>) {
+		const progress = musicQueue.node.getTimestamp() as {
+			current: {
+				label: string;
+				value: number;
+			};
+			total: {
+				label: string;
+				value: number;
+			};
+			progress: number;
+		};
+		return {
+			queue: musicQueue.tracks.map(mapTrack),
+			loopMode: musicQueue.repeatMode.toString(),
+			shuffle: musicQueue.isShuffling,
+			volume: musicQueue.node.volume,
+			playing: musicQueue.node.isPlaying(),
+			isPaused: musicQueue.node.isPaused(),
+			currentTrack: {
+				track: musicQueue.currentTrack
+					? mapTrack(musicQueue.currentTrack)
+					: null,
+				progress,
+			},
+		};
 	}
 
 	addTrack(

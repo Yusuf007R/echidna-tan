@@ -14,6 +14,7 @@ import {
 	Collection,
 	type CommandInteraction,
 	REST,
+	type RESTPostAPIApplicationCommandsJSONBody,
 	Routes,
 } from "discord.js";
 
@@ -44,7 +45,8 @@ export default class CommandManager {
 						.filter(
 							(file) =>
 								!RegExp(/\[.*\]/gm).test(file) &&
-								(file.endsWith(".ts") || file.endsWith(".js")),
+								(file.endsWith(".ts") || file.endsWith(".js")) &&
+								!file.endsWith(".d.ts"),
 						)
 						.map(async (file) => {
 							const commandFile = join(commandFolder, file);
@@ -136,7 +138,7 @@ export default class CommandManager {
 		}
 	}
 
-	filterMapCmds(filters: CmdType[]) {
+	filterMapCmds(filters: CmdType[]): RESTPostAPIApplicationCommandsJSONBody[] {
 		return this.commands
 			.filter((cmd) => filters.includes(cmd.command.cmdType))
 			.map(({ command }) => {

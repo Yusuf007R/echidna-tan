@@ -6,17 +6,17 @@ import { OptionsBuilder } from "@Utils/options-builder";
 import type { CacheType, CommandInteraction } from "discord.js";
 import { eq } from "drizzle-orm";
 import db from "src/drizzle";
-import { usersTable } from "src/drizzle/schema";
+import { userTable } from "src/drizzle/schema";
 
 const options = new OptionsBuilder()
 	.addStringOption({
 		name: "user-id",
-		description: "The ID of the user to send the message to",
+		description: "The ID of the user to update the permission of",
 		required: true,
 	})
 	.addBoolOption({
 		name: "admin",
-		description: "Whether the user is an admin",
+		description: "Update the user's admin permission",
 		required: true,
 	})
 	.build();
@@ -24,8 +24,8 @@ const options = new OptionsBuilder()
 export default class SendMessageToCommand extends Command<typeof options> {
 	constructor() {
 		super({
-			name: "send-message-to",
-			description: "Send a message to a specific user",
+			name: "user-permission",
+			description: "Update a user's permission",
 			options,
 			validators: [IsAdmin],
 			cmdType: "BOTH",
@@ -44,11 +44,11 @@ export default class SendMessageToCommand extends Command<typeof options> {
 			}
 
 			await db
-				.update(usersTable)
+				.update(userTable)
 				.set({
 					isAdmin,
 				})
-				.where(eq(usersTable.discordId, userId));
+				.where(eq(userTable.id, userId));
 
 			interaction.editReply("User permission updated");
 		} catch (error) {

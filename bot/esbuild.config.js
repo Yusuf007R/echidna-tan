@@ -112,6 +112,7 @@ async function build() {
 					clearScreen();
 					cachedFiles = null; // Clear cache to detect new files
 					config.entryPoints = getTypeScriptFiles("./src");
+					config.alias = loadPathAlias();
 					await esbuild.build(config);
 					console.log("Build completed");
 					startNodeProcess();
