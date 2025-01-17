@@ -6,7 +6,7 @@ import type { CacheType, Interaction } from "discord.js";
 import { eq } from "drizzle-orm";
 
 import db from "src/drizzle";
-import { usersTable } from "src/drizzle/schema";
+import { userTable } from "src/drizzle/schema";
 
 export default class IsAdmin extends CommandValidator {
 	constructor() {
@@ -21,12 +21,12 @@ export default class IsAdmin extends CommandValidator {
 		interaction: Interaction<CacheType>,
 		next: CommandValidatorNext,
 	) {
-		const user = await db.query.usersTable.findFirst({
-			where: eq(usersTable.discordId, interaction.user.id),
+		const user = await db.query.userTable.findFirst({
+			where: eq(userTable.id, interaction.user.id),
 		});
 		if (!user) {
-			await db.insert(usersTable).values({
-				discordId: interaction.user.id,
+			await db.insert(userTable).values({
+				id: interaction.user.id,
 				displayName: interaction.user.displayName,
 				userName: interaction.user.username,
 				isAdmin: false,

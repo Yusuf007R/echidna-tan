@@ -1,14 +1,16 @@
 import { Client, Collection, GatewayIntentBits, Partials } from "discord.js";
 
+import { startServer } from "@Api/index";
 import { default as config, default as configs } from "@Configs";
 import CommandManager from "@Managers/command-manager";
 import EventManager from "@Managers/event-manager";
+import GuildsManager from "@Managers/guilds-manager";
+import EchidnaSingleton from "@Structures/echidna-singleton";
+import MusicPlayer from "@Structures/music-player";
+import type TicTacToe from "@Structures/tic-tac-toe";
 import { eq } from "drizzle-orm";
 import db from "src/drizzle";
 import { echidnaTable } from "src/drizzle/schema";
-import EchidnaSingleton from "./echidna-singleton";
-import MusicPlayer from "./music-player";
-import type TicTacToe from "./tic-tac-toe";
 
 export default class EchidnaClient extends Client {
 	clientSingleton = new EchidnaSingleton(this);
@@ -21,6 +23,10 @@ export default class EchidnaClient extends Client {
 
 	eventManager = new EventManager();
 
+	guildsManager = new GuildsManager();
+
+	api = startServer();
+
 	constructor() {
 		super({
 			intents: [
@@ -31,6 +37,7 @@ export default class EchidnaClient extends Client {
 				GatewayIntentBits.DirectMessages,
 				GatewayIntentBits.MessageContent,
 				GatewayIntentBits.GuildMessages,
+				GatewayIntentBits.GuildMembers,
 			],
 			partials: [Partials.Channel],
 		});
@@ -38,21 +45,30 @@ export default class EchidnaClient extends Client {
 	}
 
 	async updateEchidna() {
-		const echidna = await db.query.echidnaTable.findFirst({
+		let echidna = await db.query.echidnaTable.findFirst({
 			where: eq(echidnaTable.id, config.DISCORD_DB_PROFILE),
 		});
-		if (echidna) {
-			this.user?.setPresence({
-				status: echidna.status,
-				activities: [
-					{
-						name: echidna.activity,
-						type: echidna.activityType,
-						state: echidna.state ?? undefined,
-					},
-				],
-			});
+
+		if (!echidna) {
+			const dbEchidna = await db
+				.insert(echidnaTable)
+				.values({
+					id: config.DISCORD_DB_PROFILE,
+				})
+				.returning();
+			echidna = dbEchidna[0];
 		}
+
+		this.user?.setPresence({
+			status: echidna.status,
+			activities: [
+				{
+					name: echidna.activity,
+					type: echidna.activityType,
+					state: echidna.state ?? undefined,
+				},
+			],
+		});
 	}
 
 	async init() {

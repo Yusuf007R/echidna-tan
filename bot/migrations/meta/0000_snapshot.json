@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a5ee947c-7dfb-4458-814b-6876d1571fc0",
+  "id": "f2bd5e18-4e62-47f9-b268-a5ca95bc1b51",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "chats": {
@@ -75,15 +75,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "chats_user_id_users_discord_id_fk": {
-          "name": "chats_user_id_users_discord_id_fk",
+        "chats_user_id_user_id_fk": {
+          "name": "chats_user_id_user_id_fk",
           "tableFrom": "chats",
-          "tableTo": "users",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
           "columnsTo": [
-            "discord_id"
+            "id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -101,7 +101,7 @@
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": true
+          "autoincrement": false
         },
         "status": {
           "name": "status",
@@ -132,7 +132,8 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "'FEIN FEIN FEIN'"
         },
         "created_at": {
           "name": "created_at",
@@ -214,15 +215,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "memories_user_id_users_discord_id_fk": {
-          "name": "memories_user_id_users_discord_id_fk",
+        "memories_user_id_user_id_fk": {
+          "name": "memories_user_id_user_id_fk",
           "tableFrom": "memories",
-          "tableTo": "users",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
           "columnsTo": [
-            "discord_id"
+            "id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -321,11 +322,56 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "users": {
-      "name": "users",
+    "session": {
+      "name": "session",
       "columns": {
-        "discord_id": {
-          "name": "discord_id",
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "session_user_id_user_id_fk": {
+          "name": "session_user_id_user_id_fk",
+          "tableFrom": "session",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "user": {
+      "name": "user",
+      "columns": {
+        "id": {
+          "name": "id",
           "type": "text",
           "primaryKey": true,
           "notNull": true,

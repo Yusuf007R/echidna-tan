@@ -2,7 +2,7 @@ import { openAI, openRouterAPI } from "@Utils/request";
 import { type InferSelectModel, desc, eq } from "drizzle-orm";
 import { zodFunction } from "openai/helpers/zod";
 import db from "src/drizzle";
-import { memoriesTable, type usersTable } from "src/drizzle/schema";
+import { memoriesTable, type userTable } from "src/drizzle/schema";
 import z from "zod";
 
 const memoryAIResponseSchema = z.object({
@@ -12,13 +12,13 @@ const memoryAIResponseSchema = z.object({
 export default class MemoriesManager {
 	private memories: InferSelectModel<typeof memoriesTable>[] = [];
 
-	constructor(private user: InferSelectModel<typeof usersTable>) {}
+	constructor(private user: InferSelectModel<typeof userTable>) {}
 
 	async loadMemories() {
 		this.memories = await db
 			.select()
 			.from(memoriesTable)
-			.where(eq(memoriesTable.userId, this.user.discordId))
+			.where(eq(memoriesTable.userId, this.user.id))
 			.orderBy(desc(memoriesTable.createdAt))
 			.limit(50);
 
@@ -36,7 +36,7 @@ export default class MemoriesManager {
 		const [dbMemory] = await db
 			.insert(memoriesTable)
 			.values({
-				userId: this.user.discordId,
+				userId: this.user.id,
 				memory,
 				memoryLength: memory.length,
 				embeds: embeddings,

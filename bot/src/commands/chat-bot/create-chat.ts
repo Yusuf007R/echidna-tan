@@ -12,7 +12,7 @@ import {
 } from "discord.js";
 import { eq } from "drizzle-orm";
 import db from "src/drizzle";
-import { usersTable } from "src/drizzle/schema";
+import { userTable } from "src/drizzle/schema";
 
 const options = new OptionsBuilder()
 	.addStringOption({
@@ -32,15 +32,15 @@ const options = new OptionsBuilder()
 const getUser = async (user: User) => {
 	const [dbUser] = await db
 		.select()
-		.from(usersTable)
-		.where(eq(usersTable.discordId, user.id))
+		.from(userTable)
+		.where(eq(userTable.id, user.id))
 		.limit(1);
 	if (!dbUser) {
 		const insertUser = (
 			await db
-				.insert(usersTable)
+				.insert(userTable)
 				.values({
-					discordId: user.id,
+					id: user.id,
 					displayName: user.displayName,
 					userName: user.username,
 				})

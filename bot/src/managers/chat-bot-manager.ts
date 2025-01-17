@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type ChatBot from "@AiStructures/chat-bot";
 import type { AiPrompt } from "@Interfaces/ai-prompts";
 import type { OpenRouterModel } from "@Interfaces/open-router-model";
-import CacheManager from "@Structures/cache-manager";
+import CacheManager from "@Managers/cache-manager";
 import { openRouterAPI } from "@Utils/request";
 
 export default class ChatBotManager {

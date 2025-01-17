@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 import {
 	customType,
@@ -37,32 +37,61 @@ const baseDates = {
 };
 
 export const echidnaTable = sqliteTable("echidna", {
-	id: integer("id").primaryKey({ autoIncrement: true }),
+	id: integer("id").primaryKey(),
 	status: text("status", { enum: echidnaStatus }).notNull().default("online"),
 	activity: text("activity").notNull().default("N/A"),
 	activityType: integer("activity_type").notNull().default(4),
-	state: text("state"),
+	state: text("state").default("FEIN FEIN FEIN"),
 	...baseDates,
 });
 
-export const usersTable = sqliteTable("users", {
-	discordId: text("discord_id").primaryKey(),
+export const userTable = sqliteTable("user", {
+	id: text("id").primaryKey(),
 	displayName: text("display_name").notNull(),
 	userName: text("user_name").notNull(),
 	isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
 	...baseDates,
 });
 
+export const userRelations = relations(userTable, ({ many }) => ({
+	sessions: many(sessionTable),
+	memories: many(memoriesTable),
+	chats: many(chatsTable),
+	messages: many(messagesTable),
+}));
+
+export const sessionTable = sqliteTable("session", {
+	id: text("id").primaryKey(),
+	userId: text("user_id")
+		.notNull()
+		.references(() => userTable.id),
+	expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+});
+
+export const sessionsRelations = relations(sessionTable, ({ one }) => ({
+	user: one(userTable, {
+		fields: [sessionTable.userId],
+		references: [userTable.id],
+	}),
+}));
+
 export const memoriesTable = sqliteTable("memories", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
 	userId: text("user_id")
 		.notNull()
-		.references(() => usersTable.discordId),
+		.references(() => userTable.id),
 	memory: text("memory").notNull(),
 	embeds: float32Array("embeds", { dimensions: 1536 }),
 	memoryLength: integer("memory_length").notNull(),
 	...baseDates,
 });
+
+export const memoryRelations = relations(memoriesTable, ({ one }) => ({
+	user: one(userTable, {
+		fields: [memoriesTable.userId],
+		references: [userTable.id],
+	}),
+}));
 
 export const chatsTable = sqliteTable("chats", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
@@ -71,11 +100,19 @@ export const chatsTable = sqliteTable("chats", {
 	guildId: text("guild_id"),
 	userId: text("user_id")
 		.notNull()
-		.references(() => usersTable.discordId),
+		.references(() => userTable.id),
 	modelId: text("model_id").notNull(),
 	promptTemplate: text("prompt_template").notNull(),
 	...baseDates,
 });
+
+export const chatRelations = relations(chatsTable, ({ one, many }) => ({
+	user: one(userTable, {
+		fields: [chatsTable.userId],
+		references: [userTable.id],
+	}),
+	messages: many(messagesTable),
+}));
 
 export const messagesTable = sqliteTable("messages", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
@@ -87,3 +124,10 @@ export const messagesTable = sqliteTable("messages", {
 	embeds: float32Array("embeds", { dimensions: 1536 }),
 	...baseDates,
 });
+
+export const messageRelations = relations(messagesTable, ({ one }) => ({
+	chat: one(chatsTable, {
+		fields: [messagesTable.chatId],
+		references: [chatsTable.id],
+	}),
+}));

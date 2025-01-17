@@ -19,7 +19,9 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"a11y": {
+				"useSemanticElements": "off"
+			},
 			"complexity": {
 				"noStaticOnlyClass": "off"
 			},

@@ -16,7 +16,7 @@ import type {
 	ChatCompletionMessageParam,
 	CompletionUsage,
 } from "openai/resources/index.mjs";
-import type { usersTable } from "src/drizzle/schema";
+import type { userTable } from "src/drizzle/schema";
 import MemoriesManager from "./memories";
 
 type messageHistoryType = {
@@ -33,7 +33,7 @@ export default class ChatBot {
 	constructor(
 		private channel: TextChannel | ThreadChannel,
 		private model: OpenRouterModel,
-		private user: InferSelectModel<typeof usersTable>,
+		private user: InferSelectModel<typeof userTable>,
 		private prompt: AiPrompt,
 	) {
 		this.memoriesManager = new MemoriesManager(this.user);
@@ -61,7 +61,7 @@ export default class ChatBot {
 
 	async processMessage(message: Message) {
 		if (message.channelId !== this.channel.id) return;
-		if (message.author.id !== this.user.discordId) return;
+		if (message.author.id !== this.user.id) return;
 		if (message.system) return;
 		if (![MessageType.Default, MessageType.Reply].includes(message.type))
 			return;

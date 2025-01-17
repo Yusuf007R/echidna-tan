@@ -29,7 +29,11 @@ export default class EventManager extends EchidnaSingleton {
 		const eventsRootFolder = join(__dirname, "/events");
 		await Promise.all(
 			readdirSync(eventsRootFolder)
-				.filter((file) => file.endsWith(".ts") || file.endsWith(".js"))
+				.filter(
+					(file) =>
+						(file.endsWith(".ts") || file.endsWith(".js")) &&
+						!file.endsWith(".d.ts"),
+				)
 				.map(async (file) => {
 					const eventFile = join(eventsRootFolder, file);
 					const Event = (await import(eventFile)).default;
