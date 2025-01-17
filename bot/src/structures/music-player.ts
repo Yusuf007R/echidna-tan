@@ -1,7 +1,7 @@
 import { mapTrack } from "@Api/utils/map-track";
 import StringSelectComponent from "@Components/string-select";
 import capitalize from "@Utils/capitalize";
-import getImageAsBuffer from "@Utils/get-image-from-url";
+import getImageColor from "@Utils/get-image-color";
 import milisecondsToReadable from "@Utils/seconds-to-minutes";
 import {
 	ActionRowBuilder,
@@ -25,7 +25,6 @@ import {
 	type GuildMember,
 	type StringSelectMenuInteraction,
 } from "discord.js";
-import sharp from "sharp";
 import { EventEmitter } from "tseep";
 import type EchidnaClient from "./echidna-client";
 
@@ -298,12 +297,9 @@ export default class MusicPlayer extends Player {
 		const imageCache = queue.metadata["image-url-cache"] as Record<string, any>;
 		const imageDominantColorCache = imageCache[image];
 		if (!imageDominantColorCache) {
-			const res = await getImageAsBuffer(image);
-			if (res?.ok && res.data) {
-				const { dominant } = await sharp(res.data).stats();
-				imageCache[image] = Object.values(dominant);
-				return imageCache[image];
-			}
+			const color = await getImageColor(image);
+			imageCache[image] = color;
+			return color;
 		}
 		return imageDominantColorCache;
 	}

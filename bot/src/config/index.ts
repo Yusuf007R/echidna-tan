@@ -22,6 +22,7 @@ const envSchema = z.object({
 	SOURCE_COMMIT: z.string().optional(),
 	JWT_ACCESS_SECRET: z.string(),
 	JWT_REFRESH_SECRET: z.string(),
+	TMDB_API_KEY: z.string(),
 });
 
 export default envSchema.parse(process.env);
