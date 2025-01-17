@@ -12,7 +12,7 @@ RUN corepack enable pnpm && pnpm install
 
 COPY . .
 
-RUN pnpm run build
+RUN pnpm run build:prod
 
 # Runtime Stage
 FROM node:23 AS runtime

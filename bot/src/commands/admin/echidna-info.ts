@@ -54,7 +54,7 @@ export default class EchidnaInfoCommand extends Command<typeof options> {
 
 			const ip = await baseAPI.get("https://icanhazip.com/");
 
-			console.log(ip.data);
+			const guilds = (await this.echidna.guilds.fetch()).size;
 
 			const embed = new EmbedBuilder()
 				.setTitle(`${this.echidna.user?.username}'s Information`)
@@ -83,6 +83,10 @@ export default class EchidnaInfoCommand extends Command<typeof options> {
 					{
 						name: "Status Message",
 						value: echidna.state || "No status message set",
+					},
+					{
+						name: "Total Guilds",
+						value: guilds.toString(),
 					},
 					{
 						name: "Total Commands",

@@ -1,8 +1,8 @@
-import { openRouterAPI } from "@Utils/request";
+import { openAI, openRouterAPI } from "@Utils/request";
 import { type InferSelectModel, desc, eq } from "drizzle-orm";
 import { zodFunction } from "openai/helpers/zod";
 import db from "src/drizzle";
-import { memoriesTable, type usersTable } from "src/drizzle/schema";
+import { memoriesTable, type userTable } from "src/drizzle/schema";
 import z from "zod";
 
 const memoryAIResponseSchema = z.object({
@@ -12,13 +12,13 @@ const memoryAIResponseSchema = z.object({
 export default class MemoriesManager {
 	private memories: InferSelectModel<typeof memoriesTable>[] = [];
 
-	constructor(private user: InferSelectModel<typeof usersTable>) {}
+	constructor(private user: InferSelectModel<typeof userTable>) {}
 
 	async loadMemories() {
 		this.memories = await db
 			.select()
 			.from(memoriesTable)
-			.where(eq(memoriesTable.userId, this.user.discordId))
+			.where(eq(memoriesTable.userId, this.user.id))
 			.orderBy(desc(memoriesTable.createdAt))
 			.limit(50);
 
@@ -26,25 +26,25 @@ export default class MemoriesManager {
 	}
 
 	private async addMemory(memory: string) {
-		// if (!memory) return;
-		// const embed = await openAI.embeddings.create({
-		//   model: 'text-embedding-3-small',
-		//   input: memory
-		// });
-		// const embeddings = embed.data.at(0)?.embedding;
-		// if (!embeddings) return;
-		// const [dbMemory] = await db
-		//   .insert(memoriesTable)
-		//   .values({
-		//     userId: this.user.discordId,
-		//     memory,
-		//     memoryLength: memory.length,
-		//     embed: embeddings
-		//   })
-		//   .returning();
-		// console.log(`Memory added`);
-		// if (this.memories.length >= 50) this.memories.shift();
-		// this.memories.push(dbMemory);
+		if (!memory) return;
+		const embed = await openAI.embeddings.create({
+			model: "text-embedding-3-small",
+			input: memory,
+		});
+		const embeddings = embed.data.at(0)?.embedding;
+		if (!embeddings) return;
+		const [dbMemory] = await db
+			.insert(memoriesTable)
+			.values({
+				userId: this.user.id,
+				memory,
+				memoryLength: memory.length,
+				embeds: embeddings,
+			})
+			.returning();
+		console.log("Memory added");
+		if (this.memories.length >= 50) this.memories.shift();
+		this.memories.push(dbMemory);
 	}
 
 	getMemories() {

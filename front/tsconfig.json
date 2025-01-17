@@ -1,0 +1,44 @@
+{
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+  ],
+  "references": [
+    {
+      "path": "../bot"
+    }
+  ],
+  "compilerOptions": {
+    "strict": true,
+    "composite": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "~/*": [
+        "./app/*"
+      ],
+      "@Echidna-API": [
+        "../bot/src/api/index.ts"
+      ],
+      "@Echidna": [
+        "../bot/src/index.ts"
+      ]
+    },
+    "noEmit": true
+  }
+}
