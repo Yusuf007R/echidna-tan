@@ -38,6 +38,9 @@ importers:
       '@libsql/client':
         specifier: ^0.14.0
         version: 0.14.0(bufferutil@4.0.8)(utf-8-validate@6.0.5)
+      '@oslojs/encoding':
+        specifier: ^1.1.0
+        version: 1.1.0
       apisauce:
         specifier: ^3.0.1
         version: 3.1.0

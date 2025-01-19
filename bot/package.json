@@ -33,6 +33,7 @@
 		"@hono/node-ws": "^1.0.4",
 		"@hono/zod-validator": "^0.4.1",
 		"@libsql/client": "^0.14.0",
+		"@oslojs/encoding": "^1.1.0",
 		"apisauce": "^3.0.1",
 		"arctic": "^2.2.2",
 		"bufferutil": "^4.0.8",
