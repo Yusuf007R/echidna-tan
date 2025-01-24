@@ -8,6 +8,7 @@
 		"prebuild": "rimraf dist",
 		"predev": "pnpm run check",
 		"dev": "node esbuild.config.js watch",
+		"dev:debug": "node esbuild.config.js watch debug",
 		"start": "pnpm run build && node ./dist/index.js ",
 		"build": "node esbuild.config.js",
 		"build:prod": "NODE_ENV=production node esbuild.config.js",

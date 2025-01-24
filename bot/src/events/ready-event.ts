@@ -12,5 +12,8 @@ export default class ReadyEvent extends DiscordEvent<"ready"> {
 
 		await this.echidna.commandManager.loadCommands();
 		this.echidna.commandManager.registerCommands();
+
+		await this.echidna.contextMenuManager.loadContextMenus();
+		this.echidna.contextMenuManager.registerContextMenus();
 	}
 }

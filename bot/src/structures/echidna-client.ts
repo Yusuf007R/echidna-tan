@@ -3,8 +3,10 @@ import { Client, Collection, GatewayIntentBits, Partials } from "discord.js";
 import { startServer } from "@Api/index";
 import { default as config, default as configs } from "@Configs";
 import CommandManager from "@Managers/command-manager";
+import ContextMenuManager from "@Managers/context-menu-manager";
 import EventManager from "@Managers/event-manager";
 import GuildsManager from "@Managers/guilds-manager";
+import ModalManager from "@Managers/modal-manager";
 import EchidnaSingleton from "@Structures/echidna-singleton";
 import MusicPlayer from "@Structures/music-player";
 import type TicTacToe from "@Structures/tic-tac-toe";
@@ -25,6 +27,10 @@ export default class EchidnaClient extends Client {
 
 	guildsManager = new GuildsManager();
 
+	contextMenuManager = new ContextMenuManager();
+
+	modalManager = new ModalManager();
+
 	api = startServer();
 
 	constructor() {
@@ -39,7 +45,13 @@ export default class EchidnaClient extends Client {
 				GatewayIntentBits.GuildMessages,
 				GatewayIntentBits.GuildMembers,
 			],
-			partials: [Partials.Channel],
+			partials: [
+				Partials.Channel,
+				Partials.Message,
+				Partials.Channel,
+				Partials.Reaction,
+				Partials.User,
+			],
 		});
 		this.init();
 	}
