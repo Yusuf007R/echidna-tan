@@ -1,3 +1,6 @@
+import { readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import ChatBot from "@AiStructures/chat-bot";
 import type { AiPrompt } from "@Interfaces/ai-prompts";
 import type { OpenRouterModel } from "@Interfaces/open-router-model";
@@ -5,9 +8,6 @@ import CacheManager from "@Managers/cache-manager";
 import { openRouterAPI } from "@Utils/request";
 import type { TextChannel, ThreadChannel } from "discord.js";
 import { type InferSelectModel, desc, eq } from "drizzle-orm";
-import { readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import db from "src/drizzle";
 import { chatsTable, messagesTable, type userTable } from "src/drizzle/schema";
 
