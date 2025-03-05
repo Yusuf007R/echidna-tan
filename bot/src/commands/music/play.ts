@@ -20,6 +20,7 @@ export default class Play extends MusicCommand<typeof options> {
 	}
 
 	async run(interaction: CommandInteraction<CacheType>) {
-		await this.echidna.musicPlayer.playCmd(interaction, this.options.query);
+		await interaction.reply("temporarily disabled");
+		// await this.echidna.musicPlayer.playCmd(interaction, this.options.query);
 	}
 }
