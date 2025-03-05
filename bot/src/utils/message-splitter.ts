@@ -74,7 +74,6 @@ export class MessageSplitter {
 	}
 
 	addStreamMessage(message: string, isLastChunk: boolean) {
-		console.log(isLastChunk);
 		this.fullStreamMessage += message;
 		if (!message.includes("\n") && !isLastChunk) {
 			this.bufferStreamMessage += message;

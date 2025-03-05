@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 
 import {
 	customType,
+	index,
 	integer,
 	sqliteTable,
 	text,
@@ -75,16 +76,23 @@ export const sessionsRelations = relations(sessionTable, ({ one }) => ({
 	}),
 }));
 
-export const memoriesTable = sqliteTable("memories", {
-	id: integer("id").primaryKey({ autoIncrement: true }),
-	userId: text("user_id")
-		.notNull()
-		.references(() => userTable.id),
-	memory: text("memory").notNull(),
-	embeds: float32Array("embeds", { dimensions: 1536 }),
-	memoryLength: integer("memory_length").notNull(),
-	...baseDates,
-});
+export const memoriesTable = sqliteTable(
+	"memories",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		userId: text("user_id")
+			.notNull()
+			.references(() => userTable.id),
+		memory: text("memory").notNull(),
+		prompt: text("prompt").notNull(),
+		embeds: float32Array("embeds", { dimensions: 1536 }),
+		memoryLength: integer("memory_length").notNull(),
+		...baseDates,
+	},
+	(t) => ({
+		promptIndex: index("prompt_index").on(t.prompt),
+	}),
+);
 
 export const memoryRelations = relations(memoriesTable, ({ one }) => ({
 	user: one(userTable, {
@@ -118,8 +126,9 @@ export const messagesTable = sqliteTable("messages", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
 	content: text("content").notNull(),
 	authorId: text("author_id").notNull(),
-	channelId: text("channel_id").notNull(),
-	chatId: integer("chat_id").references(() => chatsTable.id),
+	chatId: integer("chat_id")
+		.notNull()
+		.references(() => chatsTable.id),
 	messageId: text("message_id").notNull(),
 	embeds: float32Array("embeds", { dimensions: 1536 }),
 	...baseDates,

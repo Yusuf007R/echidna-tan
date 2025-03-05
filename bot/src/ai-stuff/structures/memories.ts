@@ -1,5 +1,5 @@
 import { openAI, openRouterAPI } from "@Utils/request";
-import { type InferSelectModel, desc, eq } from "drizzle-orm";
+import { type InferSelectModel, and, desc, eq } from "drizzle-orm";
 import { zodFunction } from "openai/helpers/zod";
 import db from "src/drizzle";
 import { memoriesTable, type userTable } from "src/drizzle/schema";
@@ -12,13 +12,21 @@ const memoryAIResponseSchema = z.object({
 export default class MemoriesManager {
 	private memories: InferSelectModel<typeof memoriesTable>[] = [];
 
-	constructor(private user: InferSelectModel<typeof userTable>) {}
+	constructor(
+		private user: InferSelectModel<typeof userTable>,
+		private chatBotName: string,
+	) {}
 
 	async loadMemories() {
 		this.memories = await db
 			.select()
 			.from(memoriesTable)
-			.where(eq(memoriesTable.userId, this.user.id))
+			.where(
+				and(
+					eq(memoriesTable.userId, this.user.id),
+					eq(memoriesTable.prompt, this.chatBotName),
+				),
+			)
 			.orderBy(desc(memoriesTable.createdAt))
 			.limit(50);
 
@@ -40,6 +48,7 @@ export default class MemoriesManager {
 				memory,
 				memoryLength: memory.length,
 				embeds: embeddings,
+				prompt: this.chatBotName,
 			})
 			.returning();
 		console.log("Memory added");
@@ -62,13 +71,13 @@ export default class MemoriesManager {
 		];
 
 		const completion = await openRouterAPI.beta.chat.completions.parse({
-			model: "gpt-4o-mini",
+			model: "google/gemini-2.0-flash-001",
 			messages: [
 				{
 					role: "system",
 					content: `
-          User's name: ${this.user.displayName} 
           You are a helpful assistant that can save memories. Memories are information about the users, such as their name, age, or any other relevant details like things they are doing, places they are from, their hobbies, their interests, etc.
+					this is a conversation between chatbot: ${this.chatBotName} and the user : ${this.user.displayName}, you are a memory saver, do not talk to the user, your job is to save memories about the user. 
           save-memory: Use this tool to save memories. It should have a little description of the memory.
         `,
 				},
@@ -82,7 +91,6 @@ export default class MemoriesManager {
 				}),
 			),
 		});
-
 		const toolCalls = completion.choices.at(0)?.message.tool_calls;
 		if (!toolCalls) return;
 		for (const toolCall of toolCalls) {
@@ -90,7 +98,9 @@ export default class MemoriesManager {
 			const parsed = toolCall.function.parsed_arguments as z.infer<
 				typeof memoryAIResponseSchema
 			>;
-			console.log(`Memory detected: ${parsed.memory}`);
+			console.log(
+				`Memory detected: ${parsed.memory} for prompt: ${this.chatBotName} for user: ${this.user.displayName}`,
+			);
 			this.addMemory(parsed.memory);
 		}
 	}

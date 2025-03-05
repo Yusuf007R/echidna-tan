@@ -6,8 +6,6 @@ const envSchema = z.object({
 	API_URL: z.string(),
 	FRONTEND_URL: z.string(),
 	DISCORD_TOKEN: z.string(),
-	DISCORD_GUILD_ID: z.string(),
-	DISCORD_OP_USER_ID: z.string(),
 	DISCORD_DB_PROFILE: z.string().transform((val) => Number.parseInt(val)),
 	DISCORD_BOT_CLIENT_ID: z.string(),
 	DISCORD_AUTH_CLIENT_SECRET: z.string(),
@@ -20,8 +18,6 @@ const envSchema = z.object({
 	TURSO_DATABASE_URL: z.string(),
 	TURSO_AUTH_TOKEN: z.string(),
 	SOURCE_COMMIT: z.string().optional(),
-	JWT_ACCESS_SECRET: z.string(),
-	JWT_REFRESH_SECRET: z.string(),
 	TMDB_API_KEY: z.string(),
 });
 

@@ -1,4 +1,3 @@
-import ChatBot from "@AiStructures/chat-bot";
 import ChatBotManager from "@Managers/chat-bot-manager";
 import { Command } from "@Structures/command";
 import { OptionsBuilder } from "@Utils/options-builder";
@@ -82,7 +81,7 @@ export default class CreateChatCommand extends Command<typeof options> {
 				break;
 			case "prompt":
 				{
-					const prompts = ChatBotManager.getPromptsTemplates();
+					const prompts = await ChatBotManager.getPromptsTemplates();
 					const filtered = prompts
 						.filter((prompt) => {
 							if (!option.value) return true;
@@ -122,6 +121,7 @@ export default class CreateChatCommand extends Command<typeof options> {
 			);
 			return;
 		}
+
 		const modelId = this.options.model || "google/gemini-flash-1.5";
 		const model = await ChatBotManager.getModel(modelId);
 
@@ -129,7 +129,7 @@ export default class CreateChatCommand extends Command<typeof options> {
 
 		const promptName = this.options.prompt || "Assistant";
 
-		const prompt = ChatBotManager.getPromptsTemplates().find(
+		const prompt = (await ChatBotManager.getPromptsTemplates()).find(
 			(prompt) => prompt.promptTemplate.name === promptName,
 		);
 
@@ -139,12 +139,12 @@ export default class CreateChatCommand extends Command<typeof options> {
 			name: model.name,
 		});
 
-		const chatbot = new ChatBot(thread, model, user, prompt.promptTemplate);
-		const collector = thread.createMessageCollector();
+		// const chatbot = new ChatBot(thread, model, user, prompt.promptTemplate);
+		// const collector = thread.createMessageCollector();
 
-		collector.on("collect", (m) => {
-			chatbot.processMessage(m);
-		});
+		// collector.on("collect", async (m) => {
+		// 	await chatbot.processMessage(m);
+		// });
 		interaction.editReply("New chatbot in thread created");
 	}
 }

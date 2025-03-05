@@ -12,51 +12,81 @@ import {
 } from "discord.js";
 import type { InferSelectModel } from "drizzle-orm";
 
+import type { messageHistoryType } from "@Managers/chat-bot-manager";
+import EchidnaSingleton from "@Structures/echidna-singleton";
 import type {
 	ChatCompletionMessageParam,
 	CompletionUsage,
 } from "openai/resources/index.mjs";
-import type { userTable } from "src/drizzle/schema";
+import db from "src/drizzle";
+import {
+	type chatsTable,
+	messagesTable,
+	type userTable,
+} from "src/drizzle/schema";
 import MemoriesManager from "./memories";
 
-type messageHistoryType = {
-	author: "user" | "assistant" | "system";
-	content: string;
+type ChatBotOptions = {
+	channel: TextChannel | ThreadChannel;
+	model: OpenRouterModel;
+	user: InferSelectModel<typeof userTable>;
+	prompt: AiPrompt;
+	chat: InferSelectModel<typeof chatsTable>;
+	messageHistory?: messageHistoryType[];
 };
 
 export default class ChatBot {
 	private cost = 0;
-	private hasMemories = false;
-	private messageHistory: messageHistoryType[] = [];
-	private memoriesManager!: MemoriesManager;
 
-	constructor(
+	private constructor(
 		private channel: TextChannel | ThreadChannel,
 		private model: OpenRouterModel,
 		private user: InferSelectModel<typeof userTable>,
 		private prompt: AiPrompt,
-	) {
-		this.memoriesManager = new MemoriesManager(this.user);
-		this.init();
-	}
+		private chat: InferSelectModel<typeof chatsTable>,
+		private hasMemories: boolean,
+		private memoriesManager: MemoriesManager,
+		private messageHistory: messageHistoryType[] = [],
+	) {}
 
 	lastMessage(filter?: messageHistoryType["author"]) {
 		if (!filter) return this.messageHistory[this.messageHistory.length - 1];
 		return this.messageHistory.find((msg) => msg.author === filter);
 	}
 
-	init() {
-		this.hasMemories = this.prompt.prompt_config.includes("memory");
-		if (this.hasMemories) this.memoriesManager.loadMemories();
-		if (this.prompt.type === "roleplay" && this.prompt.initial_message) {
-			const index = randomNumber(0, this.prompt.initial_message.length - 1);
-			const content = this.prompt.initial_message[index];
-			this.messageHistory.push({
+	static async init(options: ChatBotOptions) {
+		const messageHistory: messageHistoryType[] = [];
+		const hasMemories = options.prompt.prompt_config.includes("memory");
+		const memoriesManager = new MemoriesManager(
+			options.user,
+			options.prompt.name,
+		);
+
+		if (hasMemories) memoriesManager.loadMemories();
+		if (options.prompt.type === "roleplay" && options.prompt.initial_message) {
+			const index = randomNumber(0, options.prompt.initial_message.length - 1);
+			const content = options.prompt.initial_message[index];
+			messageHistory.push({
 				author: "assistant",
 				content,
 			});
-			this.channel.send(content);
+			options.channel.send(content);
 		}
+
+		if (options.messageHistory) {
+			messageHistory.push(...(options.messageHistory as messageHistoryType[]));
+		}
+
+		return new ChatBot(
+			options.channel,
+			options.model,
+			options.user,
+			options.prompt,
+			options.chat,
+			hasMemories,
+			memoriesManager,
+			messageHistory,
+		);
 	}
 
 	async processMessage(message: Message) {
@@ -106,7 +136,7 @@ export default class ChatBot {
 		console.log(
 			`Total split message length: ${totalLength}, full message length: ${
 				splitter.getFullStreamMessage().length
-			}`,
+			}, cost: ${this.cost.toFixed(5)}`,
 		);
 	}
 
@@ -248,6 +278,26 @@ export default class ChatBot {
 				default:
 					return match;
 			}
+		});
+	}
+
+	async pushMessage(message: Message) {
+		if (this.messageHistory.length >= 50) {
+			this.messageHistory.shift();
+		}
+		await db.insert(messagesTable).values({
+			authorId:
+				message.author.id === EchidnaSingleton.echidnaId
+					? this.user.id
+					: this.user.id,
+			content: message.content,
+			messageId: message.id,
+			chatId: this.chat.id,
+		});
+		this.messageHistory.push({
+			author:
+				message.author.id === EchidnaSingleton.echidnaId ? "user" : "assistant",
+			content: message.content,
 		});
 	}
 }
