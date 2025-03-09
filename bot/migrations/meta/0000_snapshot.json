@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c28ca54b-6f0f-42c9-9b96-6a88bb6a9147",
+  "id": "0dbe6152-1f28-4d62-9bbd-8f3e409c2b1f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "chats": {
@@ -182,9 +182,23 @@
           "notNull": true,
           "autoincrement": false
         },
-        "prompt": {
-          "name": "prompt",
+        "prompt_template": {
+          "name": "prompt_template",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "memory_type": {
+          "name": "memory_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "message_id": {
+          "name": "message_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -196,12 +210,13 @@
           "notNull": false,
           "autoincrement": false
         },
-        "memory_length": {
-          "name": "memory_length",
+        "importance": {
+          "name": "importance",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -221,10 +236,10 @@
         }
       },
       "indexes": {
-        "prompt_index": {
-          "name": "prompt_index",
+        "prompt_template_index": {
+          "name": "prompt_template_index",
           "columns": [
-            "prompt"
+            "prompt_template"
           ],
           "isUnique": false
         }
@@ -236,6 +251,19 @@
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "memories_message_id_messages_id_fk": {
+          "name": "memories_message_id_messages_id_fk",
+          "tableFrom": "memories",
+          "tableTo": "messages",
+          "columnsFrom": [
+            "message_id"
           ],
           "columnsTo": [
             "id"
@@ -265,8 +293,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "author_id": {
-          "name": "author_id",
+        "role": {
+          "name": "role",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -279,19 +307,28 @@
           "notNull": true,
           "autoincrement": false
         },
-        "message_id": {
-          "name": "message_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "embeds": {
           "name": "embeds",
           "type": "F32_BLOB(1536)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "cost": {
+          "name": "cost",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "token_usage": {
+          "name": "token_usage",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         },
         "created_at": {
           "name": "created_at",

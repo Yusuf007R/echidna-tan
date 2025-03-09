@@ -6,10 +6,10 @@ import type { AiPrompt } from "@Interfaces/ai-prompts";
 import type { OpenRouterModel } from "@Interfaces/open-router-model";
 import CacheManager from "@Managers/cache-manager";
 import { openRouterAPI } from "@Utils/request";
-import type { TextChannel, ThreadChannel } from "discord.js";
+import type { DMChannel, ThreadChannel } from "discord.js";
 import { type InferSelectModel, desc, eq } from "drizzle-orm";
 import db from "src/drizzle";
-import { chatsTable, messagesTable, type userTable } from "src/drizzle/schema";
+import { chatsTable, messagesTable, userTable } from "src/drizzle/schema";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -74,10 +74,44 @@ export default class ChatBotManager {
 		);
 	}
 
-	static async getChatBot(
-		channel: TextChannel | ThreadChannel,
+	static async createChatBot(
+		channel: DMChannel | ThreadChannel,
 		user: InferSelectModel<typeof userTable>,
+		promptTemplate: AiPrompt,
+		modelId: string,
+		modelConfig?: Partial<{
+			temp: string;
+		}>,
 	) {
+		const model = await ChatBotManager.getModel(modelId);
+		if (!model) return null;
+
+		const [chat] = await db
+			.insert(chatsTable)
+			.values({
+				channelId: channel.id,
+				userId: user.id,
+				modelId,
+				name: promptTemplate.name,
+				promptTemplate: promptTemplate.name,
+			})
+			.returning();
+
+		if (!chat) return null;
+		const chatBot = await ChatBot.init({
+			channel,
+			model,
+			user,
+			prompt: promptTemplate,
+			chat,
+			modelConfig,
+		});
+
+		ChatBotManager.chatBots.set(channel.id, chatBot);
+		return chatBot;
+	}
+
+	static async getChatBot(channel: DMChannel | ThreadChannel) {
 		const chatBotCache = ChatBotManager.chatBots.get(channel.id);
 		if (chatBotCache) return chatBotCache;
 
@@ -97,13 +131,18 @@ export default class ChatBotManager {
 		);
 		if (!promptTemplate) return null;
 
+		const user = await db.query.userTable.findFirst({
+			where: eq(userTable.id, chat.userId),
+		});
+		if (!user) return null;
+
 		const chatBot = await ChatBot.init({
 			channel,
-			model: model,
-			user: user,
+			model,
+			user,
 			prompt: promptTemplate.promptTemplate,
-			chat: chat,
-			messageHistory: messageHistory,
+			chat,
+			messageHistory,
 		});
 
 		ChatBotManager.chatBots.set(channel.id, chatBot);
@@ -117,12 +156,14 @@ export default class ChatBotManager {
 			limit: 45,
 		});
 
-		const mappedMessages = messages.map((msg) => {
-			return {
-				author: msg.authorId === chat.userId ? "user" : "assistant",
-				content: msg.content,
-			};
-		});
+		const mappedMessages = messages
+			.map((msg) => {
+				return {
+					author: msg.role,
+					content: msg.content,
+				};
+			})
+			.reverse();
 
 		return mappedMessages as messageHistoryType[];
 	}
@@ -146,8 +187,8 @@ export default class ChatBotManager {
 	}
 
 	static async getPromptTemplate(name: string) {
-		return ChatBotManager.promptsTemplates.find(
-			(prompt) => prompt.name === name,
+		return (await ChatBotManager.getPromptsTemplates()).find(
+			(prompt) => prompt.promptTemplate.name === name,
 		);
 	}
 }

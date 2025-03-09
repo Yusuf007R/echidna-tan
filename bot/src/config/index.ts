@@ -19,6 +19,7 @@ const envSchema = z.object({
 	TURSO_AUTH_TOKEN: z.string(),
 	SOURCE_COMMIT: z.string().optional(),
 	TMDB_API_KEY: z.string(),
+	CIVITAI_API_KEY: z.string(),
 });
 
 export default envSchema.parse(process.env);

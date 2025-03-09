@@ -10,6 +10,8 @@ import {
 
 export const echidnaStatus = ["online", "idle", "dnd", "invisible"] as const;
 
+export const messageType = ["user", "assistant", "system"] as const;
+
 const float32Array = customType<{
 	data: number[];
 	config: { dimensions: number };
@@ -84,13 +86,19 @@ export const memoriesTable = sqliteTable(
 			.notNull()
 			.references(() => userTable.id),
 		memory: text("memory").notNull(),
-		prompt: text("prompt").notNull(),
+		promptTemplate: text("prompt_template").notNull(),
+		memoryType: text("memory_type", {
+			enum: ["user", "assistant"] as const,
+		}).notNull(),
+		messageId: integer("message_id")
+			.notNull()
+			.references(() => messagesTable.id),
 		embeds: float32Array("embeds", { dimensions: 1536 }),
-		memoryLength: integer("memory_length").notNull(),
+		importance: integer("importance", { mode: "number" }).notNull().default(0),
 		...baseDates,
 	},
 	(t) => ({
-		promptIndex: index("prompt_index").on(t.prompt),
+		promptTemplateIndex: index("prompt_template_index").on(t.promptTemplate),
 	}),
 );
 
@@ -125,12 +133,13 @@ export const chatRelations = relations(chatsTable, ({ one, many }) => ({
 export const messagesTable = sqliteTable("messages", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
 	content: text("content").notNull(),
-	authorId: text("author_id").notNull(),
+	role: text("role", { enum: messageType }).notNull(),
 	chatId: integer("chat_id")
 		.notNull()
 		.references(() => chatsTable.id),
-	messageId: text("message_id").notNull(),
 	embeds: float32Array("embeds", { dimensions: 1536 }),
+	cost: integer("cost").notNull().default(0),
+	tokenUsage: integer("token_usage").notNull().default(0),
 	...baseDates,
 });
 

@@ -1,51 +1,73 @@
 import type { AiPrompt } from "@Interfaces/ai-prompts";
 import type { OpenRouterModel } from "@Interfaces/open-router-model";
+import type { messageHistoryType } from "@Managers/chat-bot-manager";
+import { extractImageFromMsg } from "@Utils/extract-image-from-msg";
+import getImageAsBuffer from "@Utils/get-image-from-url";
 import { MessageSplitter, type SplitMessage } from "@Utils/message-splitter";
 import randomNumber from "@Utils/random-number";
 import { openRouterAPI } from "@Utils/request";
+import dayjs from "dayjs";
 import {
 	AttachmentBuilder,
+	type DMChannel,
 	type Message,
 	MessageType,
-	type TextChannel,
 	type ThreadChannel,
 } from "discord.js";
-import type { InferSelectModel } from "drizzle-orm";
-
-import type { messageHistoryType } from "@Managers/chat-bot-manager";
-import EchidnaSingleton from "@Structures/echidna-singleton";
+import { type InferSelectModel, and, count, eq, sum } from "drizzle-orm";
+import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import type {
 	ChatCompletionMessageParam,
 	CompletionUsage,
 } from "openai/resources/index.mjs";
+import sharp from "sharp";
 import db from "src/drizzle";
 import {
 	type chatsTable,
+	memoriesTable,
 	messagesTable,
 	type userTable,
 } from "src/drizzle/schema";
+import { z } from "zod";
 import MemoriesManager from "./memories";
+export type ChatBotModelConfig = {
+	temp?: string;
+};
+
+export type ChatBotUsage = {
+	prompt_tokens: number;
+	completion_tokens: number;
+	total_tokens: number;
+	cost: number;
+};
 
 type ChatBotOptions = {
-	channel: TextChannel | ThreadChannel;
+	channel: DMChannel | ThreadChannel;
 	model: OpenRouterModel;
 	user: InferSelectModel<typeof userTable>;
 	prompt: AiPrompt;
 	chat: InferSelectModel<typeof chatsTable>;
 	messageHistory?: messageHistoryType[];
+	modelConfig?: ChatBotModelConfig;
 };
 
 export default class ChatBot {
-	private cost = 0;
+	private usage: ChatBotUsage = {
+		prompt_tokens: 0,
+		completion_tokens: 0,
+		total_tokens: 0,
+		cost: 0,
+	};
 
 	private constructor(
-		private channel: TextChannel | ThreadChannel,
+		private channel: DMChannel | ThreadChannel,
 		private model: OpenRouterModel,
 		private user: InferSelectModel<typeof userTable>,
 		private prompt: AiPrompt,
 		private chat: InferSelectModel<typeof chatsTable>,
 		private hasMemories: boolean,
 		private memoriesManager: MemoriesManager,
+		private modelConfig: ChatBotModelConfig | undefined,
 		private messageHistory: messageHistoryType[] = [],
 	) {}
 
@@ -62,8 +84,11 @@ export default class ChatBot {
 			options.prompt.name,
 		);
 
-		if (hasMemories) memoriesManager.loadMemories();
-		if (options.prompt.type === "roleplay" && options.prompt.initial_message) {
+		if (
+			options.prompt.type === "roleplay" &&
+			options.prompt.initial_message &&
+			(!options.messageHistory || options.messageHistory.length === 0)
+		) {
 			const index = randomNumber(0, options.prompt.initial_message.length - 1);
 			const content = options.prompt.initial_message[index];
 			messageHistory.push({
@@ -74,7 +99,7 @@ export default class ChatBot {
 		}
 
 		if (options.messageHistory) {
-			messageHistory.push(...(options.messageHistory as messageHistoryType[]));
+			messageHistory.push(...options.messageHistory);
 		}
 
 		return new ChatBot(
@@ -85,6 +110,7 @@ export default class ChatBot {
 			options.chat,
 			hasMemories,
 			memoriesManager,
+			options.modelConfig,
 			messageHistory,
 		);
 	}
@@ -96,21 +122,61 @@ export default class ChatBot {
 		if (![MessageType.Default, MessageType.Reply].includes(message.type))
 			return;
 
-		this.messageHistory.push({
-			author: "user",
-			content: message.content,
-		});
+		const images = extractImageFromMsg(message);
 
-		this.generateMessage();
-		if (this.hasMemories) this.memoriesManager.memorySaver(message.content);
+		// const civitaiImage = await WaifuGenerator.getCivitaiImage("");
+		// if (!civitaiImage) return;
+		// const buffer = await getImageAsBuffer(civitaiImage);
+		// if (!buffer.data) return;
+		// const attachment = new AttachmentBuilder(buffer.data, {
+		// 	name: "civitai-image.jpeg",
+		// });
+		// await this.channel.send({ files: [attachment] });
+
+		// if (this.prompt.tools) {
+		// 	const toolsManager = new ToolsManager(this.prompt.tools);
+		// 	await toolsManager.promptTools(message.content);
+		// }
+		const userMessage = await this.pushMessage(message.content, "user");
+		if (!userMessage) return;
+		await Promise.all([
+			this.hasMemories
+				? this.memoriesManager.memorySaver(message.content, userMessage.id)
+				: Promise.resolve(),
+			this.generateMessage(images),
+		]);
 	}
 
-	async generateMessage() {
+	private async generateMessage(images: string[]) {
 		this.channel.sendTyping();
-
+		const time = Date.now();
+		const messages = await this.buildMessageHistory();
+		const imageAnalysis = await Promise.all(
+			images.map((image) => this.processImages(image)),
+		).then((res) => res.filter((r) => r !== null));
+		let imagesMessage = "";
+		if (imageAnalysis.length > 0) {
+			imagesMessage = "--- IMAGE ANALYSIS ---\n";
+			for (const analysis of imageAnalysis) {
+				imagesMessage += `Image Description: ${analysis.description}\n`;
+				if (analysis.emotions && analysis.emotions.length > 0) {
+					imagesMessage += `Image Emotions: ${analysis.emotions.join(", ")}\n`;
+				}
+				imagesMessage +=
+					"\nPlease incorporate this image analysis in your response and respond as if you can see the image.\n";
+			}
+			imagesMessage += "----------------------\n";
+		}
+		if (imagesMessage) {
+			messages.push({
+				role: "system",
+				content: imagesMessage,
+			});
+		}
+		console.log(messages);
 		const response = await openRouterAPI.chat.completions.create({
 			model: this.model.id,
-			messages: this.buildMessageHistory(),
+			messages,
 			stream: true,
 		});
 
@@ -120,7 +186,7 @@ export default class ChatBot {
 		});
 
 		for await (const chunk of response) {
-			this.addToCost(chunk.usage);
+			this.calculateCost(chunk.usage);
 			const choice = chunk.choices?.[0];
 			const isLastChunk = choice?.finish_reason !== null;
 			const chunkMessage = choice?.delta.content;
@@ -133,11 +199,16 @@ export default class ChatBot {
 		const totalLength = splitter
 			.getMessages()
 			.reduce((acc, cur) => acc + cur.content.length, 0);
+		const message = splitter.getFullStreamMessage();
+
+		await this.pushMessage(message, "assistant", this.usage);
+
 		console.log(
 			`Total split message length: ${totalLength}, full message length: ${
-				splitter.getFullStreamMessage().length
-			}, cost: ${this.cost.toFixed(5)}`,
+				message.length
+			}, cost: ${this.usage.cost.toFixed(5)}, time: ${Date.now() - time}ms`,
 		);
+		this.resetUsage();
 	}
 
 	private async sendMessage(splitMessage: SplitMessage, maxLength: number) {
@@ -159,12 +230,12 @@ export default class ChatBot {
 		const attachment = new AttachmentBuilder(Buffer.from(msg), {
 			name: `${name}-${msg.length}.txt`,
 		});
-		await this.channel.send({
+		return await this.channel.send({
 			files: [attachment],
 		});
 	}
 
-	buildMessageHistory() {
+	private async buildMessageHistory() {
 		const msgs: ChatCompletionMessageParam[] = [];
 
 		for (const configKey of this.prompt.prompt_config) {
@@ -188,19 +259,27 @@ export default class ChatBot {
 						content: `User name is: ${this.user.displayName}`,
 					});
 					break;
-				case "memory":
-					msgs.push({
-						role: "system",
-						content: `Current memories:\n${this.memoriesManager
-							.getMemories()
-							.map((mem) => mem.memory)
-							.join("\n")}`,
-					});
+				case "memory": {
+					const memories = await this.memoriesManager.retrieveMemories(
+						this.messageHistory.at(-1)?.content ?? "",
+					);
+					if (memories.length) {
+						msgs.push({
+							role: "system",
+							content: `Current memories:\n${memories
+								.map(
+									(mem) =>
+										`${mem.memory} Date: ${dayjs(mem.date).format("YYYY-MM-DD HH:mm:ss")}`,
+								)
+								.join("\n")}`,
+						});
+					}
 					break;
+				}
 				case "current_date":
 					msgs.push({
 						role: "system",
-						content: `Current date: ${new Date().toISOString().split("T")[0]}`,
+						content: `Current date: ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`,
 					});
 					break;
 				case "chat_examples":
@@ -236,15 +315,24 @@ export default class ChatBot {
 		}
 		const msgHistory = this.messageHistory.map<ChatCompletionMessageParam>(
 			(msg) => ({
-				content: msg.content,
 				role: msg.author,
+				content: msg.content,
 			}),
 		);
 		msgs.push(...msgHistory);
 		return msgs;
 	}
 
-	async addToCost(usage?: CompletionUsage | null) {
+	private resetUsage() {
+		this.usage = {
+			prompt_tokens: 0,
+			completion_tokens: 0,
+			total_tokens: 0,
+			cost: 0,
+		};
+	}
+
+	private calculateCost(usage?: CompletionUsage | null) {
 		const inputTokens = usage?.prompt_tokens ?? 0;
 		const outputTokens = usage?.completion_tokens ?? 0;
 
@@ -264,11 +352,44 @@ export default class ChatBot {
 
 		const inputCost = inputTokens * promptPrice;
 		const outputCost = outputTokens * completionPrice;
-
-		this.cost += inputCost + outputCost;
+		this.usage.prompt_tokens += inputTokens;
+		this.usage.completion_tokens += outputTokens;
+		this.usage.total_tokens += inputTokens + outputTokens;
+		this.usage.cost += inputCost + outputCost;
 	}
 
-	replaceTemplateVars(string: string) {
+	async getChatBotInfo() {
+		const [[info], [memoriesInfo]] = await Promise.all([
+			db
+				.select({
+					count: count(),
+					cost: sum(messagesTable.cost),
+					total_tokens: sum(messagesTable.tokenUsage),
+				})
+				.from(messagesTable)
+				.where(eq(messagesTable.chatId, this.chat.id)),
+			db
+				.select({
+					count: count(),
+				})
+				.from(memoriesTable)
+				.where(
+					and(
+						eq(memoriesTable.userId, this.user.id),
+						eq(memoriesTable.promptTemplate, this.prompt.name),
+					),
+				),
+		]);
+
+		return {
+			chat: this.chat,
+			user: this.user,
+			info,
+			numMemories: memoriesInfo.count,
+		};
+	}
+
+	private replaceTemplateVars(string: string) {
 		return string.replace(/{{([^{}]*)}}/g, (match, p1: string) => {
 			switch (p1) {
 				case "name":
@@ -281,23 +402,80 @@ export default class ChatBot {
 		});
 	}
 
-	async pushMessage(message: Message) {
-		if (this.messageHistory.length >= 50) {
+	private async pushMessage(
+		content: string,
+		role: InferSelectModel<typeof messagesTable>["role"],
+		usage?: ChatBotUsage,
+	) {
+		if (this.messageHistory.length >= 25) {
 			this.messageHistory.shift();
 		}
-		await db.insert(messagesTable).values({
-			authorId:
-				message.author.id === EchidnaSingleton.echidnaId
-					? this.user.id
-					: this.user.id,
-			content: message.content,
-			messageId: message.id,
-			chatId: this.chat.id,
-		});
+
+		const [message] = await db
+			.insert(messagesTable)
+			.values({
+				role,
+				content,
+				chatId: this.chat.id,
+				tokenUsage: usage?.total_tokens,
+				cost: usage?.cost,
+			})
+			.returning();
+
+		if (!message) return;
+
 		this.messageHistory.push({
-			author:
-				message.author.id === EchidnaSingleton.echidnaId ? "user" : "assistant",
-			content: message.content,
+			author: role,
+			content,
 		});
+
+		return message;
+	}
+
+	private async processImages(imageUrl: string) {
+		try {
+			const response_format = z.object({
+				description: z
+					.string()
+					.describe(
+						"Detailed description of what's in the image, including the main subjects, setting, actions, and emotions, if there is text in the image, include it in the description be as detailed as possible",
+					),
+				emotions: z
+					.array(z.string())
+					.describe("Emotions or mood conveyed by the image"),
+			});
+
+			const imageBuffer = await getImageAsBuffer(imageUrl);
+			if (!imageBuffer.data) return null;
+
+			const completion = await openRouterAPI.beta.chat.completions.parse({
+				model: "google/gemini-2.0-flash-001",
+				messages: [
+					{
+						role: "user",
+						content: [
+							{
+								type: "image_url",
+								image_url: {
+									url: `data:image/png;base64,${Buffer.from(
+										await sharp(imageBuffer.data)
+											.webp({ quality: 100 })
+											.toBuffer(),
+									).toString("base64")}`,
+								},
+							},
+						],
+					},
+				],
+				response_format: zodResponseFormat(response_format, "image_analysis"),
+			});
+
+			const image = completion.choices[0].message.parsed;
+
+			return image;
+		} catch (error) {
+			console.error("Error processing images:", error);
+			return null;
+		}
 	}
 }
