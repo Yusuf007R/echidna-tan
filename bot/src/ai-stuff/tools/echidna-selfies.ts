@@ -13,6 +13,7 @@ export default class EchidnaSelfieTool extends Tool<typeof schema> {
 			description:
 				"Generate a selfie of an echidna, make a prompt using danbooru tags, example: '1girl, selfie, from above, looking at the camera'",
 			schema,
+			isAsync: true,
 		});
 	}
 

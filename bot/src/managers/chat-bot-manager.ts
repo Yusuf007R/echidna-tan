@@ -14,9 +14,16 @@ import { chatsTable, messagesTable, userTable } from "src/drizzle/schema";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+export type messageAttachmentType = {
+	url: string;
+	type: "image";
+	base64: string;
+};
+
 export type messageHistoryType = {
 	author: "user" | "assistant" | "system";
 	content: string;
+	attachments: messageAttachmentType[];
 };
 export default class ChatBotManager {
 	private static chatBots: Map<string, ChatBot> = new Map();
@@ -161,11 +168,12 @@ export default class ChatBotManager {
 				return {
 					author: msg.role,
 					content: msg.content,
+					attachments: [],
 				};
 			})
 			.reverse();
 
-		return mappedMessages as messageHistoryType[];
+		return mappedMessages satisfies messageHistoryType[];
 	}
 
 	static async getPromptsTemplates() {

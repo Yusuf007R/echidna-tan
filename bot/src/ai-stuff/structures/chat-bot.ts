@@ -1,6 +1,9 @@
 import type { AiPrompt } from "@Interfaces/ai-prompts";
 import type { OpenRouterModel } from "@Interfaces/open-router-model";
-import type { messageHistoryType } from "@Managers/chat-bot-manager";
+import type {
+	messageAttachmentType,
+	messageHistoryType,
+} from "@Managers/chat-bot-manager";
 import { extractImageFromMsg } from "@Utils/extract-image-from-msg";
 import getImageAsBuffer from "@Utils/get-image-from-url";
 import { MessageSplitter, type SplitMessage } from "@Utils/message-splitter";
@@ -15,7 +18,6 @@ import {
 	type ThreadChannel,
 } from "discord.js";
 import { type InferSelectModel, and, count, eq, sum } from "drizzle-orm";
-import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import type {
 	ChatCompletionMessageParam,
 	CompletionUsage,
@@ -23,12 +25,13 @@ import type {
 import sharp from "sharp";
 import db from "src/drizzle";
 import {
+	attachmentsTable,
 	type chatsTable,
 	memoriesTable,
 	messagesTable,
 	type userTable,
 } from "src/drizzle/schema";
-import { z } from "zod";
+import { AiUtils } from "./ai-utils";
 import MemoriesManager from "./memories";
 export type ChatBotModelConfig = {
 	temp?: string;
@@ -59,6 +62,8 @@ export default class ChatBot {
 		cost: 0,
 	};
 
+	private interval: NodeJS.Timeout | null = null;
+
 	private constructor(
 		private channel: DMChannel | ThreadChannel,
 		private model: OpenRouterModel,
@@ -72,8 +77,12 @@ export default class ChatBot {
 	) {}
 
 	lastMessage(filter?: messageHistoryType["author"]) {
-		if (!filter) return this.messageHistory[this.messageHistory.length - 1];
-		return this.messageHistory.find((msg) => msg.author === filter);
+		return this.messageHistory
+			.filter((msg) => {
+				if (!filter) return true;
+				return msg.author === filter;
+			})
+			.at(-1);
 	}
 
 	static async init(options: ChatBotOptions) {
@@ -94,6 +103,7 @@ export default class ChatBot {
 			messageHistory.push({
 				author: "assistant",
 				content,
+				attachments: [],
 			});
 			options.channel.send(content);
 		}
@@ -116,64 +126,34 @@ export default class ChatBot {
 	}
 
 	async processMessage(message: Message) {
+		this.channel.sendTyping();
+
+		this.interval = setInterval(() => {
+			this.channel.sendTyping();
+		}, 5000);
+
 		if (message.channelId !== this.channel.id) return;
 		if (message.author.id !== this.user.id) return;
 		if (message.system) return;
 		if (![MessageType.Default, MessageType.Reply].includes(message.type))
 			return;
 
-		const images = extractImageFromMsg(message);
-
-		// const civitaiImage = await WaifuGenerator.getCivitaiImage("");
-		// if (!civitaiImage) return;
-		// const buffer = await getImageAsBuffer(civitaiImage);
-		// if (!buffer.data) return;
-		// const attachment = new AttachmentBuilder(buffer.data, {
-		// 	name: "civitai-image.jpeg",
-		// });
-		// await this.channel.send({ files: [attachment] });
-
-		// if (this.prompt.tools) {
-		// 	const toolsManager = new ToolsManager(this.prompt.tools);
-		// 	await toolsManager.promptTools(message.content);
-		// }
-		const userMessage = await this.pushMessage(message.content, "user");
+		const imagesUrls = extractImageFromMsg(message);
+		const images = await this.processImages(imagesUrls);
+		const userMessage = await this.pushMessage(message.content, "user", images);
 		if (!userMessage) return;
 		await Promise.all([
 			this.hasMemories
 				? this.memoriesManager.memorySaver(message.content, userMessage.id)
 				: Promise.resolve(),
-			this.generateMessage(images),
+			this.generateMessage(),
 		]);
 	}
 
-	private async generateMessage(images: string[]) {
-		this.channel.sendTyping();
+	private async generateMessage() {
 		const time = Date.now();
 		const messages = await this.buildMessageHistory();
-		const imageAnalysis = await Promise.all(
-			images.map((image) => this.processImages(image)),
-		).then((res) => res.filter((r) => r !== null));
-		let imagesMessage = "";
-		if (imageAnalysis.length > 0) {
-			imagesMessage = "--- IMAGE ANALYSIS ---\n";
-			for (const analysis of imageAnalysis) {
-				imagesMessage += `Image Description: ${analysis.description}\n`;
-				if (analysis.emotions && analysis.emotions.length > 0) {
-					imagesMessage += `Image Emotions: ${analysis.emotions.join(", ")}\n`;
-				}
-				imagesMessage +=
-					"\nPlease incorporate this image analysis in your response and respond as if you can see the image.\n";
-			}
-			imagesMessage += "----------------------\n";
-		}
-		if (imagesMessage) {
-			messages.push({
-				role: "system",
-				content: imagesMessage,
-			});
-		}
-		console.log(messages);
+
 		const response = await openRouterAPI.chat.completions.create({
 			model: this.model.id,
 			messages,
@@ -194,6 +174,8 @@ export default class ChatBot {
 			splitter.addStreamMessage(chunkMessage, isLastChunk);
 		}
 
+		if (this.interval) clearInterval(this.interval);
+
 		// await this.channel.send(`Tokens: ${response.usage?.completion_tokens} - total cost: ${this.cost.toFixed(5)}`);
 		// await this.sendAsAttachment(splitter.getFullStreamMessage(), 'original-response');
 		const totalLength = splitter
@@ -201,7 +183,7 @@ export default class ChatBot {
 			.reduce((acc, cur) => acc + cur.content.length, 0);
 		const message = splitter.getFullStreamMessage();
 
-		await this.pushMessage(message, "assistant", this.usage);
+		await this.pushMessage(message, "assistant", undefined, this.usage);
 
 		console.log(
 			`Total split message length: ${totalLength}, full message length: ${
@@ -313,11 +295,52 @@ export default class ChatBot {
 					break;
 			}
 		}
+		const modelHasImageAnalysis =
+			this.model.architecture.modality.includes("image");
+		const lastUserMessage = this.lastMessage("user")!;
+		if (!modelHasImageAnalysis && lastUserMessage.attachments.length) {
+			const imageAnalysis = await this.processImageAnalysis(
+				lastUserMessage.attachments.map((a) => a.base64),
+			);
+			if (imageAnalysis) {
+				msgs.push({
+					role: "system",
+					content: imageAnalysis,
+				});
+			}
+		}
+
 		const msgHistory = this.messageHistory.map<ChatCompletionMessageParam>(
-			(msg) => ({
-				role: msg.author,
-				content: msg.content,
-			}),
+			(msg) => {
+				if (
+					msg.author === "user" &&
+					msg.attachments?.length &&
+					modelHasImageAnalysis
+				) {
+					return {
+						role: "user",
+						content: [
+							{
+								type: "text",
+								text: msg.content,
+							},
+							...msg.attachments.map(
+								(a) =>
+									({
+										type: "image_url",
+										image_url: {
+											url: a.base64,
+										},
+									}) as const,
+							),
+						],
+					};
+				}
+				return {
+					role: msg.author,
+					content: msg.content,
+				};
+			},
 		);
 		msgs.push(...msgHistory);
 		return msgs;
@@ -405,6 +428,7 @@ export default class ChatBot {
 	private async pushMessage(
 		content: string,
 		role: InferSelectModel<typeof messagesTable>["role"],
+		attachments?: messageHistoryType["attachments"],
 		usage?: ChatBotUsage,
 	) {
 		if (this.messageHistory.length >= 25) {
@@ -424,58 +448,68 @@ export default class ChatBot {
 
 		if (!message) return;
 
+		if (attachments?.length) {
+			await db.transaction(async (tx) => {
+				await Promise.all(
+					attachments.map((attachment) =>
+						tx.insert(attachmentsTable).values({
+							base64: attachment.base64,
+							messageId: message.id,
+							type: attachment.type,
+							url: attachment.url,
+						}),
+					),
+				);
+			});
+		}
 		this.messageHistory.push({
 			author: role,
 			content,
+			attachments: attachments ?? [],
 		});
 
 		return message;
 	}
 
-	private async processImages(imageUrl: string) {
-		try {
-			const response_format = z.object({
-				description: z
-					.string()
-					.describe(
-						"Detailed description of what's in the image, including the main subjects, setting, actions, and emotions, if there is text in the image, include it in the description be as detailed as possible",
-					),
-				emotions: z
-					.array(z.string())
-					.describe("Emotions or mood conveyed by the image"),
-			});
+	private async processImages(
+		images: string[],
+	): Promise<messageAttachmentType[]> {
+		const imageBuffers = await Promise.all(
+			images.map(async (image) => {
+				const imageBuffer = await getImageAsBuffer(image);
+				if (!imageBuffer.data) return null;
+				return {
+					type: "image",
+					url: image,
+					base64: `data:image/png;base64,${Buffer.from(
+						await sharp(imageBuffer.data).webp({ quality: 100 }).toBuffer(),
+					).toString("base64")}`,
+				} satisfies messageAttachmentType;
+			}),
+		);
+		if (!imageBuffers.length) return [];
 
-			const imageBuffer = await getImageAsBuffer(imageUrl);
-			if (!imageBuffer.data) return null;
+		return imageBuffers.filter((img) => img !== null);
+	}
 
-			const completion = await openRouterAPI.beta.chat.completions.parse({
-				model: "google/gemini-2.0-flash-001",
-				messages: [
-					{
-						role: "user",
-						content: [
-							{
-								type: "image_url",
-								image_url: {
-									url: `data:image/png;base64,${Buffer.from(
-										await sharp(imageBuffer.data)
-											.webp({ quality: 100 })
-											.toBuffer(),
-									).toString("base64")}`,
-								},
-							},
-						],
-					},
-				],
-				response_format: zodResponseFormat(response_format, "image_analysis"),
-			});
+	private async processImageAnalysis(images: string[]) {
+		const imageAnalysis = await Promise.all(
+			images.map((image) => AiUtils.analyzeImageContent(image)),
+		).then((res) => res.filter((r) => r !== null));
+		let imagesMessage = "";
+		if (!imageAnalysis.length) return null;
 
-			const image = completion.choices[0].message.parsed;
-
-			return image;
-		} catch (error) {
-			console.error("Error processing images:", error);
-			return null;
+		imagesMessage = "--- IMAGE ANALYSIS ---\n";
+		for (const analysis of imageAnalysis) {
+			imagesMessage += `Image Description: ${analysis.description}\n`;
+			if (analysis.emotions && analysis.emotions.length > 0) {
+				imagesMessage += `Image Emotions: ${analysis.emotions.join(", ")}\n`;
+			}
+			imagesMessage +=
+				"\nPlease incorporate this image analysis in your response and respond as if you can see the image.\n";
 		}
+		imagesMessage += "----------------------\n";
+
+		return imagesMessage ?? null;
 	}
 }

@@ -1,9 +1,20 @@
 import type { Constructor } from "@Interfaces/utils";
 import type { Tool } from "@Structures/tool";
 import { openRouterAPI } from "@Utils/request";
+import { EventEmitter } from "tseep";
 
-export default class ToolsManager {
-	constructor(private tools: Constructor<Tool<any>>[]) {}
+export type ToolEvent = {
+	"tool:start": (toolName: string, params: any) => void;
+	"tool:processing": (toolName: string, message: string) => void;
+	"tool:complete": (toolName: string, result: any) => void;
+	"tool:failed": (toolName: string, error: Error) => void;
+	"tool:contextUpdate": (context: string) => void;
+};
+
+export default class ToolsManager extends EventEmitter<ToolEvent> {
+	constructor(private tools: Constructor<Tool<any>>[]) {
+		super();
+	}
 
 	async promptTools(prompt: string) {
 		const tools = this.tools.map((ToolClass) => {
@@ -33,7 +44,6 @@ export default class ToolsManager {
 			const tool = tools.find((tool) => tool.name === toolCall.function.name);
 			if (!tool) continue;
 			const result = await tool.run(toolCall.function.parsed_arguments);
-			console.log(result);
 		}
 	}
 }

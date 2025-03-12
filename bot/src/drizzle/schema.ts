@@ -142,10 +142,28 @@ export const messagesTable = sqliteTable("messages", {
 	tokenUsage: integer("token_usage").notNull().default(0),
 	...baseDates,
 });
-
-export const messageRelations = relations(messagesTable, ({ one }) => ({
+export const messageRelations = relations(messagesTable, ({ one, many }) => ({
 	chat: one(chatsTable, {
 		fields: [messagesTable.chatId],
 		references: [chatsTable.id],
+	}),
+	attachments: many(attachmentsTable),
+}));
+
+export const attachmentsTable = sqliteTable("attachments", {
+	id: integer("id").primaryKey({ autoIncrement: true }),
+	messageId: integer("message_id")
+		.notNull()
+		.references(() => messagesTable.id),
+	type: text("type", { enum: ["image", "video", "audio", "file"] }).notNull(),
+	url: text("url").notNull(),
+	base64: text("base64").notNull(),
+	...baseDates,
+});
+
+export const attachmentsRelations = relations(attachmentsTable, ({ one }) => ({
+	message: one(messagesTable, {
+		fields: [attachmentsTable.messageId],
+		references: [messagesTable.id],
 	}),
 }));
