@@ -176,8 +176,6 @@ export default class ChatBot {
 
 		if (this.interval) clearInterval(this.interval);
 
-		// await this.channel.send(`Tokens: ${response.usage?.completion_tokens} - total cost: ${this.cost.toFixed(5)}`);
-		// await this.sendAsAttachment(splitter.getFullStreamMessage(), 'original-response');
 		const totalLength = splitter
 			.getMessages()
 			.reduce((acc, cur) => acc + cur.content.length, 0);

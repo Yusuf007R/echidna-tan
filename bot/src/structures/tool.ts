@@ -19,24 +19,33 @@ export type ToolFileResult = {
 	filename: string;
 	data: any;
 	mimeType?: string;
+	systemPrompt?: string;
 };
 
 export type ToolImageResult = {
 	type: "image";
 	url: string;
 	caption?: string;
+	systemPrompt?: string;
 };
 
 export type ToolTextResult = {
 	type: "text";
 	content: string;
+	systemPrompt?: string;
+};
+
+export type ToolErrorResult = {
+	type: "error";
+	error: Error;
+	systemPrompt?: string;
 };
 
 export type ToolResult =
 	| ToolFileResult
 	| ToolImageResult
 	| ToolTextResult
-	| any;
+	| ToolErrorResult;
 
 export abstract class Tool<
 	S extends z.ZodObject<any, any> = z.ZodObject<any, any>,
@@ -95,33 +104,58 @@ export abstract class Tool<
 		filename: string,
 		data: any,
 		mimeType?: string,
+		systemPrompt?: string,
 	): ToolFileResult {
 		return {
 			type: "file",
 			filename,
 			data,
 			mimeType,
+			systemPrompt,
 		};
 	}
 
 	/**
 	 * Helper method to create an image result
 	 */
-	protected createImageResult(url: string, caption?: string): ToolImageResult {
+	protected createImageResult(
+		url: string,
+		caption?: string,
+		systemPrompt?: string,
+	): ToolImageResult {
 		return {
 			type: "image",
 			url,
 			caption,
+			systemPrompt,
 		};
 	}
 
 	/**
 	 * Helper method to create a text result
 	 */
-	protected createTextResult(content: string): ToolTextResult {
+	protected createTextResult(
+		content: string,
+		systemPrompt?: string,
+	): ToolTextResult {
 		return {
 			type: "text",
 			content,
+			systemPrompt,
+		};
+	}
+
+	/**
+	 * Helper method to create an error result
+	 */
+	protected createErrorResult(
+		error: Error,
+		systemPrompt?: string,
+	): ToolErrorResult {
+		return {
+			type: "error",
+			error,
+			systemPrompt,
 		};
 	}
 

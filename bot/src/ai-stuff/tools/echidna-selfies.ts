@@ -21,7 +21,16 @@ export default class EchidnaSelfieTool extends Tool<typeof schema> {
 		console.log(`Generating echidna selfie with prompt: ${params.prompt}`);
 		const { prompt } = params;
 		const image = await WaifuGenerator.getCivitaiImage(prompt);
-		console.log(image);
-		return image;
+		if (!image) {
+			return this.createErrorResult(
+				new Error("Failed to generate image"),
+				`Failed to generate the selfie with the prompt: ${prompt}`,
+			);
+		}
+		return this.createImageResult(
+			image,
+			undefined,
+			`Generated a selfie of an echidna with the prompt: ${prompt}`,
+		);
 	}
 }
