@@ -297,6 +297,9 @@ export default class ChatBot {
 			this.model.architecture.modality.includes("image");
 		const lastUserMessage = this.lastMessage("user")!;
 		if (!modelHasImageAnalysis && lastUserMessage.attachments.length) {
+			console.log(
+				"Processing image analysis because model cannot handle images",
+			);
 			const imageAnalysis = await this.processImageAnalysis(
 				lastUserMessage.attachments.map((a) => a.base64),
 			);

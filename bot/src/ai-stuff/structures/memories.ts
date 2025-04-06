@@ -1,9 +1,9 @@
 import { openAI, openRouterAPI } from "@Utils/request";
-import { type InferSelectModel, eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { zodFunction } from "openai/helpers/zod";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import db from "src/drizzle";
-import { memoriesTable, type userTable } from "src/drizzle/schema";
+import { chatsTable, memoriesTable, messagesTable } from "src/drizzle/schema";
 import z from "zod";
 
 export const memoryAIResponseSchema = z.object({
@@ -13,9 +13,9 @@ export const memoryAIResponseSchema = z.object({
 });
 
 export default class MemoriesManager {
+	NUMBER_OF_MESSAGES_TO_PROCESS = 10;
 	constructor(
-		private user: InferSelectModel<typeof userTable>,
-		private chatBotName: string,
+		private chatId: number,
 	) {}
 
 	private async insertMemories(
@@ -210,5 +210,30 @@ export default class MemoriesManager {
 			.where(eq(memoriesTable.userId, this.user.id));
 
 		return topMemories;
+	}
+
+
+
+	async getChat() {
+		const chat = await db.query.chatsTable.findFirst({
+			where: eq(chatsTable.id, this.chatId),
+			with: {
+				messages: {
+					where: eq(messagesTable.wasMemoryProcessed, false),
+					orderBy: desc(messagesTable.createdAt),
+				}
+			},
+		});
+		if (!chat) throw new Error("[MemoriesManager] Chat not found");
+		return chat;
+	}
+
+
+
+
+	async manageMemory() {
+		const chat = await this.getChat();
+		if (chat.messages.length < this.NUMBER_OF_MESSAGES_TO_PROCESS) return;
+		
 	}
 }

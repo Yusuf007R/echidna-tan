@@ -140,6 +140,7 @@ export const messagesTable = sqliteTable("messages", {
 	embeds: float32Array("embeds", { dimensions: 1536 }),
 	cost: integer("cost").notNull().default(0),
 	tokenUsage: integer("token_usage").notNull().default(0),
+	wasMemoryProcessed: integer("was_memory_processed", { mode: "boolean" }).notNull().default(false),
 	...baseDates,
 });
 export const messageRelations = relations(messagesTable, ({ one, many }) => ({

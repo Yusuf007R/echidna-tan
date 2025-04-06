@@ -27,8 +27,7 @@ export default class MessageCreate extends DiscordEvent<"messageCreate"> {
 					message.channel,
 					user,
 					promptTemplate.promptTemplate,
-					"google/gemini-2.0-flash-001",
-					{ temp: "0.5" },
+					"meta-llama/llama-4-scout",
 				);
 
 				return;
