@@ -1,21 +1,32 @@
+import type { AiPrompt } from "@Interfaces/ai-prompts";
+import type { OpenRouterModel } from "@Interfaces/open-router-model";
+import ChatBotManager from "@Managers/chat-bot-manager";
+import calcCompletionUsage from "@Utils/calc-completion-usage";
 import { openAI, openRouterAPI } from "@Utils/request";
-import { desc, eq, sql } from "drizzle-orm";
+import { type InferSelectModel, desc, eq, sql } from "drizzle-orm";
 import { zodFunction } from "openai/helpers/zod";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import db from "src/drizzle";
-import { chatsTable, memoriesTable, messagesTable } from "src/drizzle/schema";
+import {
+	chatsTable,
+	memoriesTable,
+	messagesTable,
+	type userTable,
+} from "src/drizzle/schema";
 import z from "zod";
 
 export const memoryAIResponseSchema = z.object({
 	memory: z.string(),
-	importance: z.number().min(0).max(1),
-	memoryType: z.enum(["user", "assistant"]),
 });
 
 export default class MemoriesManager {
 	NUMBER_OF_MESSAGES_TO_PROCESS = 10;
+	MODEL_NAME = "google/gemini-2.5-pro-preview-03-25";
+	model: OpenRouterModel | undefined;
 	constructor(
-		private chatId: number,
+		private chat: InferSelectModel<typeof chatsTable>,
+		private user: InferSelectModel<typeof userTable>,
+		private prompt: AiPrompt,
 	) {}
 
 	private async insertMemories(
@@ -33,13 +44,12 @@ export default class MemoriesManager {
 				if (!embeddings) return;
 
 				await tx.insert(memoriesTable).values({
-					userId: this.user.id,
+					userId: this.chat.userId,
 					memory: memory.memory,
-					importance: memory.importance,
-					memoryType: memory.memoryType,
+					importance: 0.5,
+					memoryType: "user",
 					embeds: embeddings,
-					promptTemplate: this.chatBotName,
-					messageId,
+					promptTemplate: this.chat.promptTemplate,
 				});
 
 				console.log("Memory added");
@@ -48,15 +58,16 @@ export default class MemoriesManager {
 		});
 	}
 
-	async memorySaver(
-		message: string,
-		messageId: number,
+	async messagesProcessor(
+		messages: InferSelectModel<typeof messagesTable>[],
 		existingMemoriesProp?: z.infer<typeof memoryAIResponseSchema>[],
 		retry = 0,
 	): Promise<z.infer<typeof memoryAIResponseSchema>[]> {
 		const existingMemories =
 			existingMemoriesProp === undefined
-				? await this.retrieveMemories(message)
+				? await this.retrieveMemories(
+						messages.map((msg) => msg.content).join("\n"),
+					)
 				: existingMemoriesProp;
 
 		try {
@@ -68,20 +79,23 @@ export default class MemoriesManager {
 					description: `Use this tool to save an important piece of information as a memory. You can include multiple related pieces of information in a single memory.
 						
 						memory: the content of the memory - can contain multiple pieces of related information.
-						
-						memoryType: the type of the memory. can be one of the following: user, assistant.
-						importance: the importance of the memory. a float number between 0 and 1. 0 is the least important and 1 is the most important.
 					`,
 				},
 			];
+			const messagesString = messages.reduce(
+				(acc, msg) =>
+					`${acc}\n${msg.role === "user" ? this.user.displayName : this.prompt.name}: ${msg.content}`,
+				"",
+			);
 
+			console.log("Messages string", messagesString);
 			const llmMessages = [
 				{
 					role: "system",
 					content: `
 					You are a specialized memory extraction system designed to identify and save important information from conversations. Your task is to analyze messages and extract memories that would be valuable for future interactions.
 
-					CONTEXT: This is a conversation between chatbot: ${this.chatBotName} and user: ${this.user.displayName}.
+					CONTEXT: This is a conversation between chatbot: ${this.prompt.name} and user: ${this.user.displayName}.
 
 					CRITICAL INSTRUCTION - EXTRACT COMPREHENSIVE MEMORIES:
 					You should identify and save information as memories that capture the user's details, preferences, and background.
@@ -108,12 +122,8 @@ export default class MemoriesManager {
 					Compare your potential new memories with each database entry and save ALL genuinely new information.
 
 					EXISTING DATABASE MEMORIES:
-					${existingMemories.map((mem) => `• "${mem.memory}", ${mem.memoryType}, ${mem.importance})`).join("\n					")}
+					${existingMemories.map((mem) => `• "${mem.memory}"`).join("\n					")}
 				
-					MEMORY TYPES:
-					- USER memories: Facts, preferences, experiences, opinions, skills, interests, goals, relationships, and background details about the user.
-					- ASSISTANT memories: Information about how the assistant has interacted with the user, promises made, approaches that worked well, topics to avoid, etc.
-
 					WHAT TO SAVE:
 					✓ Personal information (name, location, occupation, family details)
 					✓ Strong preferences and dislikes
@@ -131,23 +141,16 @@ export default class MemoriesManager {
 					✗ Obvious or trivial details
 					✗ ANY information already in the database (even with slight wording differences)
 
-					IMPORTANCE RATING GUIDELINES:
-					- 0.8-1.0: Critical personal identifiers, major life events
-					- 0.6-0.8: Strong preferences, significant background information
-					- 0.4-0.6: Useful context, recurring interests
-					- 0.2-0.4: Potentially relevant information
-					- 0.0-0.2: Minimal importance but still worth recording
-
 					Your sole purpose is memory extraction - do not respond to or interact with the user directly.
 				`,
 				},
 				{
 					role: "user",
-					content: message,
+					content: messagesString,
 				},
 			] satisfies ChatCompletionMessageParam[];
 			const completion = await openRouterAPI.beta.chat.completions.parse({
-				model: "google/gemini-2.0-flash-001",
+				model: this.MODEL_NAME,
 				messages: llmMessages,
 				tools: tools.map((tool) =>
 					zodFunction({
@@ -158,6 +161,9 @@ export default class MemoriesManager {
 				),
 			});
 			const toolCalls = completion.choices.at(0)?.message.tool_calls;
+			if (!this.model || !completion.usage)
+				throw new Error("Model or usage not found");
+			const { totalCost } = calcCompletionUsage(completion.usage, this.model);
 			if (!toolCalls) return memoriesAdded;
 			for (const toolCall of toolCalls) {
 				if (toolCall.function.name !== "save-memory") continue;
@@ -165,20 +171,19 @@ export default class MemoriesManager {
 					typeof memoryAIResponseSchema
 				>;
 				console.log(
-					`Memory detected: ${parsed.memory} for prompt: ${this.chatBotName} for user: ${this.user.displayName}`,
+					`Memory detected: ${parsed.memory} for prompt: ${this.prompt.name} for user: ${this.user.displayName} for ${totalCost}`,
 				);
 				memoriesAdded.push(parsed);
 			}
 
-			await this.insertMemories(memoriesAdded, messageId);
+			await this.insertMemories(memoriesAdded, 0);
 
 			return memoriesAdded;
 		} catch (error) {
 			console.error(error);
 			if (retry < 3) {
-				return this.memorySaver(
-					message,
-					messageId,
+				return this.messagesProcessor(
+					messages,
 					existingMemoriesProp,
 					retry + 1,
 				);
@@ -187,10 +192,10 @@ export default class MemoriesManager {
 		}
 	}
 
-	async retrieveMemories(message: string) {
+	async retrieveMemories(messages: string) {
 		const embed = await openAI.embeddings.create({
 			model: "text-embedding-3-small",
-			input: message,
+			input: messages,
 		});
 		const embeddings = embed.data.at(0)?.embedding;
 		if (!embeddings) return [];
@@ -199,8 +204,6 @@ export default class MemoriesManager {
 			.select({
 				id: memoriesTable.id,
 				memory: memoriesTable.memory,
-				importance: memoriesTable.importance,
-				memoryType: memoriesTable.memoryType,
 				date: memoriesTable.createdAt,
 			})
 			.from(
@@ -212,28 +215,41 @@ export default class MemoriesManager {
 		return topMemories;
 	}
 
-
-
-	async getChat() {
+	async getChatMessages() {
 		const chat = await db.query.chatsTable.findFirst({
-			where: eq(chatsTable.id, this.chatId),
+			where: eq(chatsTable.id, this.chat.id),
 			with: {
 				messages: {
 					where: eq(messagesTable.wasMemoryProcessed, false),
 					orderBy: desc(messagesTable.createdAt),
-				}
+				},
 			},
 		});
 		if (!chat) throw new Error("[MemoriesManager] Chat not found");
 		return chat;
 	}
 
-
-
+	async loadModel() {
+		if (this.model) return;
+		const model = await ChatBotManager.getModel(this.MODEL_NAME);
+		if (!model) throw new Error("[MemoriesManager] Model not found");
+		this.model = model;
+	}
 
 	async manageMemory() {
-		const chat = await this.getChat();
+		await this.loadModel();
+		console.log("Managing memory");
+		const chat = await this.getChatMessages();
+		console.log(`Chat messages: ${chat.messages.length}`);
 		if (chat.messages.length < this.NUMBER_OF_MESSAGES_TO_PROCESS) return;
-		
+		console.log("Processing messages");
+		await this.messagesProcessor(chat.messages);
+
+		await db
+			.update(messagesTable)
+			.set({ wasMemoryProcessed: true })
+			.where(
+				sql`${messagesTable.id} IN (${chat.messages.map((msg) => msg.id).join(",")})`,
+			);
 	}
 }

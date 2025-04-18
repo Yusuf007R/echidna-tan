@@ -4,6 +4,7 @@ import type {
 	messageAttachmentType,
 	messageHistoryType,
 } from "@Managers/chat-bot-manager";
+import calcCompletionUsage from "@Utils/calc-completion-usage";
 import { extractImageFromMsg } from "@Utils/extract-image-from-msg";
 import getImageAsBuffer from "@Utils/get-image-from-url";
 import { MessageSplitter, type SplitMessage } from "@Utils/message-splitter";
@@ -89,8 +90,9 @@ export default class ChatBot {
 		const messageHistory: messageHistoryType[] = [];
 		const hasMemories = options.prompt.prompt_config.includes("memory");
 		const memoriesManager = new MemoriesManager(
+			options.chat,
 			options.user,
-			options.prompt.name,
+			options.prompt,
 		);
 
 		if (
@@ -142,12 +144,11 @@ export default class ChatBot {
 		const images = await this.processImages(imagesUrls);
 		const userMessage = await this.pushMessage(message.content, "user", images);
 		if (!userMessage) return;
-		await Promise.all([
-			this.hasMemories
-				? this.memoriesManager.memorySaver(message.content, userMessage.id)
-				: Promise.resolve(),
-			this.generateMessage(),
-		]);
+		void (this.hasMemories
+			? this.memoriesManager.manageMemory()
+			: Promise.resolve());
+		console.log("Generating message with model: ", this.model.id);
+		await this.generateMessage();
 	}
 
 	private async generateMessage() {
@@ -357,29 +358,15 @@ export default class ChatBot {
 	}
 
 	private calculateCost(usage?: CompletionUsage | null) {
-		const inputTokens = usage?.prompt_tokens ?? 0;
-		const outputTokens = usage?.completion_tokens ?? 0;
-
-		const promptPrice = Number.parseFloat(
-			this.model?.pricing?.prompt as string,
+		if (!usage) return;
+		const { totalCost, promptTokens, completionTokens } = calcCompletionUsage(
+			usage,
+			this.model,
 		);
-		const completionPrice = Number.parseFloat(
-			this.model?.pricing?.completion as string,
-		);
-
-		if (Number.isNaN(promptPrice) || Number.isNaN(completionPrice)) {
-			console.warn(
-				"One or both pricing values are invalid, skipping cost computation.",
-			);
-			return;
-		}
-
-		const inputCost = inputTokens * promptPrice;
-		const outputCost = outputTokens * completionPrice;
-		this.usage.prompt_tokens += inputTokens;
-		this.usage.completion_tokens += outputTokens;
-		this.usage.total_tokens += inputTokens + outputTokens;
-		this.usage.cost += inputCost + outputCost;
+		this.usage.prompt_tokens += promptTokens;
+		this.usage.completion_tokens += completionTokens;
+		this.usage.total_tokens += usage.total_tokens;
+		this.usage.cost += totalCost;
 	}
 
 	async getChatBotInfo() {
