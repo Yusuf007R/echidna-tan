@@ -16,12 +16,12 @@ import {
 import z from "zod";
 
 export const memoryAIResponseSchema = z.object({
-	memory: z.string(),
+	memory: z.string().describe("The memory to save"),
 });
 
 export default class MemoriesManager {
 	NUMBER_OF_MESSAGES_TO_PROCESS = 10;
-	MODEL_NAME = "google/gemini-2.5-pro-preview-03-25";
+	MODEL_NAME = "deepseek/deepseek-r1";
 	model: OpenRouterModel | undefined;
 	constructor(
 		private chat: InferSelectModel<typeof chatsTable>,
@@ -31,7 +31,6 @@ export default class MemoriesManager {
 
 	private async insertMemories(
 		memories: z.infer<typeof memoryAIResponseSchema>[],
-		messageId: number,
 	) {
 		await db.transaction(async (tx) => {
 			const promises = memories.map(async (memory) => {
@@ -176,7 +175,7 @@ export default class MemoriesManager {
 				memoriesAdded.push(parsed);
 			}
 
-			await this.insertMemories(memoriesAdded, 0);
+			await this.insertMemories(memoriesAdded);
 
 			return memoriesAdded;
 		} catch (error) {
