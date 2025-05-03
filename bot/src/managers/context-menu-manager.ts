@@ -88,7 +88,7 @@ export default class ContextMenuManager extends EchidnaSingleton {
 
 		const request = guilds.map((guild) => {
 			return new REST()
-				.setToken(config.DISCORD_TOKEN)
+				.setToken(config.DISCORD_BOT_TOKEN)
 				.put(
 					Routes.applicationGuildCommands(
 						config.DISCORD_BOT_CLIENT_ID,

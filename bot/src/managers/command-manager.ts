@@ -78,7 +78,7 @@ export default class CommandManager {
 		try {
 			const requests = guilds.map((guild) =>
 				new REST()
-					.setToken(configs.DISCORD_TOKEN)
+					.setToken(configs.DISCORD_BOT_TOKEN)
 					.put(
 						Routes.applicationGuildCommands(
 							configs.DISCORD_BOT_CLIENT_ID,
@@ -91,7 +91,7 @@ export default class CommandManager {
 			);
 
 			await new REST()
-				.setToken(configs.DISCORD_TOKEN)
+				.setToken(configs.DISCORD_BOT_TOKEN)
 				.put(Routes.applicationCommands(configs.DISCORD_BOT_CLIENT_ID), {
 					body: slashCommmandsDM,
 				});
@@ -99,6 +99,7 @@ export default class CommandManager {
 
 			console.log("Successfully registered application commands.");
 		} catch (error) {
+			console.log(guilds.map((guild) => `${guild.id} - ${guild.name}`));
 			console.error(error);
 		}
 	}

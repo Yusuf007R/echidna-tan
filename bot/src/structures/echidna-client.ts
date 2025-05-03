@@ -88,6 +88,6 @@ export default class EchidnaClient extends Client {
 		// sync local db with remote db
 		// await db.$client.sync();
 		await createVectorIndex();
-		this.login(configs.DISCORD_TOKEN);
+		this.login(configs.DISCORD_BOT_TOKEN);
 	}
 }
