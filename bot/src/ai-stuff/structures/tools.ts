@@ -30,7 +30,7 @@ export default class ToolsManager {
 		console.log(response);
 		const results: Promise<ToolResult>[] = [];
 		const toolsToRun: Tool[] = [];
-		for (const toolCall of response.choices[0].message.tool_calls) {
+		for (const toolCall of response.choices[0].message?.tool_calls ?? []) {
 			const tool = tools.find((tool) => tool.name === toolCall.function.name);
 			if (!tool) continue;
 			toolsToRun.push(tool);

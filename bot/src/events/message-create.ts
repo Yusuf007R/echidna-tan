@@ -10,6 +10,8 @@ export default class MessageCreate extends DiscordEvent<"messageCreate"> {
 
 	async run(message: Message) {
 		if (message.author.bot) return;
+		const user = await UserManager.getOrCreateUser(message.author.id);
+		if (!user.isAdmin) return;
 		const isDM = message.channel.type === ChannelType.DM;
 		const isThread = message.channel.type === ChannelType.PrivateThread;
 

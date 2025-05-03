@@ -44,6 +44,11 @@ CREATE TABLE `memories` (
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
 );
+
+CREATE INDEX `memories_idx` ON `memories` (
+	libsql_vector_idx(emb, 'metric=cosine')
+);
+
 --> statement-breakpoint
 CREATE INDEX `prompt_template_index` ON `memories` (`prompt_template`);--> statement-breakpoint
 CREATE TABLE `messages` (
@@ -59,6 +64,11 @@ CREATE TABLE `messages` (
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	FOREIGN KEY (`chat_id`) REFERENCES `chats`(`id`) ON UPDATE no action ON DELETE no action
 );
+
+CREATE INDEX `messages_idx` ON `messages` (
+	libsql_vector_idx(emb, 'metric=cosine')
+);
+
 --> statement-breakpoint
 CREATE TABLE `session` (
 	`id` text PRIMARY KEY NOT NULL,
