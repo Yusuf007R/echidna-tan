@@ -11,7 +11,7 @@ import EchidnaSingleton from "@Structures/echidna-singleton";
 import MusicPlayer from "@Structures/music-player";
 import type TicTacToe from "@Structures/tic-tac-toe";
 import { eq } from "drizzle-orm";
-import db from "src/drizzle";
+import db, { createVectorIndex } from "src/drizzle";
 import { echidnaTable } from "src/drizzle/schema";
 
 export default class EchidnaClient extends Client {
@@ -86,7 +86,8 @@ export default class EchidnaClient extends Client {
 	async init() {
 		this.eventManager.init();
 		// sync local db with remote db
-		await db.$client.sync();
+		// await db.$client.sync();
+		await createVectorIndex();
 		this.login(configs.DISCORD_TOKEN);
 	}
 }

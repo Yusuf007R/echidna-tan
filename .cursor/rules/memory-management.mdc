@@ -1,0 +1,41 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Memory Management System
+
+The codebase includes a sophisticated memory management system for AI conversations, primarily implemented in [bot/src/ai-stuff/structures/memories.ts](mdc:bot/src/ai-stuff/structures/memories.ts).
+
+## Core Components
+
+### MemoriesManager Class
+The `MemoriesManager` class handles memory operations for chat conversations. It manages:
+- Memory extraction from conversations
+- Memory storage and retrieval
+- Semantic search using embeddings
+- Duplicate prevention
+
+### Key Features
+
+1. **Memory Processing**
+   - Processes messages in batches (default 10 messages)
+   - Extracts important information using AI
+   - Prevents duplicate memories while preserving unique information
+   - Uses embeddings for semantic similarity
+
+2. **Memory Storage**
+   - Stores memories with embeddings for semantic search
+   - Associates memories with specific users and chat contexts
+   - Maintains importance scores and memory types
+
+3. **Memory Retrieval**
+   - Uses semantic search to find relevant memories
+   - Retrieves top-k similar memories for context
+
+## Important Considerations
+
+- Memories are user-specific and tied to prompt templates
+- The system uses OpenAI's text-embedding-3-small model for embeddings
+- Memory processing is transaction-based for data consistency
+- The system includes retry logic for error handling

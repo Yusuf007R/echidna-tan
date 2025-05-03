@@ -34,15 +34,15 @@ export type QueueMetadata = {
 };
 
 const guildEvents = [
-	GuildQueueEvent.playerStart,
-	GuildQueueEvent.playerFinish,
-	GuildQueueEvent.playerSkip,
-	GuildQueueEvent.volumeChange,
-	GuildQueueEvent.emptyQueue,
-	GuildQueueEvent.audioTrackAdd,
-	GuildQueueEvent.audioTracksAdd,
-	GuildQueueEvent.audioTrackRemove,
-	GuildQueueEvent.audioTracksRemove,
+	GuildQueueEvent.PlayerStart,
+	GuildQueueEvent.PlayerFinish,
+	GuildQueueEvent.PlayerSkip,
+	GuildQueueEvent.VolumeChange,
+	GuildQueueEvent.EmptyQueue,
+	GuildQueueEvent.AudioTrackAdd,
+	GuildQueueEvent.AudioTracksAdd,
+	GuildQueueEvent.AudioTrackRemove,
+	GuildQueueEvent.AudioTracksRemove,
 ] as const;
 
 type GuildEmitter = {
@@ -70,10 +70,10 @@ export default class MusicPlayer extends Player {
 	}
 
 	initEvents() {
-		this.events.on(GuildQueueEvent.playerStart, (queue) =>
+		this.events.on(GuildQueueEvent.PlayerStart, (queue) =>
 			this.nowPlaying(queue),
 		);
-		this.events.on(GuildQueueEvent.playerFinish, (queue) => {
+		this.events.on(GuildQueueEvent.PlayerFinish, (queue) => {
 			console.log("playerFinish", queue);
 		});
 
@@ -165,6 +165,14 @@ export default class MusicPlayer extends Player {
 			name: "\n",
 			value: "\n",
 		};
+
+		const repeatMode =
+			Object.keys(QueueRepeatMode).find(
+				(key) =>
+					QueueRepeatMode[key as keyof typeof QueueRepeatMode] ===
+					queue.repeatMode,
+			) ?? "Unknown";
+
 		const embed = new EmbedBuilder()
 			.setTitle(`${title}`)
 			.setAuthor({ name: "Now Playing: " })
@@ -179,7 +187,7 @@ export default class MusicPlayer extends Player {
 				},
 				{
 					name: "Loop mode",
-					value: `${capitalize(QueueRepeatMode[queue.repeatMode])}`,
+					value: `${capitalize(repeatMode)}`,
 					inline: true,
 				},
 				gap,

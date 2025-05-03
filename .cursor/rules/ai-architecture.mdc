@@ -1,0 +1,44 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# AI System Architecture
+
+The AI system is built around a sophisticated chat and memory management system, primarily implemented in the bot's `ai-stuff` directory.
+
+## Core Components
+
+### Chat System
+- Handles conversations between users and the AI
+- Maintains conversation context and history
+- Integrates with the memory system for context enrichment
+- Located in [bot/src/ai-stuff/structures/chat.ts](mdc:bot/src/ai-stuff/structures/chat.ts)
+
+### Memory System
+- Manages long-term memory storage and retrieval
+- Uses embeddings for semantic search
+- Prevents duplicate memories while preserving unique information
+- See [Memory Management](mdc:memory-management.mdc) for details
+
+### Database Integration
+- Uses Drizzle ORM for data persistence
+- Stores chat history, memories, and user data
+- See [Database Schema](mdc:database-schema.mdc) for table structure
+
+## Key Features
+
+1. **Semantic Search**
+   - Uses OpenAI's text-embedding-3-small model
+   - Enables context-aware memory retrieval
+   - Supports similarity-based memory matching
+
+2. **Memory Processing**
+   - Automatic extraction of important information
+   - Batch processing of messages
+   - Importance scoring and categorization
+
+3. **Error Handling**
+   - Implements retry logic for API calls
+   - Transaction-based operations for data consistency
+   - Graceful degradation on service failures

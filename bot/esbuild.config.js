@@ -6,7 +6,6 @@ import { resolve } from "node:path";
 
 const isProduction = process.env.NODE_ENV === "production";
 const isWatch = process.argv.includes("watch");
-const isDebug = process.argv.includes("debug");
 
 // Cached TypeScript files lookup with memoization
 let cachedFiles = null;
@@ -93,10 +92,11 @@ async function build() {
 
 			const startNodeProcess = () => {
 				nodeProcess?.kill();
-				const args = ["--enable-source-maps", "--trace-deprecation"];
-				if (isDebug) {
-					args.push("--inspect");
-				}
+				const args = [
+					"--enable-source-maps",
+					"--trace-deprecation",
+					"--inspect",
+				];
 
 				nodeProcess = childProcess.spawn("node", [...args, "./dist/index.js"], {
 					stdio: "inherit",
