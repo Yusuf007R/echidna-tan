@@ -8,7 +8,8 @@ import type {
 import type { CommandValidator } from "./command-validator";
 import EchidnaSingleton from "./echidna-singleton";
 
-export type CmdType = "GUILD" | "DM" | "BOTH";
+export const CmdType = ["GUILD", "DM", "BOTH"] as const;
+export type CmdType = (typeof CmdType)[number];
 
 export type commandConfigs<O extends Option[] | undefined = undefined> =
 	O extends undefined

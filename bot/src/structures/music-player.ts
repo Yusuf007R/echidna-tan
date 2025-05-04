@@ -215,7 +215,7 @@ export default class MusicPlayer extends Player {
 		const interaction = queue.metadata.interaction;
 
 		if (interaction.inGuild() && interaction.channel?.isTextBased()) {
-			interaction.channel?.send({ embeds: [embed], content: `${thumbnail}` });
+			interaction.channel?.send({ embeds: [embed] });
 		}
 	}
 

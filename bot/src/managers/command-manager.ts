@@ -2,7 +2,6 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import configs from "@Configs";
 import type { CmdType, Command } from "@Structures/command";
-import EchidnaSingleton from "@Structures/echidna-singleton";
 import type { Option } from "@Utils/options-builder";
 import {
 	SlashCommandBuilder,
@@ -13,6 +12,7 @@ import {
 	type CacheType,
 	Collection,
 	type CommandInteraction,
+	InteractionContextType,
 	REST,
 	type RESTPostAPIApplicationCommandsJSONBody,
 	Routes,
@@ -20,10 +20,24 @@ import {
 
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import db, { buildConflictUpdateColumns } from "src/drizzle";
+import { commandsTable } from "src/drizzle/schema";
+
+import { createHash } from "node:crypto";
+import config from "@Configs";
+import type { InferInsertModel } from "drizzle-orm";
+import stringify from "safe-stable-stringify";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+type MapCmds = {
+	command: RESTPostAPIApplicationCommandsJSONBody;
+	hash: string;
+	category: string;
+	cmdType: CmdType;
+	description: string;
+};
 export default class CommandManager {
 	commands: Collection<string, { category: string; command: Command }>;
 
@@ -37,6 +51,7 @@ export default class CommandManager {
 	async loadCommands() {
 		const commandsRootFolder = join(__dirname, "/commands");
 		const commands: { [key: string]: Command[] } = {};
+		const checkDupName = new Map<string, true>();
 		await Promise.all(
 			readdirSync(commandsRootFolder).flatMap(async (folder) => {
 				const commandFolder = join(commandsRootFolder, folder);
@@ -52,6 +67,12 @@ export default class CommandManager {
 							const commandFile = join(commandFolder, file);
 							const Command = (await import(commandFile)).default;
 							const cmdObj = new Command();
+							if (checkDupName.has(cmdObj.name)) {
+								throw new Error(
+									`Duplicate command name: ${cmdObj.name} in ${commandFolder}`,
+								);
+							}
+							checkDupName.set(cmdObj.name, true);
 							if (!commands[commandFolder]) commands[commandFolder] = [];
 							commands[commandFolder].push(cmdObj);
 						}),
@@ -68,38 +89,96 @@ export default class CommandManager {
 				});
 			}
 		}
+
 		console.log("Commands loaded");
 	}
 
-	async registerCommands() {
-		const guilds = await EchidnaSingleton.echidna.guilds.fetch();
-		const slashCommmandsGuild = this.filterMapCmds(["GUILD", "BOTH"]);
-		const slashCommmandsDM = this.filterMapCmds(["DM", "BOTH"]);
-		try {
-			const requests = guilds.map((guild) =>
-				new REST()
-					.setToken(configs.DISCORD_BOT_TOKEN)
-					.put(
-						Routes.applicationGuildCommands(
-							configs.DISCORD_BOT_CLIENT_ID,
-							guild.id,
-						),
-						{
-							body: slashCommmandsGuild,
-						},
-					),
+	async filterRegisteredCommands() {
+		const slashCommmands = this.mapCommands();
+
+		const registeredCommandsDB = await db.query.commandsTable.findMany();
+		let shouldUpdateCommands = false;
+
+		const commandToRegister: MapCmds[] = [];
+
+		const registeredCommands: {
+			command: MapCmds;
+			dbCommmand: (typeof registeredCommandsDB)[number];
+		}[] = [];
+
+		const insertDb: InferInsertModel<typeof commandsTable>[] = [];
+
+		for (const cmd of slashCommmands) {
+			const registeredCmd = registeredCommandsDB.find(
+				(registeredCmd) => registeredCmd.name === cmd.command.name,
 			);
 
+			if (
+				!registeredCmd ||
+				registeredCmd.hash !== cmd.hash ||
+				config.NODE_ENV === "production"
+			) {
+				if (config.NODE_ENV !== "production") {
+					registeredCmd
+						? console.log(`${registeredCmd.name} - changed`)
+						: console.log(`${cmd.command.name} - new command`);
+				}
+
+				shouldUpdateCommands = true;
+				const insert: InferInsertModel<typeof commandsTable> = {
+					name: cmd.command.name,
+					hash: cmd.hash,
+					category: cmd.category,
+					description: cmd.description,
+					cmdType: cmd.cmdType,
+				};
+				commandToRegister.push(cmd);
+				insertDb.push(insert);
+			} else {
+				registeredCommands.push({ command: cmd, dbCommmand: registeredCmd });
+			}
+		}
+
+		if (insertDb.length) {
+			await db
+				.insert(commandsTable)
+				.values(insertDb)
+				.onConflictDoUpdate({
+					target: commandsTable.name,
+					set: buildConflictUpdateColumns(commandsTable, [
+						"hash",
+						"category",
+						"description",
+						"cmdType",
+					]),
+				});
+		}
+
+		return shouldUpdateCommands
+			? slashCommmands.map((cmd) => cmd.command)
+			: null;
+	}
+
+	async registerCommands() {
+		const commandToRegister = await this.filterRegisteredCommands();
+
+		try {
+			if (!commandToRegister) {
+				console.log("No commands or updates to register.");
+				return;
+			}
 			await new REST()
 				.setToken(configs.DISCORD_BOT_TOKEN)
 				.put(Routes.applicationCommands(configs.DISCORD_BOT_CLIENT_ID), {
-					body: slashCommmandsDM,
+					body: commandToRegister,
 				});
-			await Promise.all(requests);
 
-			console.log("Successfully registered application commands.");
+			console.log(
+				`Successfully registered ${commandToRegister.length} commands.`,
+			);
 		} catch (error) {
-			console.log(guilds.map((guild) => `${guild.id} - ${guild.name}`));
+			// ! IF ERROR GO NUCLEAR AND DELETE ALL COMMANDS IN DB
+			await db.delete(commandsTable);
 			console.error(error);
 		}
 	}
@@ -139,19 +218,34 @@ export default class CommandManager {
 		}
 	}
 
-	filterMapCmds(filters: CmdType[]): RESTPostAPIApplicationCommandsJSONBody[] {
-		return this.commands
-			.filter((cmd) => filters.includes(cmd.command.cmdType))
-			.map(({ command }) => {
-				const slash = new SlashCommandBuilder()
-					.setName(command.name)
-					.setDescription(command.description);
+	mapCommands(): MapCmds[] {
+		return this.commands.map(({ command, category }) => {
+			const contexts = {
+				BOTH: [InteractionContextType.Guild, InteractionContextType.BotDM],
+				GUILD: [InteractionContextType.Guild],
+				DM: [InteractionContextType.BotDM],
+			}[command.cmdType];
 
-				if ((command._optionsArray as any)?.length) {
-					this.optionBuilder(command._optionsArray as any, slash);
-				}
-				return slash.toJSON();
-			});
+			const slash = new SlashCommandBuilder()
+				.setName(command.name)
+				.setDescription(command.description)
+				.setContexts(...contexts);
+
+			if ((command._optionsArray as any)?.length) {
+				this.optionBuilder(command._optionsArray as any, slash);
+			}
+
+			const json = slash.toJSON();
+			const stableJson = stringify(json);
+			const hash = createHash("md5").update(stableJson).digest("hex");
+			return {
+				command: slash.toJSON(),
+				hash,
+				cmdType: command.cmdType,
+				category,
+				description: command.description,
+			};
+		});
 	}
 
 	async optionBuilder(

@@ -1,3 +1,4 @@
+import { CmdType } from "@Structures/command";
 import { relations, sql } from "drizzle-orm";
 
 import {
@@ -29,6 +30,33 @@ const float32Array = customType<{
 	},
 });
 
+const arrayJson = customType<{ data: string[] }>({
+	dataType() {
+		return "text";
+	},
+	fromDriver(value) {
+		if (value === null || value === undefined || typeof value !== "string") {
+			return [];
+		}
+		try {
+			const parsed = JSON.parse(value) as never;
+			if (!Array.isArray(parsed)) {
+				return [];
+			}
+			return parsed;
+		} catch (error) {
+			console.error("Error parsing JSON array:", error);
+			return [];
+		}
+	},
+	toDriver(value) {
+		if (!Array.isArray(value)) {
+			return "[]";
+		}
+		return JSON.stringify(value);
+	},
+});
+
 const baseDates = {
 	createdAt: integer("created_at", { mode: "timestamp" })
 		.notNull()
@@ -48,13 +76,34 @@ export const echidnaTable = sqliteTable("echidna", {
 	...baseDates,
 });
 
-export const userTable = sqliteTable("user", {
-	id: text("id").primaryKey(),
-	displayName: text("display_name").notNull(),
-	userName: text("user_name").notNull(),
-	isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
-	...baseDates,
-});
+export const commandsTable = sqliteTable(
+	"commands",
+	{
+		name: text("name").primaryKey(),
+		category: text("category").notNull(),
+		description: text("description").notNull(),
+		hash: text("hash").notNull(),
+		cmdType: text("cmd_type", { enum: CmdType }).notNull(),
+		...baseDates,
+	},
+	(t) => ({
+		categoryIndex: index("category_index").on(t.category),
+	}),
+);
+
+export const userTable = sqliteTable(
+	"user",
+	{
+		id: text("id").primaryKey(),
+		displayName: text("display_name").notNull(),
+		userName: text("user_name").notNull(),
+		isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
+		...baseDates,
+	},
+	(t) => ({
+		displayNameIndex: index("display_name_index").on(t.displayName),
+	}),
+);
 
 export const userRelations = relations(userTable, ({ many }) => ({
 	sessions: many(sessionTable),

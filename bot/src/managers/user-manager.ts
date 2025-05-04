@@ -26,6 +26,7 @@ export class UserManager {
 		const discordUser = await UserManager.getDiscordUser(discordId);
 		if (!discordUser) throw new Error("Discord user not found");
 		// If user doesn't exist, create them
+		console.log("Creating new user");
 		const [newUser] = await db
 			.insert(userTable)
 			.values({
@@ -35,6 +36,7 @@ export class UserManager {
 				isAdmin: false,
 			})
 			.returning();
+		console.log(newUser);
 
 		return newUser;
 	}

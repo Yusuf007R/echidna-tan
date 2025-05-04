@@ -11,7 +11,7 @@ import EchidnaSingleton from "@Structures/echidna-singleton";
 import MusicPlayer from "@Structures/music-player";
 import type TicTacToe from "@Structures/tic-tac-toe";
 import { eq } from "drizzle-orm";
-import db, { createVectorIndex } from "src/drizzle";
+import db, { initDB } from "src/drizzle";
 import { echidnaTable } from "src/drizzle/schema";
 
 export default class EchidnaClient extends Client {
@@ -62,13 +62,17 @@ export default class EchidnaClient extends Client {
 		});
 
 		if (!echidna) {
-			const dbEchidna = await db
+			const [dbEchidna] = await db
 				.insert(echidnaTable)
 				.values({
 					id: config.DISCORD_DB_PROFILE,
 				})
 				.returning();
-			echidna = dbEchidna[0];
+
+			if (!dbEchidna) {
+				throw new Error("Echidna not found");
+			}
+			echidna = dbEchidna;
 		}
 
 		this.user?.setPresence({
@@ -84,10 +88,11 @@ export default class EchidnaClient extends Client {
 	}
 
 	async init() {
+		console.log("[EchidnaClient] initializing");
 		this.eventManager.init();
-		// sync local db with remote db
-		// await db.$client.sync();
-		await createVectorIndex();
-		this.login(configs.DISCORD_BOT_TOKEN);
+
+		await initDB();
+
+		await this.login(configs.DISCORD_BOT_TOKEN);
 	}
 }
