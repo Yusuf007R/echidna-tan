@@ -1,0 +1,39 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Structure
+
+This is a monorepo containing both the Discord bot backend and the web frontend.
+
+## Main Components
+
+### Bot Backend (`/bot`)
+The Discord bot implementation with the following key directories:
+- `src/ai-stuff/`: AI-related functionality including memory management
+- `src/commands/`: Discord bot command implementations
+- `src/drizzle/`: Database schema and migrations
+- `src/events/`: Discord event handlers
+- `src/managers/`: Core business logic managers
+- `src/structures/`: Core data structures and classes
+- `src/utils/`: Shared utility functions
+
+Key files:
+- [bot/src/index.ts](mdc:bot/src/index.ts): Main bot entry point
+- [bot/src/drizzle/schema.ts](mdc:bot/src/drizzle/schema.ts): Database schema definitions
+
+### Frontend (`/front`)
+Next.js web application with the following structure:
+- `app/`: Next.js application routes and pages
+- `public/`: Static assets
+- `components/`: Reusable React components
+
+Key configuration files:
+- [front/app.config.ts](mdc:front/app.config.ts): Frontend configuration
+- [front/tailwind.config.cjs](mdc:front/tailwind.config.cjs): Tailwind CSS configuration
+
+## Development Setup
+- The project uses pnpm for package management
+- Biome is used for code formatting and linting ([biome.json](mdc:biome.json))
+- TypeScript is used throughout the codebase

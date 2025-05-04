@@ -1,80 +1,45 @@
 {
-	"include": [
-		"src",
-		"drizzle.config.ts"
-	],
-	"exclude": [
-		"node_modules",
-		"dist"
-	],
-	"ts-node": {
-		"transpileOnly": true,
-		"files": true,
-		"require": [
-			"tsconfig-paths/register"
-		]
-	},
-	"compilerOptions": {
-		"noEmit": false,
-		"target": "ESNext",
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"allowSyntheticDefaultImports": true,
-		"esModuleInterop": true,
-		"composite": true,
-		"lib": [
-			"ESNext"
-		],
-		"declaration": true,
-		"declarationMap": false,
-		"forceConsistentCasingInFileNames": true,
-		"inlineSources": false,
-		"isolatedModules": true,
-		"noUnusedLocals": false,
-		"noUnusedParameters": false,
-		"preserveWatchOutput": true,
-		"skipLibCheck": true,
-		"strict": true,
-		"outDir": "dist/",
-		"typeRoots": [
-			"./node_modules/@types",
-			"src/interfaces"
-		],
-		"baseUrl": ".",
-		"paths": {
-			"@Configs": [
-				"./src/config"
-			],
-			"@Interfaces/*": [
-				"./src/interfaces/*"
-			],
-			"@Commands/*": [
-				"./src/commands/*"
-			],
-			"@Events/*": [
-				"./src/events/*"
-			],
-			"@EventsValidators/*": [
-				"./src/event-validators/*"
-			],
-			"@Components/*": [
-				"./src/components/*"
-			],
-			"@Utils/*": [
-				"./src/utils/*"
-			],
-			"@Managers/*": [
-				"./src/managers/*"
-			],
-			"@Structures/*": [
-				"./src/structures/*"
-			],
-			"@AiStructures/*": [
-				"./src/ai-stuff/structures/*"
-			],
-			"@Api/*": [
-				"./src/api/*"
-			]
-		}
-	}
+  "include": ["src", "db-actions.ts", "drizzle.config.ts"],
+  "exclude": ["node_modules", "dist"],
+  "ts-node": {
+    "transpileOnly": true,
+    "files": true,
+    "require": ["tsconfig-paths/register"]
+  },
+  "compilerOptions": {
+    "noEmit": false,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "composite": true,
+    "lib": ["ESNext"],
+    "declaration": true,
+    "declarationMap": false,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "outDir": "dist/",
+    "typeRoots": ["./node_modules/@types", "src/interfaces"],
+    "baseUrl": ".",
+    "paths": {
+      "@Configs": ["./src/config"],
+      "@Interfaces/*": ["./src/interfaces/*"],
+      "@Commands/*": ["./src/commands/*"],
+      "@Events/*": ["./src/events/*"],
+      "@EventsValidators/*": ["./src/event-validators/*"],
+      "@Components/*": ["./src/components/*"],
+      "@Utils/*": ["./src/utils/*"],
+      "@Managers/*": ["./src/managers/*"],
+      "@Structures/*": ["./src/structures/*"],
+      "@AiStructures/*": ["./src/ai-stuff/structures/*"],
+      "@Api/*": ["./src/api/*"]
+    }
+  }
 }

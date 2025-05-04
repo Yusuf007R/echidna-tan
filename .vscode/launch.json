@@ -8,6 +8,7 @@
       "name": "Attach to process",
       "type": "node",
       "request": "attach",
+      "restart": true,
       "port": 9229,
       "skipFiles": [
         // Node.js internal core modules

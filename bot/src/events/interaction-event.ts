@@ -13,6 +13,21 @@ export default class InteractionEvent extends DiscordEvent<"interactionCreate"> 
 				return;
 			}
 
+			if (interaction.isButton()) {
+				console.log(interaction);
+				return;
+			}
+
+			if (interaction.isModalSubmit()) {
+				this.echidna.modalManager.processModalResponse(interaction);
+				return;
+			}
+
+			if (interaction.isContextMenuCommand()) {
+				await this.echidna.contextMenuManager.executeContextMenu(interaction);
+				return;
+			}
+
 			if (interaction.isAutocomplete()) {
 				await this.echidna.commandManager.executeAutocomplete(interaction);
 				return;

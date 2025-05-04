@@ -8,9 +8,19 @@ export default class ReadyEvent extends DiscordEvent<"ready"> {
 	async run(): Promise<void> {
 		await this.echidna.updateEchidna();
 
+		setInterval(
+			() => {
+				this.echidna.updateEchidna();
+			},
+			1000 * 60 * 10,
+		); // 10 minutes
+
 		console.log(`Logged in as ${this.echidna.user?.tag}`);
 
 		await this.echidna.commandManager.loadCommands();
-		this.echidna.commandManager.registerCommands();
+		await this.echidna.commandManager.registerCommands();
+
+		await this.echidna.contextMenuManager.loadContextMenus();
+		await this.echidna.contextMenuManager.registerContextMenus();
 	}
 }

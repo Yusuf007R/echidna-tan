@@ -92,15 +92,17 @@ async function build() {
 
 			const startNodeProcess = () => {
 				nodeProcess?.kill();
-				nodeProcess = childProcess.spawn(
-					"node",
-					["--enable-source-maps", "--trace-deprecation", "./dist/index.js"],
-					{
-						stdio: "inherit",
-						// Add proper error handling for child process
-						env: { ...process.env, FORCE_COLOR: "1" },
-					},
-				);
+				const args = [
+					"--enable-source-maps",
+					"--trace-deprecation",
+					"--inspect",
+				];
+
+				nodeProcess = childProcess.spawn("node", [...args, "./dist/index.js"], {
+					stdio: "inherit",
+					// Add proper error handling for child process
+					env: { ...process.env, FORCE_COLOR: "1" },
+				});
 
 				nodeProcess.on("error", (error) => {
 					console.error("Failed to start Node.js process:", error);
