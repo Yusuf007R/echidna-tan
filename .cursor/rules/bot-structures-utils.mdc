@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Core Structures and Utilities
+
+- [structures/](mdc:bot/src/structures): Contains core data structures, classes, and types used throughout the bot. Examples include command definitions, music player logic, game logic, and integrations with external APIs.
+- [utils/](mdc:bot/src/utils): Contains utility functions and helpers for common tasks such as string manipulation, API requests, event handling, and game utilities.
+
+These directories are intended for code that is reused across multiple features or modules.

@@ -1,0 +1,23 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Backend Source Structure: [bot/src/](mdc:bot/src)
+
+The [bot/src/](mdc:bot/src) directory contains the main backend logic for the Discord bot. Key subdirectories include:
+
+- [commands/](mdc:bot/src/commands): Discord bot commands, organized by feature (e.g., admin, music, anime, etc.).
+- [api/](mdc:bot/src/api): API endpoints, middlewares, and utilities for server-side integrations.
+- [ai-stuff/](mdc:bot/src/ai-stuff): AI-related modules, including tools, templates, and structures for AI features.
+- [structures/](mdc:bot/src/structures): Core data structures and classes used throughout the bot.
+- [utils/](mdc:bot/src/utils): Utility functions shared across the backend.
+- [events/](mdc:bot/src/events): Discord event handlers.
+- [managers/](mdc:bot/src/managers): Business logic and state management classes.
+- [config/](mdc:bot/src/config): Configuration files and helpers.
+- [context-menu/](mdc:bot/src/context-menu): Context menu command handlers.
+- [drizzle/](mdc:bot/src/drizzle): Database schema and migration logic.
+- [event-validators/](mdc:bot/src/event-validators): Validators for Discord events.
+- [interfaces/](mdc:bot/src/interfaces): TypeScript interfaces for type safety.
+
+The main entry point is [index.ts](mdc:bot/src/index.ts).

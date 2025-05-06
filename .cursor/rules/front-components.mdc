@@ -1,0 +1,19 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Frontend Components Structure: [front/app/components/](mdc:front/app/components)
+
+The [front/app/components/](mdc:front/app/components) directory contains reusable UI components for the frontend, organized by feature or UI section:
+
+- [default-catch-boundary/](mdc:front/app/components/default-catch-boundary): Error boundaries and fallback UI.
+- [media-controls/](mdc:front/app/components/media-controls): Media control UI components.
+- [music-player/](mdc:front/app/components/music-player): Music player UI components.
+- [nav-bar/](mdc:front/app/components/nav-bar): Navigation bar components.
+- [not-found/](mdc:front/app/components/not-found): Not found (404) UI components.
+- [play-list/](mdc:front/app/components/play-list): Playlist UI components.
+- [server-sidebar/](mdc:front/app/components/server-sidebar): Sidebar components for server navigation.
+- [ui/](mdc:front/app/components/ui): Shared UI primitives and elements.
+
+Each subdirectory contains components relevant to its UI feature area.

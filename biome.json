@@ -19,6 +19,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
+			"recommended": true,
 			"a11y": {
 				"useSemanticElements": "off"
 			},
@@ -29,7 +30,8 @@
 				"noNonNullAssertion": "off"
 			},
 			"suspicious": {
-				"noExplicitAny": "off"
+				"noExplicitAny": "off",
+				   "useAwait": "error"
 			}
 		}
 	},

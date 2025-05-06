@@ -1,5 +1,9 @@
 // merge of command and context menu manager
 
+import { createHash } from "node:crypto";
+import { readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import config from "@Configs";
 import type { CmdType, Command } from "@Structures/command";
 import type ContextMenu from "@Structures/context-menu";
@@ -17,10 +21,6 @@ import {
 	type SlashCommandSubcommandBuilder,
 } from "discord.js";
 import { type InferInsertModel, inArray } from "drizzle-orm";
-import { createHash } from "node:crypto";
-import { readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import stringify from "safe-stable-stringify";
 import db, { buildConflictUpdateColumns } from "src/drizzle";
 import { commandsTable, contextMenusTable } from "src/drizzle/schema";
