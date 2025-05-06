@@ -22,6 +22,33 @@ CREATE TABLE `chats` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
+CREATE TABLE `commands` (
+	`name` text PRIMARY KEY NOT NULL,
+	`category` text NOT NULL,
+	`description` text NOT NULL,
+	`hash` text NOT NULL,
+	`cmd_type` text NOT NULL,
+	`deleted_at` integer,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `category_index` ON `commands` (`category`);--> statement-breakpoint
+CREATE INDEX `cmd_type_index` ON `commands` (`cmd_type`);--> statement-breakpoint
+CREATE TABLE `context_menus` (
+	`name` text PRIMARY KEY NOT NULL,
+	`category` text NOT NULL,
+	`type` text NOT NULL,
+	`cmd_type` text NOT NULL,
+	`hash` text NOT NULL,
+	`description` text NOT NULL,
+	`deleted_at` integer,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `category_context_menu_index` ON `context_menus` (`category`);--> statement-breakpoint
+CREATE INDEX `cmd_type_context_menu_index` ON `context_menus` (`cmd_type`);--> statement-breakpoint
 CREATE TABLE `echidna` (
 	`id` integer PRIMARY KEY NOT NULL,
 	`status` text DEFAULT 'online' NOT NULL,
@@ -44,9 +71,6 @@ CREATE TABLE `memories` (
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
 );
-
-
-
 --> statement-breakpoint
 CREATE INDEX `prompt_template_index` ON `memories` (`prompt_template`);--> statement-breakpoint
 CREATE TABLE `messages` (
@@ -62,8 +86,6 @@ CREATE TABLE `messages` (
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	FOREIGN KEY (`chat_id`) REFERENCES `chats`(`id`) ON UPDATE no action ON DELETE no action
 );
-
-
 --> statement-breakpoint
 CREATE TABLE `session` (
 	`id` text PRIMARY KEY NOT NULL,
@@ -80,3 +102,5 @@ CREATE TABLE `user` (
 	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL
 );
+--> statement-breakpoint
+CREATE INDEX `display_name_index` ON `user` (`display_name`);

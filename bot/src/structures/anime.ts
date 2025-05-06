@@ -6,11 +6,11 @@ export default class AnimeManager {
 	static animeClient = new Jikan.Client();
 
 	static async getRandomAnime() {
-		return AnimeManager.animeClient.anime.random();
+		return await AnimeManager.animeClient.anime.random();
 	}
 
 	static async searchForAnimeByTerm(term: string, maxCount = 8) {
-		return AnimeManager.animeClient.anime.search(
+		return await AnimeManager.animeClient.anime.search(
 			term,
 			undefined,
 			undefined,
@@ -19,7 +19,7 @@ export default class AnimeManager {
 	}
 
 	static async getAnimeByID(id: string | number) {
-		return AnimeManager.animeClient.anime.get(Number(id));
+		return await AnimeManager.animeClient.anime.get(Number(id));
 	}
 
 	static getAnimeEmbed(animeData: Jikan.Anime) {

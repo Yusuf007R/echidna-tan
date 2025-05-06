@@ -15,7 +15,7 @@ export default class WaifuGeneratorCommand extends Command<typeof options> {
 		super({
 			shouldDefer: true,
 			name: "waifu-generator",
-			description: "Generate Waifu using AI",
+			description: "Generate Waifu using AI and a prompt",
 			cmdType: "BOTH",
 			options,
 		});

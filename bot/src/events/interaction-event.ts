@@ -8,8 +8,12 @@ export default class InteractionEvent extends DiscordEvent<"interactionCreate"> 
 
 	async run(interaction: Interaction<CacheType>): Promise<void> {
 		try {
-			if (interaction.isChatInputCommand()) {
-				await this.echidna.commandManager.executeCommand(interaction);
+			if (
+				interaction.isChatInputCommand() ||
+				interaction.isAutocomplete() ||
+				interaction.isContextMenuCommand()
+			) {
+				await this.echidna.interactionManager.manageInteraction(interaction);
 				return;
 			}
 
@@ -22,16 +26,6 @@ export default class InteractionEvent extends DiscordEvent<"interactionCreate"> 
 				this.echidna.modalManager.processModalResponse(interaction);
 				return;
 			}
-
-			if (interaction.isContextMenuCommand()) {
-				await this.echidna.contextMenuManager.executeContextMenu(interaction);
-				return;
-			}
-
-			if (interaction.isAutocomplete()) {
-				await this.echidna.commandManager.executeAutocomplete(interaction);
-				return;
-			}
 		} catch (error: any) {
 			if (interaction.isMessageComponent()) {
 				interaction.message.reply({
@@ -40,7 +34,7 @@ export default class InteractionEvent extends DiscordEvent<"interactionCreate"> 
 
 				return;
 			}
-			if (interaction.inGuild() && interaction.channel?.isTextBased())
+			if (interaction.channel && "send" in interaction.channel)
 				interaction.channel?.send(
 					error?.message || "Internal error, try again later.",
 				);

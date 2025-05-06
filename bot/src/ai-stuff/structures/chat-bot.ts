@@ -86,7 +86,7 @@ export default class ChatBot {
 			.at(-1);
 	}
 
-	static async init(options: ChatBotOptions) {
+	static init(options: ChatBotOptions) {
 		const messageHistory: messageHistoryType[] = [];
 		const hasMemories = options.prompt.prompt_config.includes("memory");
 		const memoriesManager = new MemoriesManager(

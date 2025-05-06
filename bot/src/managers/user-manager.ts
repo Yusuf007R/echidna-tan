@@ -47,7 +47,11 @@ export class UserManager {
 	 * @returns The user object or null if not found
 	 */
 	static async getUser(discordId: string) {
-		return db.select().from(userTable).where(eq(userTable.id, discordId)).get();
+		return await db
+			.select()
+			.from(userTable)
+			.where(eq(userTable.id, discordId))
+			.get();
 	}
 
 	/**
@@ -70,6 +74,6 @@ export class UserManager {
 	}
 
 	static async getDiscordUser(discordId: string) {
-		return EchidnaSingleton.echidna.users.fetch(discordId);
+		return await EchidnaSingleton.echidna.users.fetch(discordId);
 	}
 }

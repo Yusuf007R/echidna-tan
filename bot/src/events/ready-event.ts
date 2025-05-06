@@ -17,10 +17,6 @@ export default class ReadyEvent extends DiscordEvent<"ready"> {
 
 		console.log(`Logged in as ${this.echidna.user?.tag}`);
 
-		await this.echidna.commandManager.loadCommands();
-		await this.echidna.commandManager.registerCommands();
-
-		await this.echidna.contextMenuManager.loadContextMenus();
-		await this.echidna.contextMenuManager.registerContextMenus();
+		await this.echidna.interactionManager.init();
 	}
 }

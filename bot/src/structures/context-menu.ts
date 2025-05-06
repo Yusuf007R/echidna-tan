@@ -1,11 +1,12 @@
 import type { ContextMenuCommandInteraction, Message, User } from "discord.js";
+import type { CmdType } from "./command";
 import EchidnaSingleton from "./echidna-singleton";
-
 export type ContextMenuType = "USER" | "MESSAGE";
 
 type ContextMenuConfigs<T extends ContextMenuType | undefined = undefined> = {
 	name: string;
 	type: T;
+	cmdType?: CmdType;
 	description: string;
 };
 
@@ -14,6 +15,7 @@ abstract class ContextMenu<
 > extends EchidnaSingleton {
 	name: string;
 	type: T;
+	cmdType: CmdType;
 	description: string;
 
 	target: T extends "USER" ? User : Message;
@@ -23,6 +25,7 @@ abstract class ContextMenu<
 		this.name = configs.name;
 		this.type = configs.type;
 		this.description = configs.description;
+		this.cmdType = configs.cmdType ?? "BOTH";
 		this.target = null as any;
 	}
 

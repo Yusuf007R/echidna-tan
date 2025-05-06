@@ -90,7 +90,11 @@ export default class EchidnaInfoCommand extends Command<typeof options> {
 					},
 					{
 						name: "Total Commands",
-						value: this.echidna.commandManager.commands.size.toString(),
+						value: this.echidna.interactionManager.commandsCount.toString(),
+					},
+					{
+						name: "Total Context Menus",
+						value: this.echidna.interactionManager.contextMenusCount.toString(),
 					},
 					{
 						name: "Total Events",

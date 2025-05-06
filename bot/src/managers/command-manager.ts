@@ -24,8 +24,7 @@ import db, { buildConflictUpdateColumns } from "src/drizzle";
 import { commandsTable } from "src/drizzle/schema";
 
 import { createHash } from "node:crypto";
-import config from "@Configs";
-import type { InferInsertModel } from "drizzle-orm";
+import { type InferInsertModel, inArray } from "drizzle-orm";
 import stringify from "safe-stable-stringify";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -64,17 +63,27 @@ export default class CommandManager {
 								!file.endsWith(".d.ts"),
 						)
 						.map(async (file) => {
-							const commandFile = join(commandFolder, file);
-							const Command = (await import(commandFile)).default;
-							const cmdObj = new Command();
-							if (checkDupName.has(cmdObj.name)) {
-								throw new Error(
-									`Duplicate command name: ${cmdObj.name} in ${commandFolder}`,
-								);
+							try {
+								const commandFile = join(commandFolder, file);
+								const Command = (await import(commandFile)).default;
+								const cmdObj = new Command();
+								if (checkDupName.has(cmdObj.name)) {
+									throw new Error(
+										`Duplicate command name: ${cmdObj.name} in ${commandFolder}`,
+									);
+								}
+								checkDupName.set(cmdObj.name, true);
+								if (!commands[commandFolder]) commands[commandFolder] = [];
+								commands[commandFolder].push(cmdObj);
+							} catch (error) {
+								if (
+									error instanceof Error &&
+									error.message.includes("Duplicate command name")
+								)
+									throw error;
+
+								console.error("[CommandManager] [loadCommands]", error);
 							}
-							checkDupName.set(cmdObj.name, true);
-							if (!commands[commandFolder]) commands[commandFolder] = [];
-							commands[commandFolder].push(cmdObj);
 						}),
 				);
 			}),
@@ -96,15 +105,8 @@ export default class CommandManager {
 	async filterRegisteredCommands() {
 		const slashCommmands = this.mapCommands();
 
-		const registeredCommandsDB = await db.query.commandsTable.findMany();
+		let registeredCommandsDB = await db.query.commandsTable.findMany();
 		let shouldUpdateCommands = false;
-
-		const commandToRegister: MapCmds[] = [];
-
-		const registeredCommands: {
-			command: MapCmds;
-			dbCommmand: (typeof registeredCommandsDB)[number];
-		}[] = [];
 
 		const insertDb: InferInsertModel<typeof commandsTable>[] = [];
 
@@ -113,16 +115,14 @@ export default class CommandManager {
 				(registeredCmd) => registeredCmd.name === cmd.command.name,
 			);
 
-			if (
-				!registeredCmd ||
-				registeredCmd.hash !== cmd.hash ||
-				config.NODE_ENV === "production"
-			) {
-				if (config.NODE_ENV !== "production") {
-					registeredCmd
-						? console.log(`${registeredCmd.name} - changed`)
-						: console.log(`${cmd.command.name} - new command`);
-				}
+			registeredCommandsDB = registeredCommandsDB.filter(
+				(cmd) => cmd.name !== registeredCmd?.name,
+			);
+
+			if (!registeredCmd || registeredCmd.hash !== cmd.hash) {
+				registeredCmd
+					? console.log(`${registeredCmd.name} - changed`)
+					: console.log(`${cmd.command.name} - new command`);
 
 				shouldUpdateCommands = true;
 				const insert: InferInsertModel<typeof commandsTable> = {
@@ -132,11 +132,22 @@ export default class CommandManager {
 					description: cmd.description,
 					cmdType: cmd.cmdType,
 				};
-				commandToRegister.push(cmd);
 				insertDb.push(insert);
-			} else {
-				registeredCommands.push({ command: cmd, dbCommmand: registeredCmd });
 			}
+		}
+
+		if (registeredCommandsDB.length) {
+			await db
+				.update(commandsTable)
+				.set({
+					deletedAt: new Date(),
+				})
+				.where(
+					inArray(
+						commandsTable.name,
+						registeredCommandsDB.map((cmd) => cmd.name),
+					),
+				);
 		}
 
 		if (insertDb.length) {
@@ -177,9 +188,7 @@ export default class CommandManager {
 				`Successfully registered ${commandToRegister.length} commands.`,
 			);
 		} catch (error) {
-			// ! IF ERROR GO NUCLEAR AND DELETE ALL COMMANDS IN DB
-			await db.delete(commandsTable);
-			console.error(error);
+			console.error("[CommandManager] [registerCommands]", error);
 		}
 	}
 

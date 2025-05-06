@@ -67,6 +67,7 @@ export abstract class Command<
 		..._rest: unknown[]
 	): Promise<void>;
 
+	// biome-ignore lint/suspicious/useAwait: this is an unimplemented method
 	async handleAutocomplete(
 		_interaction: AutocompleteInteraction<CacheType>,
 	): Promise<E> {
@@ -77,7 +78,7 @@ export abstract class Command<
 		_interaction: AutocompleteInteraction<CacheType>,
 	): Promise<E> {
 		this._getOptionsInstance.loadFromCommandInteraction(_interaction);
-		return this.handleAutocomplete(_interaction);
+		return await this.handleAutocomplete(_interaction);
 	}
 
 	async _run(interaction: CommandInteraction<CacheType>) {

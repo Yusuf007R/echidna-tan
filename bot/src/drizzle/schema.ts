@@ -84,11 +84,31 @@ export const commandsTable = sqliteTable(
 		description: text("description").notNull(),
 		hash: text("hash").notNull(),
 		cmdType: text("cmd_type", { enum: CmdType }).notNull(),
+		deletedAt: integer("deleted_at", { mode: "timestamp" }),
 		...baseDates,
 	},
-	(t) => ({
-		categoryIndex: index("category_index").on(t.category),
-	}),
+	(t) => [
+		index("category_index").on(t.category),
+		index("cmd_type_index").on(t.cmdType),
+	],
+);
+
+export const contextMenusTable = sqliteTable(
+	"context_menus",
+	{
+		name: text("name").primaryKey(),
+		category: text("category").notNull(),
+		type: text("type", { enum: ["USER", "MESSAGE"] }).notNull(),
+		cmdType: text("cmd_type", { enum: CmdType }).notNull(),
+		hash: text("hash").notNull(),
+		description: text("description").notNull(),
+		deletedAt: integer("deleted_at", { mode: "timestamp" }),
+		...baseDates,
+	},
+	(t) => [
+		index("category_context_menu_index").on(t.category),
+		index("cmd_type_context_menu_index").on(t.cmdType),
+	],
 );
 
 export const userTable = sqliteTable(

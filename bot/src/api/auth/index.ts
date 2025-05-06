@@ -80,7 +80,7 @@ export function createSessionCookie(session?: Session) {
 }
 
 export async function invalidateSession(sessionId: string) {
-	return db.delete(sessionTable).where(eq(sessionTable.id, sessionId));
+	return await db.delete(sessionTable).where(eq(sessionTable.id, sessionId));
 }
 
 export const cookieSessionKey = "echidna_auth_session";

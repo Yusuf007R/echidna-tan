@@ -33,15 +33,15 @@ export default class TMDB {
 	}
 
 	async search(query: string) {
-		return this.moviedb.searchMulti({ query });
+		return await this.moviedb.searchMulti({ query });
 	}
 
 	async getTV(id: string) {
-		return this.moviedb.tvInfo(id);
+		return await this.moviedb.tvInfo(id);
 	}
 
 	async getMovie(id: string) {
-		return this.moviedb.movieInfo(id);
+		return await this.moviedb.movieInfo(id);
 	}
 
 	async getByName(name: string): Promise<MovieResult | TvResult | null> {
