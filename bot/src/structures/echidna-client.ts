@@ -1,5 +1,3 @@
-import { Client, Collection, GatewayIntentBits, Partials } from "discord.js";
-
 import { startServer } from "@Api/index";
 import { default as config, default as configs } from "@Configs";
 import EventManager from "@Managers/event-manager";
@@ -9,6 +7,7 @@ import ModalManager from "@Managers/modal-manager";
 import EchidnaSingleton from "@Structures/echidna-singleton";
 import MusicPlayer from "@Structures/music-player";
 import type TicTacToe from "@Structures/tic-tac-toe";
+import { Client, Collection, GatewayIntentBits, Partials } from "discord.js";
 import { eq } from "drizzle-orm";
 import db, { initDB } from "src/drizzle";
 import { echidnaTable } from "src/drizzle/schema";
@@ -50,7 +49,7 @@ export default class EchidnaClient extends Client {
 				Partials.User,
 			],
 		});
-		this.init();
+		void this.init();
 	}
 
 	async updateEchidna() {

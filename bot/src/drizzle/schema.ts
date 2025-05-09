@@ -120,9 +120,10 @@ export const userTable = sqliteTable(
 		isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
 		...baseDates,
 	},
-	(t) => ({
-		displayNameIndex: index("display_name_index").on(t.displayName),
-	}),
+	(t) => [
+		index("display_name_index").on(t.displayName),
+		index("user_name_index").on(t.userName),
+	],
 );
 
 export const userRelations = relations(userTable, ({ many }) => ({
@@ -163,9 +164,10 @@ export const memoriesTable = sqliteTable(
 		importance: integer("importance", { mode: "number" }).notNull().default(0),
 		...baseDates,
 	},
-	(t) => ({
-		promptTemplateIndex: index("prompt_template_index").on(t.promptTemplate),
-	}),
+	(t) => [
+		index("memory_type_index").on(t.memoryType),
+		index("prompt_template_index").on(t.promptTemplate),
+	],
 );
 
 export const memoryRelations = relations(memoriesTable, ({ one }) => ({

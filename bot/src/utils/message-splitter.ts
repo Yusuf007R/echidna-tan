@@ -23,9 +23,9 @@ export class MessageSplitter {
 	private language = "";
 	private fullStreamMessage = "";
 	private messages: SplitMessage[] = [];
-	public maxLength: number;
-	public isStream: boolean;
-	public queue = new SerialEventEmitter<{
+	maxLength: number;
+	isStream: boolean;
+	queue = new SerialEventEmitter<{
 		message: (msg: SplitMessage) => void;
 	}>();
 

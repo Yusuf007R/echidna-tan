@@ -1,3 +1,7 @@
+import config from "@Configs";
+import getImageColor from "@Utils/get-image-color";
+import { EmbedBuilder } from "@discordjs/builders";
+import type { APIEmbed } from "discord.js";
 import {
 	type Genre,
 	MovieDb,
@@ -6,11 +10,6 @@ import {
 	type ShowResponse,
 	type TvResult,
 } from "moviedb-promise";
-
-import config from "@Configs";
-import getImageColor from "@Utils/get-image-color";
-import { EmbedBuilder } from "@discordjs/builders";
-import type { APIEmbed } from "discord.js";
 
 export interface infoTMDB {
 	id: number;

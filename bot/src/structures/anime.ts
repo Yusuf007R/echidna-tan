@@ -1,6 +1,5 @@
-import Jikan from "jikan4.js";
-
 import { type APIEmbedField, EmbedBuilder, type RestOrArray } from "discord.js";
+import Jikan from "jikan4.js";
 
 export default class AnimeManager {
 	static animeClient = new Jikan.Client();

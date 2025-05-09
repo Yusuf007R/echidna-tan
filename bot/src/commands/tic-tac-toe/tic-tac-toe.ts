@@ -1,9 +1,8 @@
-import type { CacheType, CommandInteraction } from "discord.js";
-
-import { randomBytes } from "node:crypto";
 import { Command } from "@Structures/command";
 import TicTacToe from "@Structures/tic-tac-toe";
 import { OptionsBuilder } from "@Utils/options-builder";
+import { randomBytes } from "node:crypto";
+import type { CacheType, CommandInteraction } from "discord.js";
 
 const options = new OptionsBuilder()
 	.addUserOption({

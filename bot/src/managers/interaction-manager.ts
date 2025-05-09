@@ -1,13 +1,13 @@
 // merge of command and context menu manager
 
-import { createHash } from "node:crypto";
-import { readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import config from "@Configs";
 import type { CmdType, Command } from "@Structures/command";
 import type ContextMenu from "@Structures/context-menu";
 import type { Option } from "@Utils/options-builder";
+import { createHash } from "node:crypto";
+import { readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	Collection,
 	ContextMenuCommandBuilder,
@@ -146,8 +146,10 @@ export default class InteractionManager {
 		const commands = this.mapCommands();
 		const contextMenus = this.mapContextMenus();
 
-		let registeredCommands = await db.query.commandsTable.findMany();
-		let registeredContextMenus = await db.query.contextMenusTable.findMany();
+		let [registeredCommands, registeredContextMenus] = await Promise.all([
+			db.query.commandsTable.findMany(),
+			db.query.contextMenusTable.findMany(),
+		]);
 
 		const insertDbCommands: InferInsertModel<typeof commandsTable>[] = [];
 		const insertDbContextMenus: InferInsertModel<typeof contextMenusTable>[] =
@@ -360,7 +362,7 @@ export default class InteractionManager {
 		});
 	}
 
-	async commandOptionsBuilder(
+	commandOptionsBuilder(
 		options: Option[],
 		slash: SlashCommandBuilder | SlashCommandSubcommandBuilder,
 	) {

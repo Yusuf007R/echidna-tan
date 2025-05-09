@@ -1,8 +1,8 @@
+import type { DiscordEvent, eventType } from "@Structures/discord-events";
+import EchidnaSingleton from "@Structures/echidna-singleton";
 import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { DiscordEvent, eventType } from "@Structures/discord-events";
-import EchidnaSingleton from "@Structures/echidna-singleton";
 import { Collection } from "discord.js";
 
 const __filename = fileURLToPath(import.meta.url);

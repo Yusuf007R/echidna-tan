@@ -20,7 +20,7 @@ class SerialEventEmitter<
 			this.queue.set(event, []);
 		}
 		this.queue.get(event)?.push(args);
-		this.processNext(event);
+		void this.processNext(event);
 		return true;
 	};
 

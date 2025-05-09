@@ -1,7 +1,7 @@
+import type { Tool } from "@Structures/tool";
 import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Tool } from "@Structures/tool";
 import { Collection } from "discord.js";
 
 const __filename = fileURLToPath(import.meta.url);

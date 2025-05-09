@@ -35,7 +35,9 @@ export class CommandValidator extends EchidnaSingleton {
 		return new Promise((resolve, reject) => {
 			this.resolve = resolve;
 			this.reject = reject;
-			this.isValid(interaction, () => resolve(true)).then(() => resolve(false));
+			this.isValid(interaction, () => resolve(true))
+				.then(() => resolve(false))
+				.catch(() => resolve(false));
 		});
 	}
 

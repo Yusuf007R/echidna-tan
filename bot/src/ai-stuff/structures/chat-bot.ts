@@ -18,7 +18,7 @@ import {
 	MessageType,
 	type ThreadChannel,
 } from "discord.js";
-import { type InferSelectModel, and, count, eq, sum } from "drizzle-orm";
+import { and, count, eq, type InferSelectModel, sum } from "drizzle-orm";
 import type {
 	ChatCompletionMessageParam,
 	CompletionUsage,

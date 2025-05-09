@@ -3,7 +3,7 @@ import type { OpenRouterModel } from "@Interfaces/open-router-model";
 import ChatBotManager from "@Managers/chat-bot-manager";
 import calcCompletionUsage from "@Utils/calc-completion-usage";
 import { openAI, openRouterAPI } from "@Utils/request";
-import { type InferSelectModel, desc, eq, sql } from "drizzle-orm";
+import { desc, eq, type InferSelectModel, sql } from "drizzle-orm";
 import { zodFunction } from "openai/helpers/zod";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import db from "src/drizzle";

@@ -1,6 +1,6 @@
+import { baseAPI } from "@Utils/request";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { baseAPI } from "@Utils/request";
 import { EmbedBuilder } from "@discordjs/builders";
 import {
 	AttachmentBuilder,

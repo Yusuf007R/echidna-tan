@@ -34,7 +34,9 @@
     "@hono/node-ws": "^1.1.4",
     "@hono/zod-validator": "^0.5.0",
     "@libsql/client": "^0.15.4",
+    "@openrouter/ai-sdk-provider": "^0.4.5",
     "@oslojs/encoding": "^1.1.0",
+    "ai": "^4.3.14",
     "apisauce": "^3.1.1",
     "arctic": "^3.6.0",
     "bgutils-js": "^3.2.0",
@@ -71,7 +73,8 @@
     "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "2.0.0-beta.2",
+    "@biomejs/cli-linux-x64": "2.0.0-beta.2",
     "@types/cors": "^2.8.17",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/gifsicle": "^5.2.2",
@@ -92,7 +95,13 @@
     },
     "onlyBuiltDependencies": [
       "@discordjs/opus",
+      "bufferutil",
+      "esbuild",
+      "ffmpeg-static",
+      "gifsicle",
+      "postinstall-postinstall",
       "sharp",
+      "utf-8-validate",
       "zlib-sync"
     ]
   }

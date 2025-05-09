@@ -1,7 +1,7 @@
 import capitalize from "@Utils/capitalize";
 import { OptionsBuilder } from "@Utils/options-builder";
-import { QueueRepeatMode } from "discord-player";
 import type { CacheType, CommandInteraction } from "discord.js";
+import { QueueRepeatMode } from "discord-player";
 import { MusicCommand } from "./[wrapper]";
 
 const options = new OptionsBuilder()

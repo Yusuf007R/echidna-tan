@@ -9,6 +9,14 @@ import {
 	type StringSelectMenuBuilder,
 } from "@discordjs/builders";
 import {
+	type BaseInteraction,
+	type CacheType,
+	Collection,
+	type CommandInteraction,
+	type GuildMember,
+	type StringSelectMenuInteraction,
+} from "discord.js";
+import {
 	type GuildQueue,
 	GuildQueueEvent,
 	Player,
@@ -17,14 +25,6 @@ import {
 	type Track,
 } from "discord-player";
 import { YoutubeiExtractor } from "discord-player-youtubei";
-import {
-	type BaseInteraction,
-	type CacheType,
-	Collection,
-	type CommandInteraction,
-	type GuildMember,
-	type StringSelectMenuInteraction,
-} from "discord.js";
 import { EventEmitter } from "tseep";
 import type EchidnaClient from "./echidna-client";
 
@@ -56,11 +56,11 @@ export default class MusicPlayer extends Player {
 	static guildEmiters = new Collection<string, EventEmitter<GuildEmitter>>();
 	constructor(echidna: EchidnaClient) {
 		super(echidna);
-		this.init();
+		void this.init();
 	}
 
-	init() {
-		this.loadExtractors();
+	async init() {
+		await this.loadExtractors();
 		this.initEvents();
 	}
 

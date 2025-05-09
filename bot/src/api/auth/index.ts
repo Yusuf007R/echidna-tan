@@ -1,9 +1,8 @@
 import config from "@Configs";
-import db from "src/drizzle";
-
 import { encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
 import { Discord } from "arctic";
-import { type InferSelectModel, eq, sql } from "drizzle-orm";
+import { eq, type InferSelectModel, sql } from "drizzle-orm";
+import db from "src/drizzle";
 
 import { sessionTable, userTable } from "src/drizzle/schema";
 
