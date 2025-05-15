@@ -29,7 +29,7 @@ export class MessageSplitter {
 		message: (msg: SplitMessage) => void;
 	}>();
 
-	constructor({ maxLength = 1800, isStream = false }: SplitterOptions = {}) {
+	constructor({ maxLength = 3900, isStream = false }: SplitterOptions = {}) {
 		this.maxLength = maxLength;
 		this.isStream = isStream;
 	}

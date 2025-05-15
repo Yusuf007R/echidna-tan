@@ -1,3 +1,4 @@
+import config from "@Configs";
 import EchidnaSingleton from "@Structures/echidna-singleton";
 import { eq } from "drizzle-orm";
 import db from "../drizzle";
@@ -33,7 +34,7 @@ export class UserManager {
 				id: discordId,
 				displayName: discordUser.displayName,
 				userName: discordUser.username,
-				isAdmin: false,
+				isAdmin: discordId === config.DISCORD_OWNER_ID,
 			})
 			.returning();
 		console.log(newUser);

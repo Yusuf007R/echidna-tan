@@ -10,6 +10,7 @@ export default class MessageCreate extends DiscordEvent<"messageCreate"> {
 
 	async run(message: Message) {
 		if (message.author.bot) return;
+
 		const user = await UserManager.getOrCreateUser(message.author.id);
 
 		if (!user.isAdmin) return;
@@ -23,7 +24,7 @@ export default class MessageCreate extends DiscordEvent<"messageCreate"> {
 				const user = await UserManager.getOrCreateUser(message.author.id);
 				if (!user) return;
 				const promptTemplate =
-					await ChatBotManager.getPromptTemplate("Echidna-Assistant");
+					await ChatBotManager.getPromptTemplate("Assistant");
 				if (!promptTemplate) return;
 
 				await ChatBotManager.createChatBot(

@@ -15,7 +15,9 @@ import {
 	AttachmentBuilder,
 	type DMChannel,
 	type Message,
+	MessageFlags,
 	MessageType,
+	TextDisplayBuilder,
 	type ThreadChannel,
 } from "discord.js";
 import { and, count, eq, type InferSelectModel, sum } from "drizzle-orm";
@@ -194,7 +196,13 @@ export default class ChatBot {
 
 	private async sendMessage(splitMessage: SplitMessage, maxLength: number) {
 		if (splitMessage.type === "text") {
-			await this.channel.send(`${splitMessage.content}`);
+			const textComponent = new TextDisplayBuilder().setContent(
+				splitMessage.content,
+			);
+			await this.channel.send({
+				flags: MessageFlags.IsComponentsV2,
+				components: [textComponent],
+			});
 		} else {
 			if (splitMessage.content.length > maxLength) {
 				await this.sendAsAttachment(

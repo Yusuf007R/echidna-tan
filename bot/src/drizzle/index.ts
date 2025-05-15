@@ -51,7 +51,7 @@ export const createVectorIndex = async () => {
 };
 
 export const initDB = async () => {
-	// await createVectorIndex();
+	await createVectorIndex();
 };
 
 export const buildConflictUpdateColumns = <
