@@ -73,9 +73,9 @@ export default class MusicPlayer extends Player {
 		this.events.on(GuildQueueEvent.PlayerStart, (queue) =>
 			this.nowPlaying(queue),
 		);
-		this.events.on(GuildQueueEvent.PlayerFinish, (queue) => {
-			console.log("playerFinish", queue);
-		});
+		// this.events.on(GuildQueueEvent.PlayerFinish, (queue) => {
+		// 	console.log("playerFinish", queue);
+		// });
 
 		for (const event of guildEvents) {
 			this.events.on(event, (queue: GuildQueue<QueueMetadata>) => {
@@ -112,6 +112,10 @@ export default class MusicPlayer extends Player {
 		if (searchResult.tracks.length === 1) {
 			const track = searchResult.tracks[0];
 			this.addTrack(track, interaction);
+			await interaction.editReply({
+				content: `Added ${track.title} to the queue.`,
+				components: [],
+			});
 			return;
 		}
 

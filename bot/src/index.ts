@@ -18,7 +18,8 @@ process.on("uncaughtException", (error) => {
 });
 
 process.removeAllListeners("warning").on("warning", (error) => {
-	if (error.stack?.includes("jikan4.js")) {
+	const ignore = ["jikan4.js", "discord-voip"];
+	if (ignore.some((i) => error.stack?.includes(i))) {
 		return;
 	}
 	console.log("[WARNING]", error, error.stack);
