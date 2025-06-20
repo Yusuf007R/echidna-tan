@@ -1,13 +1,13 @@
-diff --git a/node_modules/fluent-ffmpeg/lib/processor.js b/node_modules/fluent-ffmpeg/lib/processor.js
-index 36d980a..70a4f03 100644
---- a/node_modules/fluent-ffmpeg/lib/processor.js
-+++ b/node_modules/fluent-ffmpeg/lib/processor.js
+diff --git a/lib/processor.js b/lib/processor.js
+index 36d980ad0cbf60cf55d2b2664460cad7b475584b..1f8ffd7b417484951a2abb0f0adf33e74b3c7b09 100644
+--- a/lib/processor.js
++++ b/lib/processor.js
 @@ -488,7 +488,7 @@ module.exports = function(proto) {
                setTimeout(function() {
                  emitEnd(new Error('Output stream closed'));
                  ffmpegProc.kill();
 -              }, 20);
-+              }, 500);
++              }, 1000);
              });
  
              outputStream.target.on('error', function(err) {
