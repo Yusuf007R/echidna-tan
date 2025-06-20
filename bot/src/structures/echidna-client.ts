@@ -86,7 +86,7 @@ export default class EchidnaClient extends Client {
 	async init() {
 		console.log("[EchidnaClient] initializing");
 		this.eventManager.init();
-
+		await this.musicPlayer.init();
 		await initDB();
 
 		await this.login(configs.DISCORD_BOT_TOKEN);

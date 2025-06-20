@@ -8,6 +8,11 @@ const options = new OptionsBuilder()
 		description: "query to search or url to play",
 		required: true,
 	})
+	.addBoolOption({
+		name: "download-play",
+		description: "Download the song before playing",
+		required: false,
+	})
 	.build();
 
 export default class Play extends MusicCommand<typeof options> {
@@ -21,6 +26,10 @@ export default class Play extends MusicCommand<typeof options> {
 
 	async run(interaction: CommandInteraction<CacheType>) {
 		// await interaction.reply("temporarily disabled");
-		await this.echidna.musicPlayer.playCmd(interaction, this.options.query);
+		await this.echidna.musicPlayer.playCmd(
+			interaction,
+			this.options.query,
+			this.options["download-play"] ?? true,
+		);
 	}
 }

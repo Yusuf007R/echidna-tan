@@ -1,37 +1,37 @@
-import { eq, sql } from "drizzle-orm";
-import db from "./src/drizzle";
-import { memoriesTable } from "./src/drizzle/schema";
-import { openAI } from "./src/utils/request";
+import { createWriteStream } from "fs";
+import { mkdir } from "fs/promises";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
+import { YtDlp } from "ytdlp-nodejs";
 
-async function retrieveMemories(messages: string) {
-	const embed = await openAI.embeddings.create({
-		model: "text-embedding-3-small",
-		input: messages,
-	});
-	const embeddings = embed.data.at(0)?.embedding;
-	if (!embeddings) return [];
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-	console.time("retrieveMemories");
-	const topMemories = await db
-		.select({
-			id: memoriesTable.id,
-			memory: memoriesTable.memory,
-			date: memoriesTable.createdAt,
-			distance: sql<number>`vector_distance_cos(embeds, vector32(${JSON.stringify(embeddings)}))`,
-		})
-		.from(
-			sql`vector_top_k('vector_memories_embeds', vector32(${JSON.stringify(embeddings)}), 3) as v`,
-		)
-		.leftJoin(memoriesTable, sql`${memoriesTable}.rowid = v.id`)
-		.where(eq(memoriesTable.userId, "320065552389242880"));
-	console.timeEnd("retrieveMemories");
-	return topMemories;
+const TEMP_DIR = path.join(__dirname, "temp", "ytdlp");
+const ytdlp = new YtDlp();
+
+async function downloadVideo() {
+	// Ensure the temp directory exists
+	await mkdir(TEMP_DIR, { recursive: true });
+
+	const filePath = path.join(TEMP_DIR, `${"MP3WhIB9mQg"}.opus`);
+	const stream = createWriteStream(filePath);
+	const ytdlpStream = ytdlp.stream(
+		"https://www.youtube.com/watch?v=MP3WhIB9mQg",
+		{
+			format: {
+				filter: "audioonly",
+				type: "opus",
+				quality: 10,
+			},
+			onProgress: (progress) => {
+				console.log(progress);
+			},
+		},
+	);
+	await ytdlpStream.pipeAsync(stream);
+	console.log("Downloaded", filePath);
+	return filePath;
 }
 
-async function main() {
-	const memories = await retrieveMemories("usa");
-	console.log(memories);
-}
-
-// biome-ignore lint/nursery/noFloatingPromises: xsss
-main();
+downloadVideo().catch(console.error);

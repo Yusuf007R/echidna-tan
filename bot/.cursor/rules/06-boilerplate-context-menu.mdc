@@ -1,0 +1,59 @@
+---
+description: MANDATORY BLUEPRINT for creating any new Discord context menu command. Follow this structure to ensure compatibility with the interaction system.
+globs: 
+alwaysApply: false
+---
+# The Context Menu Creation Blueprint
+
+## When to Use This Rule
+*   When creating a new right-click command on a user or a message.
+
+## Core Principles
+1.  All context menus MUST extend the `ContextMenu` class from `@Structures/context-menu`.
+2.  The `type` in the constructor MUST be either `"USER"` or `"MESSAGE"`.
+3.  The `target` property (`this.target`) will be automatically populated with the target `User` or `Message` before `run` is called.
+
+## Mandatory Context Menu Blueprint
+This template is for a **MESSAGE** context menu. For a **USER** menu, change the type and the type of `interaction` in `run`.
+
+```typescript
+// src/context-menu/<category>/<command-name>.ts
+
+// 1. Import necessary modules
+import ContextMenu from "@Structures/context-menu";
+import type { MessageContextMenuCommandInteraction } from "discord.js"; // or UserContextMenuCommandInteraction
+
+// 2. Define the ContextMenu class
+class MyMessageContextMenu extends ContextMenu<"MESSAGE"> {
+	constructor() {
+		super({
+			name: "Do Something With Message",
+			description: "A description of what this menu does.",
+			type: "MESSAGE", // This is critical. Use "USER" for user menus.
+			cmdType: "GUILD", // Or "DM", "BOTH"
+		});
+	}
+
+	// 3. Implement the execution logic
+	async run(interaction: MessageContextMenuCommandInteraction) {
+		// Access the target message via `this.target`
+		const message = this.target;
+
+		// Example: Check if the command that created the message was `tmdb-query`
+		if (message.interaction?.commandName !== "tmdb-query") {
+			await interaction.reply({
+				content: "This action can only be used on a TMDB query result.",
+				ephemeral: true,
+			});
+			return;
+		}
+
+		// Perform action
+		await interaction.reply({
+			content: `You selected message: "${message.content.slice(0, 50)}..."`,
+			ephemeral: true,
+		});
+	}
+}
+
+export default MyMessageContextMenu;

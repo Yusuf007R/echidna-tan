@@ -140,6 +140,9 @@ importers:
       ws:
         specifier: ^8.18.2
         version: 8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ytdlp-nodejs:
+        specifier: ^2.3.0
+        version: 2.3.0
       zlib-sync:
         specifier: ^0.1.10
         version: 0.1.10
@@ -3471,6 +3474,10 @@ packages:
   youtubei.js@13.4.0:
     resolution: {integrity: sha512-+fmIZU/dWAjsROONrASy1REwVpy6umAPVuoNLr/4iNmZXl84LyBef0n3hrd1Vn9035EuINToGyQcBmifwUEemA==}
 
+  ytdlp-nodejs@2.3.0:
+    resolution: {integrity: sha512-gnhxwwr1nS+G0w3H5NHTZWUg5Mr26KXMjZnWAYlOWiteT5o/YrQovenaYP95AT88uI0mGaPMd2i2OEYSelC7+A==}
+    engines: {node: '>=16.0.0'}
+
   zlib-sync@0.1.10:
     resolution: {integrity: sha512-t7/pYg5tLBznL1RuhmbAt8rNp5tbhr+TSrJFnMkRtrGIaPJZ6Dc0uR4u3OoQI2d6cGlVI62E3Gy6gwkxyIqr/w==}
 
@@ -6606,6 +6613,8 @@ snapshots:
       jintr: 3.3.1
       tslib: 2.8.1
       undici: 5.29.0
+
+  ytdlp-nodejs@2.3.0: {}
 
   zlib-sync@0.1.10:
     dependencies:

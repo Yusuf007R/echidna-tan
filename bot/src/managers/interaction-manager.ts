@@ -3,11 +3,11 @@
 import config from "@Configs";
 import type { CmdType, Command } from "@Structures/command";
 import type ContextMenu from "@Structures/context-menu";
+import { baseDir } from "@Utils/dir-name";
 import type { Option } from "@Utils/options-builder";
 import { createHash } from "node:crypto";
 import { readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import {
 	Collection,
 	ContextMenuCommandBuilder,
@@ -24,8 +24,6 @@ import { type InferInsertModel, inArray } from "drizzle-orm";
 import stringify from "safe-stable-stringify";
 import db, { buildConflictUpdateColumns } from "src/drizzle";
 import { commandsTable, contextMenusTable } from "src/drizzle/schema";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 type MapCmds = {
 	command: RESTPostAPIApplicationCommandsJSONBody;
@@ -74,7 +72,7 @@ export default class InteractionManager {
 
 	async loadInteractions<T extends "command" | "contextMenu">(type: T) {
 		const interactionsRootFolder = join(
-			__dirname,
+			baseDir,
 			type === "command" ? "/commands" : "/context-menu",
 		);
 

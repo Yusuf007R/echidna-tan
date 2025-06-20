@@ -1,0 +1,102 @@
+---
+description: MANDATORY BLUEPRINT for creating any new Discord slash command. Follow this structure precisely to ensure compatibility with the command, options, and validation systems
+globs: 
+alwaysApply: false
+---
+# The Command Creation Blueprint
+
+## When to Use This Rule
+*   When creating any new slash command for the bot. This is not a guide; it is a required template.
+
+## Core Principles
+1.  All commands MUST extend the `Command` class from `@Structures/command`.
+2.  All command options MUST be defined using the `OptionsBuilder` from `@Utils/options-builder`.
+3.  Command execution logic MUST be placed within the `run` method.
+4.  Autocomplete logic MUST be placed within the `handleAutocomplete` method.
+5.  All validators (e.g., `IsAdmin`, `GuildOnly`) MUST be passed in the `validators` array in the constructor.
+
+## Command File Location
+Create a new file in the appropriate category under `src/commands/`. For example, a new utility command would go in `src/commands/misc/new-utility.ts`.
+
+## Mandatory Command Blueprint
+
+Copy, paste, and modify this exact template. Do not deviate from this structure.
+
+```typescript
+// src/commands/<category>/<command-name>.ts
+
+// 1. Import necessary modules
+import { Command } from "@Structures/command";
+import { OptionsBuilder } from "@Utils/options-builder";
+import IsAdmin from "@EventsValidators/isAdmin"; // Example validator
+import type {
+	AutocompleteInteraction,
+	CacheType,
+	CommandInteraction,
+} from "discord.js";
+
+// 2. Define options using OptionsBuilder
+const options = new OptionsBuilder()
+	.addStringOption({
+		name: "query",
+		description: "The item to search for.",
+		required: true,
+		autocomplete: true, // Enable autocomplete for this option
+	})
+	.addBoolOption({
+		name: "ephemeral",
+		description: "Whether the reply should be visible only to you.",
+		required: false,
+	})
+	.build();
+
+// 3. Define the Command class, extending Command<typeof options>
+export default class NewCommand extends Command<typeof options> {
+	constructor() {
+		super({
+			// Command metadata
+			name: "new-command",
+			description: "A description of what this new command does.",
+			
+			// System configuration
+			options, // Pass the defined options
+			cmdType: "BOTH", // Or "GUILD", "DM"
+			shouldDefer: true, // Set to true if the command takes time to process
+			validators: [IsAdmin], // Add validators here, e.g., [IsAdmin, GuildOnly]
+		});
+	}
+
+	// 4. Implement the autocomplete handler if any option has autocomplete: true
+	async handleAutocomplete(interaction: AutocompleteInteraction<CacheType>): Promise<void> {
+		const focusedValue = interaction.options.getFocused();
+        
+        // Replace with actual autocomplete logic
+		const choices = [
+			{ name: `Result for "${focusedValue}" 1`, value: "result1" },
+			{ name: `Result for "${focusedValue}" 2`, value: "result2" },
+		];
+
+		await interaction.respond(choices);
+	}
+
+	// 5. Implement the main execution logic in the run method
+	async run(interaction: CommandInteraction<CacheType>): Promise<void> {
+		// Access validated and typed options via `this.options`
+		const query = this.options.query;
+		const isEphemeral = this.options.ephemeral ?? false; // Handle optional values
+
+        // Since shouldDefer is true, we use editReply. If it were false, we'd use reply.
+        // The deferral is handled automatically by the base Command class.
+		await interaction.editReply({
+			content: `You searched for: ${query}`,
+			ephemeral: isEphemeral,
+		});
+
+        // Access singleton managers via `this.echidna`
+        const guilds = await this.echidna.guildsManager.getGuilds();
+	}
+}
+```
+
+## Special Case: Music Commands
+Music commands in `src/commands/music/` MUST extend `MusicCommand` from `./[wrapper].ts` instead of the base `Command` class. This wrapper automatically handles player initialization and voice channel validation.
