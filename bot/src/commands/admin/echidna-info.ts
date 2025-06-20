@@ -62,7 +62,7 @@ export default class EchidnaInfoCommand extends Command<typeof options> {
 				.setThumbnail(image ?? null)
 				.setColor(color as RGBTuple)
 				.setFooter({
-					text: `Echidna ID: ${config.DISCORD_DB_PROFILE} - Commit Hash: ${config.SOURCE_COMMIT} - Created at: ${dayjs(echidna.createdAt).format("DD/MM/YYYY HH:mm:ss")}`,
+					text: `Echidna ID: ${config.DISCORD_DB_PROFILE} - Commit Hash: ${config.SOURCE_COMMIT} - Created at: ${dayjs(this.echidna.user?.createdAt).format("DD/MM/YYYY HH:mm:ss")}`,
 				})
 				.addFields([
 					{
