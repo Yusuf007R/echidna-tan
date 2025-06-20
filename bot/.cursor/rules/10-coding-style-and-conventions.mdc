@@ -1,0 +1,68 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Coding Style and Conventions
+
+## 1. Naming
+*   **Classes:** `PascalCase` (e.g., `ChatBotManager`, `MusicCommand`).
+*   **Variables/Functions:** `camelCase` (e.g., `guildsManager`, `createSession`).
+*   **Constants:** `UPPER_SNAKE_CASE` (e.g., `TIMEOUT_TIME`).
+*   **Interfaces/Types:** `PascalCase` (e.g., `QueueMetadata`, `AiRpPrompt`).
+*   **Files:** `kebab-case` (e.g., `chat-bot-manager.ts`).
+
+## 2. Imports
+*   Imports MUST be organized and ordered. Use path aliases (`@Components`, `@Structures`) where available.
+*   Group imports: project modules first, then third-party libraries.
+```typescript
+// ✅ CORRECT
+import ChatBotManager from "@Managers/chat-bot-manager";
+import { Command } from "@Structures/command";
+import { type APIEmbed, EmbedBuilder } from "discord.js";
+import { z } from "zod";
+```
+
+## 3. Error Handling
+*   All asynchronous operations that can fail (API calls, database queries, file I/O) MUST be wrapped in a `try...catch` block.
+*   Do not swallow errors. Log them to the console (`console.error`).
+*   When responding to a Discord interaction after an error, provide a user-friendly message.
+
+```typescript
+// ✅ CORRECT
+async run(interaction: CommandInteraction) {
+    try {
+        await interaction.deferReply();
+        const result = await some riskyApiCall();
+        await interaction.editReply(`Success: ${result}`);
+    } catch (error) {
+        console.error("[MyCommand] Failed to run:", error);
+        // Do not expose internal error details to the user.
+        await interaction.editReply("An unexpected error occurred. Please try again later.");
+    }
+}
+```
+
+## 4. Asynchronous Code
+*   Always use `async/await`. Avoid raw `.then()` and `.catch()` chains for flow control.
+*   Be mindful of unhandled promises. Every `Promise` returned by a function should be `await`ed or explicitly handled.
+
+## 5. Comments
+*   Write comments to explain the *why*, not the *what*. Assume the reader understands TypeScript syntax.
+*   Use JSDoc comments for public-facing methods in manager and structure classes to explain parameters, return values, and purpose.
+
+```typescript
+// ❌ BAD COMMENT
+// set i to 0
+let i = 0;
+
+// ✅ GOOD COMMENT
+/**
+ * Fetches and caches all guilds the bot is a member of.
+ * The cache expires after 30 minutes to ensure data freshness.
+ * @returns {Promise<Collection<string, CacheManagerGuild>>} A collection of cached guild data.
+ */
+async getGuilds() {
+    // ...
+}
+```

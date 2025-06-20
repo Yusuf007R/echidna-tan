@@ -1,9 +1,11 @@
-import { EmbedBuilder } from "@discordjs/builders";
-import { AttachmentBuilder, type Message } from "discord.js";
-
+import config from "@Configs";
+import type { CivitaiResponse } from "@Interfaces/civitai";
 import type { RunpodRes, Txt2img } from "@Interfaces/waifu-generator";
 import { waifuGeneratorAPI } from "@Utils/request";
 import milisecondsToReadable from "@Utils/seconds-to-minutes";
+import { EmbedBuilder } from "@discordjs/builders";
+import Civitai from "civitai";
+import { AttachmentBuilder, type Message } from "discord.js";
 
 export type getImageProps = {
 	prompt: string;
@@ -129,5 +131,35 @@ export default class WaifuGenerator {
 		if (!response.ok || !response?.data?.output?.images)
 			throw new Error("Internal error, try again later.");
 		return response.data;
+	}
+
+	static async getCivitaiImage(prompt: string) {
+		const civitai = new Civitai.Civitai({
+			auth: config.CIVITAI_API_KEY,
+		});
+
+		const response = (await civitai.image.fromText(
+			{
+				model: "urn:air:sdxl:checkpoint:civitai:827184@1410435",
+				additionalNetworks: {
+					"urn:air:sdxl:lora:civitai:1147432@1383359": {
+						strength: 1,
+					},
+				},
+				params: {
+					prompt: `echidna, 1girl, pale skin, long hair, white hair, butterfly hair ornament, hair between eyes, bangs, white eyelashes, medium breasts, black cape, dress, vertical stripes, vertical-striped dress, striped dress, striped, sitting, from above, looking at viewer, smiling, ((selfie)) ${prompt}`,
+					negativePrompt:
+						"(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime, mutated hands and fingers:1.4), (deformed, distorted, disfigured:1.3)",
+					scheduler: Civitai.Scheduler.EULER_A,
+					steps: 30,
+					cfgScale: 6.5,
+					width: 812,
+					height: 1216,
+				},
+			},
+			true,
+		)) as CivitaiResponse;
+
+		return response?.jobs.at(0)?.result?.jobs.at(0)?.result?.blobUrl ?? null;
 	}
 }

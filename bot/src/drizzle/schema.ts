@@ -1,13 +1,17 @@
+import { CmdType } from "@Structures/command";
 import { relations, sql } from "drizzle-orm";
 
 import {
 	customType,
+	index,
 	integer,
 	sqliteTable,
 	text,
 } from "drizzle-orm/sqlite-core";
 
 export const echidnaStatus = ["online", "idle", "dnd", "invisible"] as const;
+
+export const messageType = ["user", "assistant", "system"] as const;
 
 const float32Array = customType<{
 	data: number[];
@@ -23,6 +27,33 @@ const float32Array = customType<{
 	},
 	toDriver(value: number[]) {
 		return sql`vector32(${JSON.stringify(value)})`;
+	},
+});
+
+const arrayJson = customType<{ data: string[] }>({
+	dataType() {
+		return "text";
+	},
+	fromDriver(value) {
+		if (value === null || value === undefined || typeof value !== "string") {
+			return [];
+		}
+		try {
+			const parsed = JSON.parse(value) as never;
+			if (!Array.isArray(parsed)) {
+				return [];
+			}
+			return parsed;
+		} catch (error) {
+			console.error("Error parsing JSON array:", error);
+			return [];
+		}
+	},
+	toDriver(value) {
+		if (!Array.isArray(value)) {
+			return "[]";
+		}
+		return JSON.stringify(value);
 	},
 });
 
@@ -45,13 +76,55 @@ export const echidnaTable = sqliteTable("echidna", {
 	...baseDates,
 });
 
-export const userTable = sqliteTable("user", {
-	id: text("id").primaryKey(),
-	displayName: text("display_name").notNull(),
-	userName: text("user_name").notNull(),
-	isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
-	...baseDates,
-});
+export const commandsTable = sqliteTable(
+	"commands",
+	{
+		name: text("name").primaryKey(),
+		category: text("category").notNull(),
+		description: text("description").notNull(),
+		hash: text("hash").notNull(),
+		cmdType: text("cmd_type", { enum: CmdType }).notNull(),
+		deletedAt: integer("deleted_at", { mode: "timestamp" }),
+		...baseDates,
+	},
+	(t) => [
+		index("category_index").on(t.category),
+		index("cmd_type_index").on(t.cmdType),
+	],
+);
+
+export const contextMenusTable = sqliteTable(
+	"context_menus",
+	{
+		name: text("name").primaryKey(),
+		category: text("category").notNull(),
+		type: text("type", { enum: ["USER", "MESSAGE"] }).notNull(),
+		cmdType: text("cmd_type", { enum: CmdType }).notNull(),
+		hash: text("hash").notNull(),
+		description: text("description").notNull(),
+		deletedAt: integer("deleted_at", { mode: "timestamp" }),
+		...baseDates,
+	},
+	(t) => [
+		index("category_context_menu_index").on(t.category),
+		index("cmd_type_context_menu_index").on(t.cmdType),
+	],
+);
+
+export const userTable = sqliteTable(
+	"user",
+	{
+		id: text("id").primaryKey(),
+		displayName: text("display_name").notNull(),
+		userName: text("user_name").notNull(),
+		isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
+		...baseDates,
+	},
+	(t) => [
+		index("display_name_index").on(t.displayName),
+		index("user_name_index").on(t.userName),
+	],
+);
 
 export const userRelations = relations(userTable, ({ many }) => ({
 	sessions: many(sessionTable),
@@ -75,16 +148,27 @@ export const sessionsRelations = relations(sessionTable, ({ one }) => ({
 	}),
 }));
 
-export const memoriesTable = sqliteTable("memories", {
-	id: integer("id").primaryKey({ autoIncrement: true }),
-	userId: text("user_id")
-		.notNull()
-		.references(() => userTable.id),
-	memory: text("memory").notNull(),
-	embeds: float32Array("embeds", { dimensions: 1536 }),
-	memoryLength: integer("memory_length").notNull(),
-	...baseDates,
-});
+export const memoriesTable = sqliteTable(
+	"memories",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		userId: text("user_id")
+			.notNull()
+			.references(() => userTable.id),
+		memory: text("memory").notNull(),
+		promptTemplate: text("prompt_template").notNull(),
+		memoryType: text("memory_type", {
+			enum: ["user", "assistant"] as const,
+		}).notNull(),
+		embeds: float32Array("embeds", { dimensions: 1536 }),
+		importance: integer("importance", { mode: "number" }).notNull().default(0),
+		...baseDates,
+	},
+	(t) => [
+		index("memory_type_index").on(t.memoryType),
+		index("prompt_template_index").on(t.promptTemplate),
+	],
+);
 
 export const memoryRelations = relations(memoriesTable, ({ one }) => ({
 	user: one(userTable, {
@@ -117,17 +201,40 @@ export const chatRelations = relations(chatsTable, ({ one, many }) => ({
 export const messagesTable = sqliteTable("messages", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
 	content: text("content").notNull(),
-	authorId: text("author_id").notNull(),
-	channelId: text("channel_id").notNull(),
-	chatId: integer("chat_id").references(() => chatsTable.id),
-	messageId: text("message_id").notNull(),
+	role: text("role", { enum: messageType }).notNull(),
+	chatId: integer("chat_id")
+		.notNull()
+		.references(() => chatsTable.id),
 	embeds: float32Array("embeds", { dimensions: 1536 }),
+	cost: integer("cost").notNull().default(0),
+	tokenUsage: integer("token_usage").notNull().default(0),
+	wasMemoryProcessed: integer("was_memory_processed", { mode: "boolean" })
+		.notNull()
+		.default(false),
 	...baseDates,
 });
-
-export const messageRelations = relations(messagesTable, ({ one }) => ({
+export const messageRelations = relations(messagesTable, ({ one, many }) => ({
 	chat: one(chatsTable, {
 		fields: [messagesTable.chatId],
 		references: [chatsTable.id],
+	}),
+	attachments: many(attachmentsTable),
+}));
+
+export const attachmentsTable = sqliteTable("attachments", {
+	id: integer("id").primaryKey({ autoIncrement: true }),
+	messageId: integer("message_id")
+		.notNull()
+		.references(() => messagesTable.id),
+	type: text("type", { enum: ["image", "video", "audio", "file"] }).notNull(),
+	url: text("url").notNull(),
+	base64: text("base64").notNull(),
+	...baseDates,
+});
+
+export const attachmentsRelations = relations(attachmentsTable, ({ one }) => ({
+	message: one(messagesTable, {
+		fields: [attachmentsTable.messageId],
+		references: [messagesTable.id],
 	}),
 }));

@@ -23,6 +23,7 @@ export class CommandValidator extends EchidnaSingleton {
 		this.message = configs.message || "";
 	}
 
+	// biome-ignore lint/suspicious/useAwait: this is an unimplemented method
 	async isValid(
 		_interaction: BaseInteraction<CacheType>,
 		_next: CommandValidatorNext,
@@ -34,15 +35,17 @@ export class CommandValidator extends EchidnaSingleton {
 		return new Promise((resolve, reject) => {
 			this.resolve = resolve;
 			this.reject = reject;
-			this.isValid(interaction, () => resolve(true)).then(() => resolve(false));
+			this.isValid(interaction, () => resolve(true))
+				.then(() => resolve(false))
+				.catch(() => resolve(false));
 		});
 	}
 
-	sendMessage(interaction: BaseInteraction<CacheType>) {
+	async sendMessage(interaction: BaseInteraction<CacheType>) {
 		if (interaction.isCommand()) {
-			interaction.reply(this.message);
+			await interaction.reply(this.message);
 		} else if (interaction.isButton()) {
-			interaction.reply(this.message);
+			await interaction.reply(this.message);
 		}
 	}
 }

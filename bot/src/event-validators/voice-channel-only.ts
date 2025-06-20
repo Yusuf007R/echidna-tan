@@ -19,7 +19,7 @@ export default class VoiceChannelOnly extends CommandValidator {
 	) {
 		if (!interaction.inGuild()) return;
 		if (!(interaction.member as GuildMember).voice.channel) {
-			return this.sendMessage(interaction);
+			return await this.sendMessage(interaction);
 		}
 		next();
 	}

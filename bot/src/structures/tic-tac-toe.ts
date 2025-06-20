@@ -1,3 +1,6 @@
+import ButtonComponent from "@Components/button";
+import TicTacToeUtils from "@Utils/tic-tac-toe-utils";
+import wait from "@Utils/wait";
 import { ActionRowBuilder } from "@discordjs/builders";
 import {
 	type ButtonBuilder,
@@ -8,10 +11,6 @@ import {
 	EmbedBuilder,
 	type User,
 } from "discord.js";
-
-import ButtonComponent from "@Components/button";
-import TicTacToeUtils from "@Utils/tic-tac-toe-utils";
-import wait from "@Utils/wait";
 import EchidnaSingleton from "./echidna-singleton";
 
 export enum TurnEnum {
@@ -78,15 +77,15 @@ export default class TicTacToe extends EchidnaSingleton {
 		this.isAgainAI = this.echidna.user === player2;
 		this.resetTimeout(true);
 		if (!this.isAgainAI) {
-			this.sendGameRequest();
+			void this.sendGameRequest();
 			return;
 		}
 		this.status = TicTacToeStatus.Playing;
 		this.coinFlipFirstTurn();
 		if (this.player1 === this.echidna.user) {
-			this.AiMakeMove();
+			void this.AiMakeMove();
 		}
-		this.drawTable();
+		void this.drawTable();
 		this.resetTimeout();
 	}
 
@@ -259,7 +258,7 @@ export default class TicTacToe extends EchidnaSingleton {
 		this.markPos(pos);
 		if (!(await this.didGameEnd())) {
 			this.switchTurn();
-			if (this.isAgainAI) this.AiMakeMove();
+			if (this.isAgainAI) await this.AiMakeMove();
 			await this.drawTable();
 		}
 	}
@@ -281,7 +280,7 @@ export default class TicTacToe extends EchidnaSingleton {
 		this.timeOut = setTimeout(() => {
 			if (isRequestType) this.status = TicTacToeStatus.RequestTimeout;
 			else this.status = TicTacToeStatus.GameTimeout;
-			this.endGame();
+			void this.endGame();
 		}, TIMEOUT_TIME);
 	}
 

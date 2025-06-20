@@ -1,9 +1,8 @@
 import config from "@Configs";
-import db from "src/drizzle";
-
 import { encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
 import { Discord } from "arctic";
-import { type InferSelectModel, eq, sql } from "drizzle-orm";
+import { eq, type InferSelectModel, sql } from "drizzle-orm";
+import db from "src/drizzle";
 
 import { sessionTable, userTable } from "src/drizzle/schema";
 
@@ -80,7 +79,7 @@ export function createSessionCookie(session?: Session) {
 }
 
 export async function invalidateSession(sessionId: string) {
-	return db.delete(sessionTable).where(eq(sessionTable.id, sessionId));
+	return await db.delete(sessionTable).where(eq(sessionTable.id, sessionId));
 }
 
 export const cookieSessionKey = "echidna_auth_session";

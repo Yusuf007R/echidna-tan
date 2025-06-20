@@ -8,13 +8,22 @@ export default class InteractionEvent extends DiscordEvent<"interactionCreate"> 
 
 	async run(interaction: Interaction<CacheType>): Promise<void> {
 		try {
-			if (interaction.isChatInputCommand()) {
-				await this.echidna.commandManager.executeCommand(interaction);
+			if (
+				interaction.isChatInputCommand() ||
+				interaction.isAutocomplete() ||
+				interaction.isContextMenuCommand()
+			) {
+				await this.echidna.interactionManager.manageInteraction(interaction);
 				return;
 			}
 
-			if (interaction.isAutocomplete()) {
-				await this.echidna.commandManager.executeAutocomplete(interaction);
+			if (interaction.isButton()) {
+				console.log(interaction);
+				return;
+			}
+
+			if (interaction.isModalSubmit()) {
+				this.echidna.modalManager.processModalResponse(interaction);
 				return;
 			}
 		} catch (error: any) {
@@ -25,7 +34,7 @@ export default class InteractionEvent extends DiscordEvent<"interactionCreate"> 
 
 				return;
 			}
-			if (interaction.inGuild() && interaction.channel?.isTextBased())
+			if (interaction.channel && "send" in interaction.channel)
 				interaction.channel?.send(
 					error?.message || "Internal error, try again later.",
 				);

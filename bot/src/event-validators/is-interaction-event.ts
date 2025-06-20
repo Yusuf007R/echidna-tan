@@ -12,6 +12,7 @@ export default class IsInteractionEvent extends CommandValidator {
 		});
 	}
 
+	// biome-ignore lint/suspicious/useAwait: there is nothing to await
 	async isValid(
 		interaction: Interaction<CacheType>,
 		next: CommandValidatorNext,

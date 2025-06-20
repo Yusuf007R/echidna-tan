@@ -1,5 +1,5 @@
-import ChatBot from "@AiStructures/chat-bot";
 import ChatBotManager from "@Managers/chat-bot-manager";
+import { UserManager } from "@Managers/user-manager";
 import { Command } from "@Structures/command";
 import { OptionsBuilder } from "@Utils/options-builder";
 import {
@@ -8,11 +8,7 @@ import {
 	type CacheType,
 	ChannelType,
 	type ChatInputCommandInteraction,
-	type User,
 } from "discord.js";
-import { eq } from "drizzle-orm";
-import db from "src/drizzle";
-import { userTable } from "src/drizzle/schema";
 
 const options = new OptionsBuilder()
 	.addStringOption({
@@ -28,29 +24,6 @@ const options = new OptionsBuilder()
 		autocomplete: true,
 	})
 	.build();
-
-const getUser = async (user: User) => {
-	const [dbUser] = await db
-		.select()
-		.from(userTable)
-		.where(eq(userTable.id, user.id))
-		.limit(1);
-	if (!dbUser) {
-		const insertUser = (
-			await db
-				.insert(userTable)
-				.values({
-					id: user.id,
-					displayName: user.displayName,
-					userName: user.username,
-				})
-				.returning()
-		).at(0);
-		if (!insertUser) throw new Error("Internal error, try again later.");
-		return insertUser;
-	}
-	return dbUser;
-};
 
 export default class CreateChatCommand extends Command<typeof options> {
 	constructor() {
@@ -82,7 +55,7 @@ export default class CreateChatCommand extends Command<typeof options> {
 				break;
 			case "prompt":
 				{
-					const prompts = ChatBotManager.getPromptsTemplates();
+					const prompts = await ChatBotManager.getPromptsTemplates();
 					const filtered = prompts
 						.filter((prompt) => {
 							if (!option.value) return true;
@@ -112,7 +85,7 @@ export default class CreateChatCommand extends Command<typeof options> {
 	}
 
 	async run(interaction: ChatInputCommandInteraction<CacheType>) {
-		const user = await getUser(interaction.user);
+		const user = await UserManager.getOrCreateUser(interaction.user.id);
 		if (!user) throw new Error("Internal error, try again later.");
 		const channel = interaction.channel;
 
@@ -122,6 +95,7 @@ export default class CreateChatCommand extends Command<typeof options> {
 			);
 			return;
 		}
+
 		const modelId = this.options.model || "google/gemini-flash-1.5";
 		const model = await ChatBotManager.getModel(modelId);
 
@@ -129,7 +103,7 @@ export default class CreateChatCommand extends Command<typeof options> {
 
 		const promptName = this.options.prompt || "Assistant";
 
-		const prompt = ChatBotManager.getPromptsTemplates().find(
+		const prompt = (await ChatBotManager.getPromptsTemplates()).find(
 			(prompt) => prompt.promptTemplate.name === promptName,
 		);
 
@@ -137,14 +111,22 @@ export default class CreateChatCommand extends Command<typeof options> {
 
 		const thread = await channel.threads.create({
 			name: model.name,
+			type: ChannelType.PrivateThread,
 		});
 
-		const chatbot = new ChatBot(thread, model, user, prompt.promptTemplate);
-		const collector = thread.createMessageCollector();
-
-		collector.on("collect", (m) => {
-			chatbot.processMessage(m);
+		await thread.send({
+			content: `Thread Created by <@${interaction.user.id}> - ${model.name}`,
 		});
+
+		const chatbot = await ChatBotManager.createChatBot(
+			thread,
+			user,
+			prompt.promptTemplate,
+			modelId,
+		);
+
+		if (!chatbot) throw new Error("Failed to create chatbot");
+
 		interaction.editReply("New chatbot in thread created");
 	}
 }

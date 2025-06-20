@@ -1,12 +1,10 @@
 // make a command that sends a message to a specific user
 
 import IsAdmin from "@EventsValidators/isAdmin";
+import { UserManager } from "@Managers/user-manager";
 import { Command } from "@Structures/command";
 import { OptionsBuilder } from "@Utils/options-builder";
 import type { CacheType, CommandInteraction } from "discord.js";
-import { eq } from "drizzle-orm";
-import db from "src/drizzle";
-import { userTable } from "src/drizzle/schema";
 
 const options = new OptionsBuilder()
 	.addStringOption({
@@ -43,12 +41,9 @@ export default class SendMessageToCommand extends Command<typeof options> {
 				return;
 			}
 
-			await db
-				.update(userTable)
-				.set({
-					isAdmin,
-				})
-				.where(eq(userTable.id, userId));
+			await UserManager.updateUser(userId, {
+				isAdmin,
+			});
 
 			interaction.editReply("User permission updated");
 		} catch (error) {

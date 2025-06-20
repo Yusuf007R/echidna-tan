@@ -4,8 +4,8 @@ import { Command, type commandConfigs } from "@Structures/command";
 import type { CommandValidator } from "@Structures/command-validator";
 import type { QueueMetadata } from "@Structures/music-player";
 import type { Option } from "@Utils/options-builder";
-import type { GuildQueue } from "discord-player";
 import type { CacheType, CommandInteraction } from "discord.js";
+import type { GuildQueue } from "discord-player";
 
 export abstract class MusicCommand<
 	O extends Option[] | undefined = undefined,

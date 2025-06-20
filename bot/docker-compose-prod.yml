@@ -6,15 +6,21 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     environment:
-      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_SERVICE_PROVIDER=surfshark
       - SERVER_COUNTRIES=United States
       - VPN_TYPE=openvpn
       - OPENVPN_USER=${OPENVPN_USER}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
-      - FREE_ONLY=on
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://google.com"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
   echidna:
     build: .
     depends_on:
-      - gluetun
+      gluetun:
+        condition: service_healthy
     network_mode: service:gluetun
     restart: unless-stopped

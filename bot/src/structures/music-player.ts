@@ -1,22 +1,17 @@
 import { mapTrack } from "@Api/utils/map-track";
 import StringSelectComponent from "@Components/string-select";
 import capitalize from "@Utils/capitalize";
+import { baseDir } from "@Utils/dir-name";
 import getImageColor from "@Utils/get-image-color";
 import milisecondsToReadable from "@Utils/seconds-to-minutes";
+import { createReadStream, createWriteStream } from "node:fs";
+import { mkdir, readdir, rm } from "node:fs/promises";
+import path from "node:path";
 import {
 	ActionRowBuilder,
 	EmbedBuilder,
 	type StringSelectMenuBuilder,
 } from "@discordjs/builders";
-import {
-	type GuildQueue,
-	GuildQueueEvent,
-	Player,
-	type Playlist,
-	QueueRepeatMode,
-	type Track,
-} from "discord-player";
-import { YoutubeiExtractor } from "discord-player-youtubei";
 import {
 	type BaseInteraction,
 	type CacheType,
@@ -25,24 +20,37 @@ import {
 	type GuildMember,
 	type StringSelectMenuInteraction,
 } from "discord.js";
+import {
+	type GuildQueue,
+	GuildQueueEvent,
+	Player,
+	Playlist,
+	QueueRepeatMode,
+	type Track,
+} from "discord-player";
+import { YoutubeiExtractor } from "discord-player-youtubei";
 import { EventEmitter } from "tseep";
-import type EchidnaClient from "./echidna-client";
+import { YtDlp } from "ytdlp-nodejs";
 
+const TEMP_DIR = path.join(baseDir, "temp", "ytdlp");
+
+const ytdlp = new YtDlp();
 export type QueueMetadata = {
 	interaction: BaseInteraction<CacheType>;
+	guildId: string;
 	"image-url-cache": Record<string, any>;
 };
 
 const guildEvents = [
-	GuildQueueEvent.playerStart,
-	GuildQueueEvent.playerFinish,
-	GuildQueueEvent.playerSkip,
-	GuildQueueEvent.volumeChange,
-	GuildQueueEvent.emptyQueue,
-	GuildQueueEvent.audioTrackAdd,
-	GuildQueueEvent.audioTracksAdd,
-	GuildQueueEvent.audioTrackRemove,
-	GuildQueueEvent.audioTracksRemove,
+	GuildQueueEvent.PlayerStart,
+	GuildQueueEvent.PlayerFinish,
+	GuildQueueEvent.PlayerSkip,
+	GuildQueueEvent.VolumeChange,
+	GuildQueueEvent.EmptyQueue,
+	GuildQueueEvent.AudioTrackAdd,
+	GuildQueueEvent.AudioTracksAdd,
+	GuildQueueEvent.AudioTrackRemove,
+	GuildQueueEvent.AudioTracksRemove,
 ] as const;
 
 type GuildEmitter = {
@@ -53,27 +61,72 @@ type GuildEmitter = {
 };
 
 export default class MusicPlayer extends Player {
+	DOWNLOAD_PLAY = true;
 	static guildEmiters = new Collection<string, EventEmitter<GuildEmitter>>();
-	constructor(echidna: EchidnaClient) {
-		super(echidna);
-		this.init();
-	}
 
-	init() {
-		this.loadExtractors();
+	async init() {
+		await this.loadExtractors();
 		this.initEvents();
+		this.cleanUpDownloadedStream();
 	}
 
 	async loadExtractors() {
 		// await this.extractors.loadDefault();
+
 		await this.extractors.register(YoutubeiExtractor, {});
 	}
 
+	get youtubeiExtractor() {
+		return this.extractors.get(
+			YoutubeiExtractor.identifier,
+		) as YoutubeiExtractor;
+	}
+
+	private async createDownloadStream(q: Track, guildId: string) {
+		const dir = path.join(TEMP_DIR, guildId);
+		const filePath = path.join(dir, `${q.id}.opus`);
+		await mkdir(dir, { recursive: true });
+		const stream = createWriteStream(filePath);
+		const ytdlpStream = ytdlp.stream(q.url, {
+			format: {
+				filter: "audioonly",
+				quality: 10,
+				type: "opus",
+			},
+			onProgress: (progress) => {
+				if (progress.status === "finished") {
+					console.log("Stream finished", {
+						...progress,
+						track: q,
+					});
+				}
+			},
+		});
+		await ytdlpStream.pipeAsync(stream);
+		console.log("Stream created", filePath);
+		return createReadStream(filePath);
+	}
+
+	private cleanUpDownloadedStream() {
+		setInterval(
+			async () => {
+				const folders = await readdir(TEMP_DIR);
+				for (const folder of folders) {
+					const queue = this.queues.get(folder);
+					if (!queue || !queue.isPlaying()) {
+						await rm(path.join(TEMP_DIR, folder), { recursive: true });
+					}
+				}
+			},
+			1000 * 60 * 60,
+		); // 1 hour
+	}
+
 	initEvents() {
-		this.events.on(GuildQueueEvent.playerStart, (queue) =>
+		this.events.on(GuildQueueEvent.PlayerStart, (queue) =>
 			this.nowPlaying(queue),
 		);
-		this.events.on(GuildQueueEvent.playerFinish, (queue) => {
+		this.events.on(GuildQueueEvent.PlayerFinish, (queue) => {
 			console.log("playerFinish", queue);
 		});
 
@@ -94,7 +147,13 @@ export default class MusicPlayer extends Player {
 		return MusicPlayer.guildEmiters.get(guildId)!;
 	}
 
-	async playCmd(interaction: CommandInteraction<CacheType>, query: string) {
+	async playCmd(
+		interaction: CommandInteraction<CacheType>,
+		query: string,
+		downloadPlay = false,
+	) {
+		this.DOWNLOAD_PLAY = downloadPlay;
+		await this.loadExtractors();
 		if (!this.getVoiceChannel(interaction)) {
 			await interaction.editReply("You are not connected to a voice channel!");
 			return;
@@ -111,7 +170,11 @@ export default class MusicPlayer extends Player {
 
 		if (searchResult.tracks.length === 1) {
 			const track = searchResult.tracks[0];
-			this.addTrack(track, interaction);
+			this.addTrack(track, interaction, downloadPlay);
+			await interaction.editReply({
+				content: `Added ${track.title} to the queue.`,
+				components: [],
+			});
 			return;
 		}
 
@@ -131,7 +194,7 @@ export default class MusicPlayer extends Player {
 				return StringSelectComponent.filterByCustomID(inter, customId);
 			})
 			.onAction(async (interaction) => {
-				await this.selectMusic(interaction, firstFiveTracks);
+				await this.selectMusic(interaction, firstFiveTracks, downloadPlay);
 			})
 			.onError((error) => {
 				console.log(error);
@@ -152,6 +215,29 @@ export default class MusicPlayer extends Player {
 		});
 	}
 
+	private appendMetadata(
+		track: Track | Track[] | Playlist,
+		metadata: Record<string, any>,
+	) {
+		if (Array.isArray(track)) {
+			track.forEach((t) => {
+				this.appendMetadata(t, metadata);
+			});
+			return;
+		}
+		if (track instanceof Playlist) {
+			track.tracks.forEach((t) => {
+				this.appendMetadata(t, metadata);
+			});
+			return;
+		}
+		const currentMetadata = track.metadata ?? {};
+		track.setMetadata({
+			...currentMetadata,
+			...metadata,
+		});
+	}
+
 	async nowPlaying(queue: GuildQueue<QueueMetadata>): Promise<void> {
 		const currentTrack = queue.currentTrack;
 		if (!currentTrack) {
@@ -165,6 +251,14 @@ export default class MusicPlayer extends Player {
 			name: "\n",
 			value: "\n",
 		};
+
+		const repeatMode =
+			Object.keys(QueueRepeatMode).find(
+				(key) =>
+					QueueRepeatMode[key as keyof typeof QueueRepeatMode] ===
+					queue.repeatMode,
+			) ?? "Unknown";
+
 		const embed = new EmbedBuilder()
 			.setTitle(`${title}`)
 			.setAuthor({ name: "Now Playing: " })
@@ -179,7 +273,7 @@ export default class MusicPlayer extends Player {
 				},
 				{
 					name: "Loop mode",
-					value: `${capitalize(QueueRepeatMode[queue.repeatMode])}`,
+					value: `${capitalize(repeatMode)}`,
 					inline: true,
 				},
 				gap,
@@ -207,13 +301,14 @@ export default class MusicPlayer extends Player {
 		const interaction = queue.metadata.interaction;
 
 		if (interaction.inGuild() && interaction.channel?.isTextBased()) {
-			interaction.channel?.send({ embeds: [embed], content: `${thumbnail}` });
+			interaction.channel?.send({ embeds: [embed] });
 		}
 	}
 
 	async selectMusic(
 		interaction: StringSelectMenuInteraction<CacheType>,
 		tracks: Track<unknown>[],
+		downloadPlay = false,
 	) {
 		await interaction.deferUpdate();
 		if (!interaction.values.length)
@@ -222,7 +317,8 @@ export default class MusicPlayer extends Player {
 		try {
 			const index = Number(interaction.values[0]);
 			const track = tracks[index];
-			this.addTrack(track, interaction);
+
+			this.addTrack(track, interaction, downloadPlay);
 			interaction.editReply({
 				content: `${track.title} added to the queue.`,
 				components: [],
@@ -269,20 +365,35 @@ export default class MusicPlayer extends Player {
 	addTrack(
 		track: Track | Track[] | Playlist,
 		interaction: BaseInteraction<CacheType>,
+		downloadPlay = false,
 	) {
 		// we can assume guild is not null because music command can only be use from guilds
+		if (downloadPlay) {
+			this.appendMetadata(track, { downloadPlay });
+		}
 		const queue = this.queues.get(interaction.guild!);
 		if (!queue) {
 			const voiceChannel = this.getVoiceChannel(interaction);
 			this.play(voiceChannel!, track, {
 				nodeOptions: {
+					onBeforeCreateStream: async (q) => {
+						console.log("Creating stream", q.url, q.metadata);
+						// @ts-expect-error metadata is not typed
+						if (q.metadata?.downloadPlay) {
+							return await this.createDownloadStream(q, interaction.guild!.id);
+						}
+						return null;
+					},
+
 					metadata: {
 						interaction: interaction,
+						guildId: interaction.guild?.id,
 					},
 				},
 			});
 			return;
 		}
+
 		if (!queue.isPlaying()) return queue.play(track);
 		queue.addTrack(track);
 	}

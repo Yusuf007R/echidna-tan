@@ -78,7 +78,7 @@ export default class TMDBQueryCommand extends Command<typeof options> {
 
 			const info = this.tmdb.getInfo(result);
 
-			const embed = await this.tmdb.getEmbed(info);
+			const embed = await this.tmdb.generateEmbed(info);
 
 			await interaction.editReply({ embeds: [embed] });
 		} catch (error) {

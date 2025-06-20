@@ -1,7 +1,7 @@
 import type EchidnaClient from "@Structures/echidna-client";
 import type { QueueMetadata } from "@Structures/music-player";
-import type { GuildQueue } from "discord-player";
 import type { Guild } from "discord.js";
+import type { GuildQueue } from "discord-player";
 import { createMiddleware } from "hono/factory";
 
 type GuildMiddlewareOptions = {
@@ -18,10 +18,10 @@ type Variables<T extends GuildMiddlewareOptions> = {
 				? GuildQueue<QueueMetadata>
 				: GuildQueue<QueueMetadata> | null;
 		}
-	: // biome-ignore lint/complexity/noBannedTypes: <explanation>
+	: // biome-ignore lint/complexity/noBannedTypes: this is a type system limitation
 		{});
 
-// biome-ignore lint/complexity/noBannedTypes: <explanation>
+// biome-ignore lint/complexity/noBannedTypes: this is a type system limitation
 const guildMiddleware = <T extends GuildMiddlewareOptions = {}>(
 	options: T = {} as T,
 ) => {

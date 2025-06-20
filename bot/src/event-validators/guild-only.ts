@@ -18,7 +18,7 @@ export default class GuildOnly extends CommandValidator {
 		next: CommandValidatorNext,
 	) {
 		if (!interaction.inGuild()) {
-			return this.sendMessage(interaction);
+			return await this.sendMessage(interaction);
 		}
 		next();
 	}

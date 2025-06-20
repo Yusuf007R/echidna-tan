@@ -1,19 +1,19 @@
+import {
+	cookieSessionKey,
+	createSession,
+	createSessionCookie,
+	discord,
+} from "@Api/auth";
 import type { HonoEnv } from "@Api/index";
 import config from "@Configs";
 import type { DiscordOAuthUser } from "@Interfaces/discord-oauth";
-import { Discord, generateState } from "arctic";
+import { zValidator } from "@hono/zod-validator";
+import { generateState } from "arctic";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import db from "src/drizzle";
 import { sessionTable, userTable } from "src/drizzle/schema";
-
-import {
-	cookieSessionKey,
-	createSession,
-	createSessionCookie,
-} from "@Api/auth";
-import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 
 export type jwtPayload = {
@@ -22,11 +22,6 @@ export type jwtPayload = {
 	exp: number;
 };
 
-const discord = new Discord(
-	config.DISCORD_BOT_CLIENT_ID,
-	config.DISCORD_AUTH_CLIENT_SECRET,
-	`${config.API_URL}/auth/callback`,
-);
 const authRouter = new Hono<HonoEnv>()
 	.get("/login", (c) => {
 		const state = generateState();
@@ -40,7 +35,7 @@ const authRouter = new Hono<HonoEnv>()
 			sameSite: "lax",
 		} as const;
 		setCookie(c, "discord_oauth_state", state, cookieOptions);
-		const url = discord.createAuthorizationURL(state, scopes);
+		const url = discord.createAuthorizationURL(state, null, scopes);
 		return c.redirect(url, 302);
 	})
 	.get(
@@ -54,7 +49,7 @@ const authRouter = new Hono<HonoEnv>()
 					return c.json({ error: "Invalid request" }, 400);
 				}
 
-				const tokens = await discord.validateAuthorizationCode(code);
+				const tokens = await discord.validateAuthorizationCode(code, null);
 				const response = await fetch("https://discord.com/api/users/@me", {
 					headers: {
 						Authorization: `Bearer ${tokens.accessToken()}`,

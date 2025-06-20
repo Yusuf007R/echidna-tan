@@ -1,13 +1,9 @@
-import { readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { DiscordEvent, eventType } from "@Structures/discord-events";
 import EchidnaSingleton from "@Structures/echidna-singleton";
+import { baseDir } from "@Utils/dir-name";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { Collection } from "discord.js";
-
-// Add these lines near the top of the file, after imports
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 export default class EventManager extends EchidnaSingleton {
 	events: Collection<string, { type: eventType; event: DiscordEvent }>;
@@ -26,7 +22,7 @@ export default class EventManager extends EchidnaSingleton {
 	}
 
 	async loadEvents() {
-		const eventsRootFolder = join(__dirname, "/events");
+		const eventsRootFolder = join(baseDir, "/events");
 		await Promise.all(
 			readdirSync(eventsRootFolder)
 				.filter(
@@ -53,7 +49,7 @@ export default class EventManager extends EchidnaSingleton {
 				try {
 					await event.event.run(...args);
 				} catch (error) {
-					console.error(`[EventManager] [${event.event.eventName}] ${error}`);
+					console.error(`[EventManager] [${event.event.eventName}] `, error);
 				}
 			});
 		}

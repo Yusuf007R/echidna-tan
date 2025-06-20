@@ -23,13 +23,13 @@ export class MessageSplitter {
 	private language = "";
 	private fullStreamMessage = "";
 	private messages: SplitMessage[] = [];
-	public maxLength: number;
-	public isStream: boolean;
-	public queue = new SerialEventEmitter<{
+	maxLength: number;
+	isStream: boolean;
+	queue = new SerialEventEmitter<{
 		message: (msg: SplitMessage) => void;
 	}>();
 
-	constructor({ maxLength = 1800, isStream = false }: SplitterOptions = {}) {
+	constructor({ maxLength = 3900, isStream = false }: SplitterOptions = {}) {
 		this.maxLength = maxLength;
 		this.isStream = isStream;
 	}
@@ -63,6 +63,13 @@ export class MessageSplitter {
 	}
 
 	private pushMessage(type: SplitMessageType, content: string) {
+		if (!content || content.trim() === "") {
+			this.queue.emit("message", {
+				type: "text",
+				content: "Error empty message :c",
+			});
+			return;
+		}
 		const msg: SplitMessage = {
 			type,
 			content: content,
@@ -74,7 +81,6 @@ export class MessageSplitter {
 	}
 
 	addStreamMessage(message: string, isLastChunk: boolean) {
-		console.log(isLastChunk);
 		this.fullStreamMessage += message;
 		if (!message.includes("\n") && !isLastChunk) {
 			this.bufferStreamMessage += message;

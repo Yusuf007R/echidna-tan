@@ -1,15 +1,15 @@
-import { Client, Collection, GatewayIntentBits, Partials } from "discord.js";
-
 import { startServer } from "@Api/index";
 import { default as config, default as configs } from "@Configs";
-import CommandManager from "@Managers/command-manager";
 import EventManager from "@Managers/event-manager";
 import GuildsManager from "@Managers/guilds-manager";
+import InteractionManager from "@Managers/interaction-manager";
+import ModalManager from "@Managers/modal-manager";
 import EchidnaSingleton from "@Structures/echidna-singleton";
 import MusicPlayer from "@Structures/music-player";
 import type TicTacToe from "@Structures/tic-tac-toe";
+import { Client, Collection, GatewayIntentBits, Partials } from "discord.js";
 import { eq } from "drizzle-orm";
-import db from "src/drizzle";
+import db, { initDB } from "src/drizzle";
 import { echidnaTable } from "src/drizzle/schema";
 
 export default class EchidnaClient extends Client {
@@ -19,11 +19,13 @@ export default class EchidnaClient extends Client {
 
 	ticTacToeManager = new Collection<string, TicTacToe>();
 
-	commandManager = new CommandManager();
-
 	eventManager = new EventManager();
 
 	guildsManager = new GuildsManager();
+
+	interactionManager = new InteractionManager();
+
+	modalManager = new ModalManager();
 
 	api = startServer();
 
@@ -39,9 +41,15 @@ export default class EchidnaClient extends Client {
 				GatewayIntentBits.GuildMessages,
 				GatewayIntentBits.GuildMembers,
 			],
-			partials: [Partials.Channel],
+			partials: [
+				Partials.Channel,
+				Partials.Message,
+				Partials.Channel,
+				Partials.Reaction,
+				Partials.User,
+			],
 		});
-		this.init();
+		void this.init();
 	}
 
 	async updateEchidna() {
@@ -50,13 +58,17 @@ export default class EchidnaClient extends Client {
 		});
 
 		if (!echidna) {
-			const dbEchidna = await db
+			const [dbEchidna] = await db
 				.insert(echidnaTable)
 				.values({
 					id: config.DISCORD_DB_PROFILE,
 				})
 				.returning();
-			echidna = dbEchidna[0];
+
+			if (!dbEchidna) {
+				throw new Error("Echidna not found");
+			}
+			echidna = dbEchidna;
 		}
 
 		this.user?.setPresence({
@@ -72,9 +84,11 @@ export default class EchidnaClient extends Client {
 	}
 
 	async init() {
+		console.log("[EchidnaClient] initializing");
 		this.eventManager.init();
-		// sync local db with remote db
-		await db.$client.sync();
-		this.login(configs.DISCORD_TOKEN);
+		await this.musicPlayer.init();
+		await initDB();
+
+		await this.login(configs.DISCORD_BOT_TOKEN);
 	}
 }

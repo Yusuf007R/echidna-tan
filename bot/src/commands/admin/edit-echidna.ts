@@ -6,7 +6,7 @@ import { Command } from "@Structures/command";
 import getImageAsBuffer from "@Utils/get-image-from-url";
 import { OptionsBuilder } from "@Utils/options-builder";
 import { ActivityType, type ChatInputCommandInteraction } from "discord.js";
-import { type InferInsertModel, eq } from "drizzle-orm";
+import { eq, type InferInsertModel } from "drizzle-orm";
 import db from "src/drizzle";
 import { echidnaStatus, echidnaTable } from "src/drizzle/schema";
 
