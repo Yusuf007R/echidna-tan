@@ -1,15 +1,13 @@
-import { Client, Collection, GatewayIntentBits, Partials } from "discord.js";
-
 import { startServer } from "@Api/index";
 import { default as config, default as configs } from "@Configs";
-import CommandManager from "@Managers/command-manager";
-import ContextMenuManager from "@Managers/context-menu-manager";
 import EventManager from "@Managers/event-manager";
 import GuildsManager from "@Managers/guilds-manager";
+import InteractionManager from "@Managers/interaction-manager";
 import ModalManager from "@Managers/modal-manager";
 import EchidnaSingleton from "@Structures/echidna-singleton";
 import MusicPlayer from "@Structures/music-player";
 import type TicTacToe from "@Structures/tic-tac-toe";
+import { Client, Collection, GatewayIntentBits, Partials } from "discord.js";
 import { eq } from "drizzle-orm";
 import db, { initDB } from "src/drizzle";
 import { echidnaTable } from "src/drizzle/schema";
@@ -21,13 +19,11 @@ export default class EchidnaClient extends Client {
 
 	ticTacToeManager = new Collection<string, TicTacToe>();
 
-	commandManager = new CommandManager();
-
 	eventManager = new EventManager();
 
 	guildsManager = new GuildsManager();
 
-	contextMenuManager = new ContextMenuManager();
+	interactionManager = new InteractionManager();
 
 	modalManager = new ModalManager();
 
@@ -53,7 +49,7 @@ export default class EchidnaClient extends Client {
 				Partials.User,
 			],
 		});
-		this.init();
+		void this.init();
 	}
 
 	async updateEchidna() {
@@ -90,7 +86,7 @@ export default class EchidnaClient extends Client {
 	async init() {
 		console.log("[EchidnaClient] initializing");
 		this.eventManager.init();
-
+		await this.musicPlayer.init();
 		await initDB();
 
 		await this.login(configs.DISCORD_BOT_TOKEN);

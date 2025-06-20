@@ -5,6 +5,7 @@ export default class ErrorEvent extends DiscordEvent<"error"> {
 		super({ eventName: "error" });
 	}
 
+	// biome-ignore lint/suspicious/useAwait: there is nothing to await
 	async run(error: Error): Promise<void> {
 		console.error("Client error:", error);
 	}

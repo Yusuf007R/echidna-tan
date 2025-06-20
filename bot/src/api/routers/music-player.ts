@@ -37,6 +37,7 @@ const musicRouter = new Hono<HonoEnv>()
 	.get("/events", (c) => {
 		const musicQueue = c.get("musicQueue");
 		const eventEmitter = MusicPlayer.getGuildEmitter(musicQueue.guild.id);
+		// biome-ignore lint/suspicious/useAwait: i know there is no await but the type needs to be async
 		return streamSSE(c, async (stream) => {
 			eventEmitter.on("update", (data) => {
 				stream.writeSSE({

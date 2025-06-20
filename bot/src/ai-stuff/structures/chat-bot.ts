@@ -15,10 +15,12 @@ import {
 	AttachmentBuilder,
 	type DMChannel,
 	type Message,
+	MessageFlags,
 	MessageType,
+	TextDisplayBuilder,
 	type ThreadChannel,
 } from "discord.js";
-import { type InferSelectModel, and, count, eq, sum } from "drizzle-orm";
+import { and, count, eq, type InferSelectModel, sum } from "drizzle-orm";
 import type {
 	ChatCompletionMessageParam,
 	CompletionUsage,
@@ -86,7 +88,7 @@ export default class ChatBot {
 			.at(-1);
 	}
 
-	static async init(options: ChatBotOptions) {
+	static init(options: ChatBotOptions) {
 		const messageHistory: messageHistoryType[] = [];
 		const hasMemories = options.prompt.prompt_config.includes("memory");
 		const memoriesManager = new MemoriesManager(
@@ -194,7 +196,13 @@ export default class ChatBot {
 
 	private async sendMessage(splitMessage: SplitMessage, maxLength: number) {
 		if (splitMessage.type === "text") {
-			await this.channel.send(`${splitMessage.content}`);
+			const textComponent = new TextDisplayBuilder().setContent(
+				splitMessage.content,
+			);
+			await this.channel.send({
+				flags: MessageFlags.IsComponentsV2,
+				components: [textComponent],
+			});
 		} else {
 			if (splitMessage.content.length > maxLength) {
 				await this.sendAsAttachment(

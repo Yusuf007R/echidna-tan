@@ -1,10 +1,10 @@
 import config from "@Configs";
 import { createClient } from "@libsql/client";
 import {
-	type SQL,
 	getTableColumns,
 	getTableName,
 	isTable,
+	type SQL,
 	sql,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -51,7 +51,7 @@ export const createVectorIndex = async () => {
 };
 
 export const initDB = async () => {
-	// await createVectorIndex();
+	await createVectorIndex();
 };
 
 export const buildConflictUpdateColumns = <

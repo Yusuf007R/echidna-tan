@@ -1,3 +1,7 @@
+import config from "@Configs";
+import getImageColor from "@Utils/get-image-color";
+import { EmbedBuilder } from "@discordjs/builders";
+import type { APIEmbed } from "discord.js";
 import {
 	type Genre,
 	MovieDb,
@@ -6,11 +10,6 @@ import {
 	type ShowResponse,
 	type TvResult,
 } from "moviedb-promise";
-
-import config from "@Configs";
-import getImageColor from "@Utils/get-image-color";
-import { EmbedBuilder } from "@discordjs/builders";
-import type { APIEmbed } from "discord.js";
 
 export interface infoTMDB {
 	id: number;
@@ -33,15 +32,15 @@ export default class TMDB {
 	}
 
 	async search(query: string) {
-		return this.moviedb.searchMulti({ query });
+		return await this.moviedb.searchMulti({ query });
 	}
 
 	async getTV(id: string) {
-		return this.moviedb.tvInfo(id);
+		return await this.moviedb.tvInfo(id);
 	}
 
 	async getMovie(id: string) {
-		return this.moviedb.movieInfo(id);
+		return await this.moviedb.movieInfo(id);
 	}
 
 	async getByName(name: string): Promise<MovieResult | TvResult | null> {

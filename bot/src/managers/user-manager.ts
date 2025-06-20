@@ -1,3 +1,4 @@
+import config from "@Configs";
 import EchidnaSingleton from "@Structures/echidna-singleton";
 import { eq } from "drizzle-orm";
 import db from "../drizzle";
@@ -33,7 +34,7 @@ export class UserManager {
 				id: discordId,
 				displayName: discordUser.displayName,
 				userName: discordUser.username,
-				isAdmin: false,
+				isAdmin: discordId === config.DISCORD_OWNER_ID,
 			})
 			.returning();
 		console.log(newUser);
@@ -47,7 +48,11 @@ export class UserManager {
 	 * @returns The user object or null if not found
 	 */
 	static async getUser(discordId: string) {
-		return db.select().from(userTable).where(eq(userTable.id, discordId)).get();
+		return await db
+			.select()
+			.from(userTable)
+			.where(eq(userTable.id, discordId))
+			.get();
 	}
 
 	/**
@@ -70,6 +75,6 @@ export class UserManager {
 	}
 
 	static async getDiscordUser(discordId: string) {
-		return EchidnaSingleton.echidna.users.fetch(discordId);
+		return await EchidnaSingleton.echidna.users.fetch(discordId);
 	}
 }

@@ -1,18 +1,14 @@
-import { readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import ChatBot from "@AiStructures/chat-bot";
 import type { AiPrompt } from "@Interfaces/ai-prompts";
 import type { OpenRouterModel } from "@Interfaces/open-router-model";
 import CacheManager from "@Managers/cache-manager";
 import { openRouterAPI } from "@Utils/request";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import type { DMChannel, ThreadChannel } from "discord.js";
-import { type InferSelectModel, desc, eq } from "drizzle-orm";
+import { desc, eq, type InferSelectModel } from "drizzle-orm";
 import db from "src/drizzle";
 import { chatsTable, messagesTable, userTable } from "src/drizzle/schema";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 export type messageAttachmentType = {
 	url: string;
@@ -39,7 +35,7 @@ export default class ChatBotManager {
 
 		const list = (await openRouterAPI.models.list()).data;
 		CacheManager.set(cacheKey, list, {
-			ttl: CacheManager.TTL.oneDay,
+			ttl: CacheManager.TTL.oneHour,
 		});
 		return list as any;
 	}

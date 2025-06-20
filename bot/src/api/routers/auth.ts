@@ -1,20 +1,19 @@
-import { discord } from "@Api/auth";
+import {
+	cookieSessionKey,
+	createSession,
+	createSessionCookie,
+	discord,
+} from "@Api/auth";
 import type { HonoEnv } from "@Api/index";
 import config from "@Configs";
 import type { DiscordOAuthUser } from "@Interfaces/discord-oauth";
+import { zValidator } from "@hono/zod-validator";
 import { generateState } from "arctic";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import db from "src/drizzle";
 import { sessionTable, userTable } from "src/drizzle/schema";
-
-import {
-	cookieSessionKey,
-	createSession,
-	createSessionCookie,
-} from "@Api/auth";
-import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 
 export type jwtPayload = {

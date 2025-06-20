@@ -8,6 +8,7 @@ import authRouter from "./routers/auth";
 import guildRouter from "./routers/guild";
 import musicPlayerRouter from "./routers/music-player";
 import userRouter from "./routers/user";
+
 type Bindings = HttpBindings & {};
 
 export type HonoEnv = {

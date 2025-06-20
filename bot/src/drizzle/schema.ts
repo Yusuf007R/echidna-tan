@@ -84,11 +84,31 @@ export const commandsTable = sqliteTable(
 		description: text("description").notNull(),
 		hash: text("hash").notNull(),
 		cmdType: text("cmd_type", { enum: CmdType }).notNull(),
+		deletedAt: integer("deleted_at", { mode: "timestamp" }),
 		...baseDates,
 	},
-	(t) => ({
-		categoryIndex: index("category_index").on(t.category),
-	}),
+	(t) => [
+		index("category_index").on(t.category),
+		index("cmd_type_index").on(t.cmdType),
+	],
+);
+
+export const contextMenusTable = sqliteTable(
+	"context_menus",
+	{
+		name: text("name").primaryKey(),
+		category: text("category").notNull(),
+		type: text("type", { enum: ["USER", "MESSAGE"] }).notNull(),
+		cmdType: text("cmd_type", { enum: CmdType }).notNull(),
+		hash: text("hash").notNull(),
+		description: text("description").notNull(),
+		deletedAt: integer("deleted_at", { mode: "timestamp" }),
+		...baseDates,
+	},
+	(t) => [
+		index("category_context_menu_index").on(t.category),
+		index("cmd_type_context_menu_index").on(t.cmdType),
+	],
 );
 
 export const userTable = sqliteTable(
@@ -100,9 +120,10 @@ export const userTable = sqliteTable(
 		isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
 		...baseDates,
 	},
-	(t) => ({
-		displayNameIndex: index("display_name_index").on(t.displayName),
-	}),
+	(t) => [
+		index("display_name_index").on(t.displayName),
+		index("user_name_index").on(t.userName),
+	],
 );
 
 export const userRelations = relations(userTable, ({ many }) => ({
@@ -143,9 +164,10 @@ export const memoriesTable = sqliteTable(
 		importance: integer("importance", { mode: "number" }).notNull().default(0),
 		...baseDates,
 	},
-	(t) => ({
-		promptTemplateIndex: index("prompt_template_index").on(t.promptTemplate),
-	}),
+	(t) => [
+		index("memory_type_index").on(t.memoryType),
+		index("prompt_template_index").on(t.promptTemplate),
+	],
 );
 
 export const memoryRelations = relations(memoriesTable, ({ one }) => ({

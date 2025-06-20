@@ -1,12 +1,11 @@
-import { EmbedBuilder } from "@discordjs/builders";
-import { AttachmentBuilder, type Message } from "discord.js";
-
 import config from "@Configs";
 import type { CivitaiResponse } from "@Interfaces/civitai";
 import type { RunpodRes, Txt2img } from "@Interfaces/waifu-generator";
 import { waifuGeneratorAPI } from "@Utils/request";
 import milisecondsToReadable from "@Utils/seconds-to-minutes";
+import { EmbedBuilder } from "@discordjs/builders";
 import Civitai from "civitai";
+import { AttachmentBuilder, type Message } from "discord.js";
 
 export type getImageProps = {
 	prompt: string;

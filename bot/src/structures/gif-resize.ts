@@ -1,17 +1,15 @@
-import fs from "node:fs/promises";
+import getImageAsBuffer from "@Utils/get-image-from-url";
 import wait from "@Utils/wait";
-import type { EmbedType, Message } from "discord.js";
-
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import getImageAsBuffer from "@Utils/get-image-from-url";
-import type { ApiResponse } from "apisauce";
-import ffmpegStatic from "ffmpeg-static";
-import Ffmpeg from "fluent-ffmpeg";
-
 import { mkdirSync } from "node:fs";
+import fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { ApiResponse } from "apisauce";
+import type { EmbedType, Message } from "discord.js";
+import ffmpegStatic from "ffmpeg-static";
+import Ffmpeg from "fluent-ffmpeg";
 import gifsicle from "gifsicle";
 import sharp from "sharp";
 
@@ -90,7 +88,7 @@ export default class GifResize {
 		return gifs;
 	}
 
-	async optimizeGif(inputPath: string, maxSizeMb = 10, compressionLevel = 30) {
+	optimizeGif(inputPath: string, maxSizeMb = 10, compressionLevel = 30) {
 		return new Promise<string>((resolve, reject) => {
 			const outputPath = this.getTempPath();
 

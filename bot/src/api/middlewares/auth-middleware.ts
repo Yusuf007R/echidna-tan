@@ -1,7 +1,7 @@
 import {
+	cookieSessionKey,
 	type Session,
 	type User,
-	cookieSessionKey,
 	validateSessionToken,
 } from "@Api/auth";
 import { getCookie } from "hono/cookie";
