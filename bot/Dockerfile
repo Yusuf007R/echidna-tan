@@ -7,6 +7,7 @@ RUN apt-get update \
     && apt-get install -y build-essential
 
 COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
 
 RUN corepack enable pnpm && pnpm install 
 
