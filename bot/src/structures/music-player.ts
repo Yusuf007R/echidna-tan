@@ -108,7 +108,8 @@ export default class MusicPlayer extends Player {
 	}
 
 	private cleanUpDownloadedStream() {
-		setInterval(
+		try {
+			setInterval(
 			async () => {
 				const folders = await readdir(TEMP_DIR);
 				for (const folder of folders) {
@@ -118,8 +119,11 @@ export default class MusicPlayer extends Player {
 					}
 				}
 			},
-			1000 * 60 * 60,
-		); // 1 hour
+			1000 * 60 * 60 * 24,
+		); // 24 hour
+		} catch (_) {
+			
+		}
 	}
 
 	initEvents() {
