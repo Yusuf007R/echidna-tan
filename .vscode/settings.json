@@ -16,13 +16,13 @@
     "source.fixAll.biome": "explicit"
   },
   "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "biomejs.biome"  
   },
-  "[dockerfile]": {
-    "editor.defaultFormatter": "ms-azuretools.vscode-docker",
-  },
-  "biome.lsp.bin": "/home/yusuf/code/echidna-tan/bot/node_modules/@biomejs/cli-linux-x64/biome",
+
+  "biome.configurationPath": "./bot/biome.json",
+  "biome.lsp.bin": "./bot/node_modules/.bin/biome",
+  "biome.suggestInstallingGlobally": true,
   "[json]": {
     "editor.defaultFormatter": "biomejs.biome"
-  }
+  },
 }
