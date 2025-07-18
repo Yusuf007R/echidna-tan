@@ -38,8 +38,16 @@ const ytdlp = new YtDlp();
 export type QueueMetadata = {
 	interaction: BaseInteraction<CacheType>;
 	guildId: string;
+	timeoutId: NodeJS.Timeout | null;
+
 	"image-url-cache": Record<string, any>;
 };
+
+enum TIMEOUT_OPTIONS {
+	FADE_OUT_AND_LEAVE = "fade-out-and-leave",
+	LEAVE = "leave",
+	STOP = "stop",
+}
 
 const guildEvents = [
 	GuildQueueEvent.PlayerStart,
@@ -137,6 +145,42 @@ export default class MusicPlayer extends Player {
 					queue,
 				});
 			});
+		}
+	}
+
+	setupTimeout(
+		queue: GuildQueue<QueueMetadata>,
+		minutes: number,
+		timeoutOption: TIMEOUT_OPTIONS = TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE,
+	) {
+		const timeoutId = setTimeout(
+			async () => {
+				try {
+					await this.fadeOutAndStop(queue);
+				} catch (error) {
+					console.error("[AsmrPlay] Timeout error:", error);
+				}
+			},
+			minutes * 60 * 1000,
+		);
+	}
+
+	private async fadeOutAndStop(queue: GuildQueue<QueueMetadata>) {
+		const originalVolume = queue.node.volume;
+		const fadeSteps = 10;
+		const fadeInterval = 2000; // 1 second per step = 10 second fade
+		// Gentle fade out to prevent jarring wake-up
+		for (let i = fadeSteps; i > 0; i--) {
+			if (queue.deleted) return; // Exit if queue was manually stopped
+
+			const newVolume = Math.floor((originalVolume * i) / fadeSteps);
+			queue.node.setVolume(Math.max(newVolume, 1)); // Never go to 0 to avoid audio issues
+			await new Promise((resolve) => setTimeout(resolve, fadeInterval));
+		}
+
+		// Stop the music player after fade
+		if (!queue.deleted) {
+			queue.delete();
 		}
 	}
 
