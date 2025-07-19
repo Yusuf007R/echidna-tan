@@ -14,6 +14,9 @@ import {
 } from "discord.js";
 import EchidnaSingleton from "./echidna-singleton";
 
+/**
+ * Context type that represents either an interaction or message context
+ */
 type InteractionContextType =
 	| {
 			type: "interaction";
@@ -25,8 +28,14 @@ type InteractionContextType =
 			replyMessage?: Message;
 	  };
 
+/**
+ * Async local storage for maintaining context throughout the request lifecycle
+ */
 const storage = new AsyncLocalStorage<InteractionContextType>();
 
+/**
+ * Options for sending messages with embeds, files, and ephemeral settings
+ */
 type messageOptions = {
 	content?: string;
 	embeds?: EmbedBuilder[];
@@ -34,20 +43,24 @@ type messageOptions = {
 	ephemeral?: boolean;
 };
 
-/*
-Universal wrapper around interactions and messages for consistent API across the bot.
-Handles defer system, reply, send, edit, embeds - abstracts away the complexity of 
-different interaction types and provides fallback mechanisms.
-
-Features:
-- Automatic defer handling
-- Smart reply/editReply/followUp routing
-- Message vs Interaction abstraction
-- Channel validation and error handling
-- Async local storage for context passing
-*/
-
+/**
+ * Universal wrapper around interactions and messages for consistent API across the bot.
+ * Handles defer system, reply, send, edit, embeds - abstracts away the complexity of
+ * different interaction types and provides fallback mechanisms.
+ *
+ * Features:
+ * - Automatic defer handling
+ * - Smart reply/editReply/followUp routing
+ * - Message vs Interaction abstraction
+ * - Channel validation and error handling
+ * - Async local storage for context passing
+ */
 export class InteractionContext {
+	/**
+	 * Gets the user from the current context (interaction user or message author)
+	 * @returns The user associated with the current context
+	 * @throws Error if not called within InteractionContext.run() or no user is found
+	 */
 	static get user(): User {
 		const context = InteractionContext.getInteractionContext();
 		if (context.type === "interaction") return context.interaction.user;
@@ -55,7 +68,12 @@ export class InteractionContext {
 		throw new Error("User not found");
 	}
 
-	// Core response methods
+	/**
+	 * Replies to the current context (interaction or message)
+	 * Automatically handles reply vs editReply based on interaction state
+	 * @param options - Message content or options object
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static async reply(options: string | messageOptions): Promise<void> {
 		const context = InteractionContext.getInteractionContext();
 
@@ -91,6 +109,13 @@ export class InteractionContext {
 		}
 	}
 
+	/**
+	 * Edits the reply in the current context
+	 * For interactions: edits the interaction reply
+	 * For messages: edits the stored reply message or creates one if none exists
+	 * @param options - Message content or options object
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static async editReply(options: string | messageOptions): Promise<void> {
 		const context = InteractionContext.getInteractionContext();
 
@@ -120,6 +145,12 @@ export class InteractionContext {
 		}
 	}
 
+	/**
+	 * Defers the reply for interactions (no-op for messages)
+	 * Only defers if the interaction is repliable and not already replied/deferred
+	 * @param options - Optional ephemeral setting for the deferred reply
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static async deferReply(options?: { ephemeral?: boolean }): Promise<void> {
 		const context = InteractionContext.getInteractionContext();
 
@@ -136,6 +167,11 @@ export class InteractionContext {
 		// Messages don't need to be deferred
 	}
 
+	/**
+	 * Defers an update for message component interactions
+	 * Only works with message component interactions that haven't been replied/deferred
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static async deferUpdate(): Promise<void> {
 		const context = InteractionContext.getInteractionContext();
 
@@ -151,6 +187,13 @@ export class InteractionContext {
 		}
 	}
 
+	/**
+	 * Sends a follow-up message
+	 * For interactions: uses interaction.followUp()
+	 * For messages: replies to the original message
+	 * @param options - Message content or options object
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static async followUp(options: string | messageOptions): Promise<void> {
 		const context = InteractionContext.getInteractionContext();
 
@@ -160,11 +203,30 @@ export class InteractionContext {
 				await interaction.followUp(options);
 			}
 		} else {
-			// For messages, followUp is just another send
-			await InteractionContext.sendInChannel(options);
+			// For messages, followUp should reply to maintain conversation flow
+			const message = context.message;
+			const content =
+				typeof options === "string" ? options : options.content || "";
+
+			if (typeof options === "object" && options.embeds) {
+				await message.reply({
+					content,
+					embeds: options.embeds,
+					files: options.files,
+				});
+			} else {
+				await message.reply(content);
+			}
 		}
 	}
 
+	/**
+	 * Shows a modal dialog to the user
+	 * Only works with interactions (throws error for message contexts)
+	 * @param modal - The modal builder to display
+	 * @returns Promise that resolves with the modal submit interaction
+	 * @throws Error if not called within InteractionContext.run(), called in message context, or unsupported interaction type
+	 */
 	static async showModal(modal: ModalBuilder): Promise<ModalSubmitInteraction> {
 		const context = InteractionContext.getInteractionContext();
 		if (context.type === "message")
@@ -190,7 +252,12 @@ export class InteractionContext {
 		return res;
 	}
 
-	// Channel messaging
+	/**
+	 * Sends a message directly to the channel (not as a reply)
+	 * @param options - Message content or create options
+	 * @returns Promise that resolves with the sent message
+	 * @throws Error if not called within InteractionContext.run() or channel is not text-based
+	 */
 	static async sendInChannel(
 		options: string | MessageCreateOptions,
 	): Promise<Message> {
@@ -198,7 +265,13 @@ export class InteractionContext {
 		return await channel.send(options);
 	}
 
-	// Message editing (for context menus on messages)
+	/**
+	 * Edits a message in the current context
+	 * For messages: edits the message itself
+	 * For message context menu interactions: edits the target message
+	 * @param options - Message edit options
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static async editMessage(options: MessageEditOptions): Promise<void> {
 		const context = InteractionContext.getInteractionContext();
 
@@ -213,7 +286,11 @@ export class InteractionContext {
 		}
 	}
 
-	// Error handling with fallbacks
+	/**
+	 * Safely replies with automatic fallback to channel send if reply fails
+	 * @param options - Message content or options object
+	 * @throws Error if not called within InteractionContext.run() (though errors are caught and logged)
+	 */
 	static async safeReply(options: string | messageOptions): Promise<void> {
 		try {
 			await InteractionContext.reply(options);
@@ -227,28 +304,51 @@ export class InteractionContext {
 		}
 	}
 
-	// Utility methods
+	/**
+	 * Checks if the current context is an interaction
+	 * @returns True if context is an interaction, false if it's a message
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static isInteraction(): boolean {
 		const context = InteractionContext.getInteractionContext();
 		return context.type === "interaction";
 	}
 
+	/**
+	 * Checks if the current context is a message
+	 * @returns True if context is a message, false if it's an interaction
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static isMessage(): boolean {
 		const context = InteractionContext.getInteractionContext();
 		return context.type === "message";
 	}
 
+	/**
+	 * Gets the interaction from the current context
+	 * @returns The interaction if context is an interaction, null otherwise
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static getInteraction(): BaseInteraction<CacheType> | null {
 		const context = InteractionContext.getInteractionContext();
 		return context.type === "interaction" ? context.interaction : null;
 	}
 
+	/**
+	 * Gets the message from the current context
+	 * @returns The message if context is a message, null otherwise
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static getMessage(): Message | null {
 		const context = InteractionContext.getInteractionContext();
 		return context.type === "message" ? context.message : null;
 	}
 
-	// State checking
+	/**
+	 * Checks if the interaction has already been replied to
+	 * @returns True if interaction is replied, false for messages or unreplied interactions
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static isReplied(): boolean {
 		const context = InteractionContext.getInteractionContext();
 		if (context.type === "interaction" && context.interaction.isRepliable()) {
@@ -257,6 +357,11 @@ export class InteractionContext {
 		return false;
 	}
 
+	/**
+	 * Checks if the interaction has been deferred
+	 * @returns True if interaction is deferred, false for messages or non-deferred interactions
+	 * @throws Error if not called within InteractionContext.run()
+	 */
 	static isDeferred(): boolean {
 		const context = InteractionContext.getInteractionContext();
 		if (context.type === "interaction" && context.interaction.isRepliable()) {
@@ -265,7 +370,13 @@ export class InteractionContext {
 		return false;
 	}
 
-	// Context management
+	/**
+	 * Runs a callback within the context of an interaction or message
+	 * Sets up async local storage for the duration of the callback
+	 * @param context - The interaction or message to use as context
+	 * @param callback - The async function to execute within the context
+	 * @returns Promise that resolves with the callback's return value
+	 */
 	static run<T>(
 		context: Interaction | Message,
 		callback: () => Promise<T>,
@@ -280,6 +391,11 @@ export class InteractionContext {
 		);
 	}
 
+	/**
+	 * Gets the text-based channel from the current context
+	 * @returns The text-based channel with send capability
+	 * @throws Error if channel is not found or not text-based
+	 */
 	private static getTextBasedChannel() {
 		const channel = InteractionContext.getChannel();
 		if (!channel || !channel.isTextBased() || !("send" in channel)) {
@@ -288,6 +404,11 @@ export class InteractionContext {
 		return channel;
 	}
 
+	/**
+	 * Gets the channel from the current context
+	 * @returns The channel from interaction or message
+	 * @throws Error if no channel is found
+	 */
 	private static getChannel() {
 		const context = InteractionContext.getInteractionContext();
 		if (context.type === "interaction") return context.interaction.channel;
@@ -295,6 +416,11 @@ export class InteractionContext {
 		throw new Error("Channel not found");
 	}
 
+	/**
+	 * Gets the current interaction context from async local storage
+	 * @returns The current context
+	 * @throws Error if no context is found (not called within InteractionContext.run())
+	 */
 	private static getInteractionContext(): InteractionContextType {
 		const context = storage.getStore();
 		if (!context) {
