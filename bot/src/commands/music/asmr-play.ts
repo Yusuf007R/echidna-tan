@@ -1,9 +1,4 @@
-import {
-	PLAY_MODE,
-	PLAYER_TYPE,
-	type QueueMetadata,
-	TIMEOUT_OPTIONS,
-} from "@Structures/music-player";
+import { PLAY_MODE, type QueueMetadata } from "@Structures/music-player";
 import { OptionsBuilder } from "@Utils/options-builder";
 import type { CacheType, CommandInteraction } from "discord.js";
 import type { GuildQueue } from "discord-player";
@@ -44,7 +39,6 @@ export default class AsmrPlay extends MusicCommand<typeof options> {
 
 	async run(interaction: CommandInteraction<CacheType>): Promise<void> {
 		const query = this.options.query;
-		const timeoutMinutes = this.options.timeout;
 
 		try {
 			// Check for existing queue and handle appropriately
@@ -58,12 +52,9 @@ export default class AsmrPlay extends MusicCommand<typeof options> {
 
 			// Start playing with download enabled
 			await this.echidna.musicPlayer.playCmd({
-				interaction,
+				queue: existingQueue,
 				query,
 				playMode: PLAY_MODE.download,
-				timeoutOption: TIMEOUT_OPTIONS.LEAVE,
-				timeoutMinutes,
-				type: PLAYER_TYPE.ASMR_PLAY,
 			});
 		} catch (error) {
 			console.error("[AsmrPlay] Failed to start ASMR playback:", error);

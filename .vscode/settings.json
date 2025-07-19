@@ -16,13 +16,12 @@
     "source.fixAll.biome": "explicit"
   },
   "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"  
-  },
-
-  "biome.configurationPath": "./bot/biome.json",
-  "biome.lsp.bin": "./bot/node_modules/.bin/biome",
-  "biome.suggestInstallingGlobally": true,
-  "[json]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
+  "biome.lsp.bin": "./bot/node_modules/.bin/biome",
+  "biome.suggestInstallingGlobally": true,
+  // "biome.configurationPath": "./bot/biome.json",
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  }
 }

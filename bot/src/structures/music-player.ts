@@ -15,8 +15,8 @@ import {
 import {
 	type BaseInteraction,
 	type CacheType,
+	type ChatInputCommandInteraction,
 	Collection,
-	type CommandInteraction,
 	type GuildMember,
 	type StringSelectMenuInteraction,
 } from "discord.js";
@@ -37,6 +37,7 @@ const TEMP_DIR = path.join(baseDir, "temp", "ytdlp");
 const ytdlp = new YtDlp();
 
 export const TIMEOUT_OPTIONS = {
+	FADE_OUT: "fade-out",
 	FADE_OUT_AND_LEAVE: "fade-out-and-leave",
 	LEAVE: "leave",
 	STOP: "stop",
@@ -65,7 +66,7 @@ export type QueueMetadata = {
 	timeoutId: NodeJS.Timeout | null;
 	"image-url-cache": Record<string, any>;
 	type: PLAYER_TYPE;
-	timeoutOption: TIMEOUT_OPTIONS;
+	timeoutOption: TIMEOUT_OPTIONS | null;
 };
 
 export type TrackMetadata = {
@@ -182,14 +183,24 @@ export default class MusicPlayer extends Player {
 		}
 	}
 
-	setupTimeout(queue: GuildQueue<QueueMetadata>, minutes: number) {
+	setupTimeout(
+		queue: GuildQueue<QueueMetadata>,
+		minutes: number,
+		timeoutOption: TIMEOUT_OPTIONS = TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE,
+	) {
 		this.clearTimeout(queue);
+		queue.metadata.timeoutOption = timeoutOption;
 		queue.metadata.timeoutId = setTimeout(
 			async () => {
 				try {
-					switch (queue.metadata.timeoutOption) {
+					switch (timeoutOption) {
 						case TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE:
-							await this.fadeOutAndStop(queue);
+							await this.fadeOut(queue);
+							queue.delete();
+							break;
+						case TIMEOUT_OPTIONS.FADE_OUT:
+							await this.fadeOut(queue);
+							queue.node.pause();
 							break;
 						case TIMEOUT_OPTIONS.LEAVE:
 							queue.delete();
@@ -199,7 +210,7 @@ export default class MusicPlayer extends Player {
 							break;
 					}
 				} catch (error) {
-					console.error("[AsmrPlay] Timeout error:", error);
+					console.error("[MusicPlayer] Timeout error:", error);
 				}
 			},
 			minutes * 60 * 1000,
@@ -219,7 +230,7 @@ export default class MusicPlayer extends Player {
 		}
 	}
 
-	private async fadeOutAndStop(queue: GuildQueue<QueueMetadata>) {
+	private async fadeOut(queue: GuildQueue<QueueMetadata>) {
 		const originalVolume = queue.node.volume;
 		const fadeSteps = 10;
 		const fadeInterval = 2000; // 1 second per step = 10 second fade
@@ -231,11 +242,6 @@ export default class MusicPlayer extends Player {
 			queue.node.setVolume(Math.max(newVolume, 1)); // Never go to 0 to avoid audio issues
 			await new Promise((resolve) => setTimeout(resolve, fadeInterval));
 		}
-
-		// Stop the music player after fade
-		if (!queue.deleted) {
-			queue.delete();
-		}
 	}
 
 	static getGuildEmitter(guildId: string) {
@@ -246,39 +252,25 @@ export default class MusicPlayer extends Player {
 	}
 
 	async playCmd({
-		interaction,
+		queue,
 		query,
 		playMode = PLAY_MODE.download,
-		timeoutOption = TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE,
-		type = PLAYER_TYPE.MUSIC,
-		timeoutMinutes = 0,
-		loopMode = QueueRepeatMode.OFF,
 	}: {
-		interaction: CommandInteraction<CacheType>;
+		queue: GuildQueue<QueueMetadata>;
 		query: string;
 		playMode?: PLAY_MODE;
-		timeoutOption?: TIMEOUT_OPTIONS;
-		type?: PLAYER_TYPE;
-		timeoutMinutes?: number;
-		loopMode?: QueueRepeatMode;
 	}) {
 		await this.loadExtractors();
-		if (!this.getVoiceChannel(interaction)) {
-			await interaction.editReply("You are not connected to a voice channel!");
-			return;
-		}
-		const queue = await this.getOrCreateQueue(
-			interaction,
-			type,
-			timeoutOption,
-			timeoutMinutes,
-		);
-		queue.setRepeatMode(loopMode);
 
 		const searchResult = await this.search(query, {
-			requestedBy: interaction.user,
+			requestedBy: queue.metadata.interaction.user,
 		});
 
+		const interaction = queue.metadata.interaction;
+
+		if (!interaction.isCommand()) {
+			return;
+		}
 		if (!searchResult.hasTracks()) {
 			await interaction.editReply("No tracks found");
 			return;
@@ -422,20 +414,22 @@ export default class MusicPlayer extends Player {
 	}
 
 	async getOrCreateQueue(
-		interaction: BaseInteraction<CacheType>,
+		interaction: ChatInputCommandInteraction<CacheType>,
 		type: PLAYER_TYPE,
-		timeoutOption: TIMEOUT_OPTIONS = TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE,
-		timeoutMinutes = 0,
 	): Promise<GuildQueue<QueueMetadata>> {
 		const queue = this.queues.get<QueueMetadata>(interaction.guild!.id);
 		if (queue) return queue;
 		const voiceChannel = this.getVoiceChannel(interaction);
+		if (!voiceChannel) {
+			await interaction.editReply("You are not connected to a voice channel!");
+			throw new Error("User is not connected to a voice channel");
+		}
 		const queueMetadata: QueueMetadata = {
 			interaction: interaction,
 			timeoutId: null,
 			guildId: interaction.guild!.id,
 			type,
-			timeoutOption,
+			timeoutOption: null,
 			"image-url-cache": {},
 		};
 		const newQueue = this.queues.create(interaction.guild!, {
@@ -450,9 +444,6 @@ export default class MusicPlayer extends Player {
 			},
 		});
 		await newQueue.connect(voiceChannel!);
-		if (timeoutMinutes > 0) {
-			this.setupTimeout(newQueue, timeoutMinutes);
-		}
 		return newQueue as GuildQueue<QueueMetadata>;
 	}
 
