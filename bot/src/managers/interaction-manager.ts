@@ -77,9 +77,10 @@ export default class InteractionManager {
 		);
 
 		const interactions: {
-			[key: string]: typeof type extends "command"
-				? Command
-				: ContextMenu<"USER" | "MESSAGE">;
+			[key: string]: {
+				category: string;
+				interaction: Command | ContextMenu<"USER" | "MESSAGE">;
+			};
 		} = {};
 		const checkDupName = new Map<string, true>();
 
@@ -105,7 +106,10 @@ export default class InteractionManager {
 									);
 								}
 								checkDupName.set(interactionObj.name, true);
-								interactions[interactionObj.name] = interactionObj;
+								interactions[interactionObj.name] = {
+									category: folder,
+									interaction: interactionObj,
+								};
 							} catch (error) {
 								if (
 									error instanceof Error &&
@@ -126,14 +130,16 @@ export default class InteractionManager {
 		for (const key in interactions) {
 			const interaction = interactions[key];
 			if (type === "command") {
-				this.commands.set(interaction.name, {
-					category: key.split("/").pop() ?? "",
-					command: interaction as Command,
+				this.commands.set(interaction.interaction.name, {
+					category: interaction.category,
+					command: interaction.interaction as Command,
 				});
 			} else if (type === "contextMenu") {
-				this.contextMenus.set(interaction.name, {
-					category: key.split("/").pop() ?? "",
-					contextMenu: interaction as ContextMenu<"USER" | "MESSAGE">,
+				this.contextMenus.set(interaction.interaction.name, {
+					category: interaction.category,
+					contextMenu: interaction.interaction as ContextMenu<
+						"USER" | "MESSAGE"
+					>,
 				});
 			}
 		}
