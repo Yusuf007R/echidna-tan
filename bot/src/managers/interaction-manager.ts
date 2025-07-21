@@ -3,7 +3,7 @@
 import config from "@Configs";
 import type { CmdType, Command } from "@Structures/command";
 import type ContextMenu from "@Structures/context-menu";
-import { baseDir } from "@Utils/dir-name";
+import { getBaseDir } from "@Utils/get-dir-name";
 import type { Option } from "@Utils/options-builder";
 import { createHash } from "node:crypto";
 import { readdirSync } from "node:fs";
@@ -72,7 +72,7 @@ export default class InteractionManager {
 
 	async loadInteractions<T extends "command" | "contextMenu">(type: T) {
 		const interactionsRootFolder = join(
-			baseDir,
+			getBaseDir(),
 			type === "command" ? "/commands" : "/context-menu",
 		);
 
@@ -432,7 +432,7 @@ export default class InteractionManager {
 	}
 
 	async manageInteraction(interaction: Interaction) {
-		if (interaction.isCommand()) {
+		if (interaction.isChatInputCommand()) {
 			try {
 				await this.commands
 					.get(interaction.commandName)

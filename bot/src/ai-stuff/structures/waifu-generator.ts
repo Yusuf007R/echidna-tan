@@ -99,7 +99,7 @@ export default class WaifuGenerator {
 		configs.enable_hr = true;
 		const res = await this.getImage(configs);
 		const {
-			data: { type, ...embedData },
+			data: { type: _type, ...embedData },
 		} = message.embeds[0];
 		const newEmbed = new EmbedBuilder({
 			...embedData,

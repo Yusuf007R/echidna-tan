@@ -1,7 +1,7 @@
 import { mapTrack } from "@Api/utils/map-track";
 import StringSelectComponent from "@Components/string-select";
 import capitalize from "@Utils/capitalize";
-import { baseDir } from "@Utils/dir-name";
+import { getBaseDir } from "@Utils/get-dir-name";
 import getImageColor from "@Utils/get-image-color";
 import milisecondsToReadable from "@Utils/seconds-to-minutes";
 import { createReadStream, createWriteStream } from "node:fs";
@@ -32,7 +32,7 @@ import { YoutubeiExtractor } from "discord-player-youtubei";
 import { EventEmitter } from "tseep";
 import { YtDlp } from "ytdlp-nodejs";
 
-const TEMP_DIR = path.join(baseDir, "temp", "ytdlp");
+const TEMP_DIR = path.join(getBaseDir(), "temp", "ytdlp");
 
 const ytdlp = new YtDlp();
 

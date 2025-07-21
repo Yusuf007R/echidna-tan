@@ -89,7 +89,7 @@
 	},
 	"pnpm": {
 		"overrides": {
-			"node-fetch@2.7.0>whatwg-url": "14.0.0"
+			"node-fetch@2.7.0": "3.0.0"
 		},
 		"onlyBuiltDependencies": [
 			"@discordjs/opus",

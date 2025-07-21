@@ -1,4 +1,3 @@
-import { startServer } from "@Api/index";
 import { default as config, default as configs } from "@Configs";
 import EventManager from "@Managers/event-manager";
 import GuildsManager from "@Managers/guilds-manager";
@@ -27,7 +26,7 @@ export default class EchidnaClient extends Client {
 
 	modalManager = new ModalManager();
 
-	api = startServer();
+	// api = startServer();
 
 	constructor() {
 		super({

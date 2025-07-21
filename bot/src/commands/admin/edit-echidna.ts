@@ -11,7 +11,7 @@ import db from "src/drizzle";
 import { echidnaStatus, echidnaTable } from "src/drizzle/schema";
 
 const activityTypeValues = Object.entries(ActivityType)
-	.filter(([key, value]) => typeof value === "number")
+	.filter(([_, value]) => typeof value === "number")
 	.map(([key, value]) => ({
 		name: key,
 		value: value,

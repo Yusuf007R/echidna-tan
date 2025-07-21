@@ -30,7 +30,7 @@ const float32Array = customType<{
 	},
 });
 
-const arrayJson = customType<{ data: string[] }>({
+export const arrayJson = customType<{ data: string[] }>({
 	dataType() {
 		return "text";
 	},

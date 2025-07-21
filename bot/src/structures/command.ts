@@ -3,6 +3,7 @@ import type { Option } from "@Utils/options-builder";
 import type {
 	AutocompleteInteraction,
 	CacheType,
+	ChatInputCommandInteraction,
 	CommandInteraction,
 } from "discord.js";
 import type { CommandValidator } from "./command-validator";
@@ -81,7 +82,7 @@ export abstract class Command<
 		return await this.handleAutocomplete(_interaction);
 	}
 
-	async _run(interaction: CommandInteraction<CacheType>) {
+	async _run(interaction: ChatInputCommandInteraction<CacheType>) {
 		const validators = this.validators.map((validator) =>
 			new validator().validate(interaction),
 		);
