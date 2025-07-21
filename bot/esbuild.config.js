@@ -1,8 +1,8 @@
+import childProcess from "node:child_process";
+import { readdirSync, readFileSync, watch } from "node:fs";
+import { resolve } from "node:path";
 import * as esbuild from "esbuild";
 import { nodeExternalsPlugin } from "esbuild-node-externals";
-import childProcess from "node:child_process";
-import { readFileSync, readdirSync, watch } from "node:fs";
-import { resolve } from "node:path";
 
 const isProduction = process.env.NODE_ENV === "production";
 const isWatch = process.argv.includes("watch");
@@ -151,4 +151,4 @@ async function build() {
 	}
 }
 
-build();
+void build();
