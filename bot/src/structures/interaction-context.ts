@@ -3,6 +3,7 @@ import {
 	type AttachmentBuilder,
 	BaseInteraction,
 	type CacheType,
+	type Channel,
 	type EmbedBuilder,
 	type Interaction,
 	type Message,
@@ -69,6 +70,51 @@ export class InteractionContext {
 	}
 
 	/**
+	 * Gets the channel from the current context
+	 * @returns The channel from interaction or message
+	 * @throws Error if no channel is found
+	 */
+	static get channel(): Channel {
+		return InteractionContext.getChannel();
+	}
+
+	/**
+	 * Gets the text-based channel from the current context
+	 * @returns The text-based channel with send capability
+	 * @throws Error if channel is not found or not text-based
+	 */
+	static get textBasedChannel() {
+		return InteractionContext.getTextBasedChannel();
+	}
+
+	/**
+	 * Gets the interaction from the current context
+	 * @returns The interaction if context is an interaction, null otherwise
+	 * @throws Error if not called within InteractionContext.run()
+	 */
+	static get interaction() {
+		return InteractionContext.getInteraction();
+	}
+
+	/**
+	 * Gets the message from the current context
+	 * @returns The message if context is a message, null otherwise
+	 * @throws Error if not called within InteractionContext.run()
+	 */
+	static get message() {
+		return InteractionContext.getMessage();
+	}
+
+	/**
+	 * Gets the guild from the current context
+	 * @returns The guild if context is an interaction or message, null otherwise
+	 * @throws Error if not called within InteractionContext.run()
+	 */
+	static get guild() {
+		return InteractionContext.getGuild();
+	}
+
+	/**
 	 * Replies to the current context (interaction or message)
 	 * Automatically handles reply vs editReply based on interaction state
 	 * @param options - Message content or options object
@@ -122,7 +168,11 @@ export class InteractionContext {
 		if (context.type === "interaction") {
 			const interaction = context.interaction;
 			if (interaction.isRepliable()) {
-				await interaction.editReply(options);
+				if (!interaction.replied && !interaction.deferred) {
+					await interaction.reply(options);
+				} else {
+					await interaction.editReply(options);
+				}
 			}
 		} else {
 			// For messages, edit the stored reply message if it exists
@@ -262,6 +312,7 @@ export class InteractionContext {
 		options: string | MessageCreateOptions,
 	): Promise<Message> {
 		const channel = InteractionContext.getTextBasedChannel();
+		if (!channel) throw new Error("Channel not found or not text-based");
 		return await channel.send(options);
 	}
 
@@ -393,15 +444,29 @@ export class InteractionContext {
 
 	/**
 	 * Gets the text-based channel from the current context
-	 * @returns The text-based channel with send capability
-	 * @throws Error if channel is not found or not text-based
+	 * @returns The text-based channel with send capability or null if not found
+	 * @throws Error if not called within InteractionContext.run()
 	 */
 	private static getTextBasedChannel() {
 		const channel = InteractionContext.getChannel();
 		if (!channel || !channel.isTextBased() || !("send" in channel)) {
-			throw new Error("Channel not found or not text-based");
+			return null;
 		}
 		return channel;
+	}
+
+	/**
+	 * Gets the guild from the current context
+	 * @returns The guild if context is an interaction or message, null otherwise
+	 * @throws Error if not called within InteractionContext.run()
+	 */
+	private static getGuild() {
+		const context = InteractionContext.getInteractionContext();
+		if (context.type === "interaction" && context.interaction.guild)
+			return context.interaction.guild;
+		if (context.type === "message" && context.message.guild)
+			return context.message.guild;
+		return null;
 	}
 
 	/**
@@ -411,7 +476,8 @@ export class InteractionContext {
 	 */
 	private static getChannel() {
 		const context = InteractionContext.getInteractionContext();
-		if (context.type === "interaction") return context.interaction.channel;
+		if (context.type === "interaction" && context.interaction.channel)
+			return context.interaction.channel;
 		if (context.type === "message") return context.message.channel;
 		throw new Error("Channel not found");
 	}

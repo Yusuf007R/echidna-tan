@@ -1,7 +1,13 @@
-import { PLAY_MODE, type QueueMetadata } from "@Structures/music-player";
+import {
+	PLAY_MODE,
+	PLAYER_TYPE,
+	type QueueMetadata,
+	TIMEOUT_OPTIONS,
+} from "@Structures/music-player";
+import capitalize from "@Utils/capitalize";
 import { OptionsBuilder } from "@Utils/options-builder";
-import type { CacheType, CommandInteraction } from "discord.js";
-import type { GuildQueue } from "discord-player";
+import type { CacheType, ChatInputCommandInteraction } from "discord.js";
+import { type GuildQueue, QueueRepeatMode } from "discord-player";
 import { MusicCommand } from "./[wrapper]";
 
 const options = new OptionsBuilder()
@@ -21,7 +27,7 @@ const options = new OptionsBuilder()
 		name: "loop-mode",
 		description: "Loop mode for ASMR playback",
 		required: false,
-		choices: ["Track", "Queue"],
+		choices: Object.keys(QueueRepeatMode).map((opt) => capitalize(opt)),
 	})
 	.build();
 
@@ -37,7 +43,9 @@ export default class AsmrPlay extends MusicCommand<typeof options> {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>): Promise<void> {
+	async run(
+		interaction: ChatInputCommandInteraction<CacheType>,
+	): Promise<void> {
 		const query = this.options.query;
 
 		try {
@@ -50,9 +58,32 @@ export default class AsmrPlay extends MusicCommand<typeof options> {
 				existingQueue.delete();
 			}
 
+			const queue = await this.echidna.musicPlayer.getOrCreateQueue(
+				interaction,
+				PLAYER_TYPE.ASMR_PLAY,
+			);
+
+			if (this.options["loop-mode"]) {
+				const mode =
+					QueueRepeatMode[
+						this.options[
+							"loop-mode"
+						].toUpperCase() as keyof typeof QueueRepeatMode
+					];
+				queue.setRepeatMode(mode);
+			}
+
+			if (this.options.timeout) {
+				this.echidna.musicPlayer.setupTimeout(
+					queue,
+					this.options.timeout,
+					TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE,
+				);
+			}
+
 			// Start playing with download enabled
 			await this.echidna.musicPlayer.playCmd({
-				queue: existingQueue,
+				queue,
 				query,
 				playMode: PLAY_MODE.download,
 			});

@@ -3,7 +3,6 @@ import StringSelectComponent from "@Components/string-select";
 import capitalize from "@Utils/capitalize";
 import { getBaseDir } from "@Utils/get-dir-name";
 import getImageColor from "@Utils/get-image-color";
-import milisecondsToReadable from "@Utils/seconds-to-minutes";
 import { createReadStream, createWriteStream } from "node:fs";
 import { mkdir, readdir, rm } from "node:fs/promises";
 import path from "node:path";
@@ -18,6 +17,7 @@ import {
 	type ChatInputCommandInteraction,
 	Collection,
 	type GuildMember,
+	type Message,
 	type StringSelectMenuInteraction,
 } from "discord.js";
 import {
@@ -63,10 +63,14 @@ export type PLAY_MODE = (typeof PLAY_MODE)[keyof typeof PLAY_MODE];
 export type QueueMetadata = {
 	interaction: BaseInteraction<CacheType>;
 	guildId: string;
-	timeoutId: NodeJS.Timeout | null;
 	"image-url-cache": Record<string, any>;
 	type: PLAYER_TYPE;
-	timeoutOption: TIMEOUT_OPTIONS | null;
+	timeout: {
+		minutes: number;
+		option: TIMEOUT_OPTIONS;
+		timeoutId: NodeJS.Timeout;
+		startedAt: number;
+	} | null;
 };
 
 export type TrackMetadata = {
@@ -118,23 +122,48 @@ export default class MusicPlayer extends Player {
 		const filePath = path.join(dir, `${q.id}.opus`);
 		await mkdir(dir, { recursive: true });
 		const stream = createWriteStream(filePath);
+		const queue = this.queues.get(guildId) as GuildQueue<QueueMetadata> | null;
+		const interaction = queue?.metadata?.interaction;
+
 		const ytdlpStream = ytdlp.stream(q.url, {
 			format: {
 				filter: "audioonly",
 				quality: 10,
 				type: "opus",
 			},
-			onProgress: (progress) => {
-				if (progress.status === "finished") {
-					console.log("Stream finished", {
-						...progress,
-						track: q,
-					});
-				}
-			},
+			onProgress: (() => {
+				// Closure to keep track of last milestone
+				let lastMilestone = -1;
+				const milestones = [0, 25, 50, 75, 100];
+				let message: Message | null = null;
+				return async (progress) => {
+					if (progress.status === "downloading" && progress.percentage) {
+						const percent = Number.parseInt(progress.percentage.toString(), 10);
+						const nextMilestone = milestones.find(
+							(m) => percent === m && lastMilestone < m,
+						);
+						if (nextMilestone !== undefined) {
+							lastMilestone = nextMilestone;
+							const text = `Downloading stream... ${nextMilestone}% - ${progress.downloaded_str} / ${progress.total_str} - ${progress.eta_str}`;
+							if (message) {
+								message.edit({ content: text });
+							} else if (
+								interaction?.channel?.isTextBased() &&
+								"send" in interaction.channel
+							) {
+								message = await interaction?.channel?.send(text);
+							}
+						}
+					}
+					if (progress.status === "finished") {
+						if (message) {
+							message.delete();
+						}
+					}
+				};
+			})(),
 		});
 		await ytdlpStream.pipeAsync(stream);
-		console.log("Stream created", filePath);
 		return createReadStream(filePath);
 	}
 
@@ -165,6 +194,9 @@ export default class MusicPlayer extends Player {
 		this.events.on(GuildQueueEvent.PlayerFinish, (queue) => {
 			console.log("playerFinish", queue);
 		});
+		this.events.on(GuildQueueEvent.PlayerError, (queue, error) => {
+			console.log("playerError", queue, error);
+		});
 
 		for (const event of guildEvents) {
 			this.events.on(event, (queue: GuildQueue<QueueMetadata>) => {
@@ -177,9 +209,9 @@ export default class MusicPlayer extends Player {
 	}
 
 	clearTimeout(queue: GuildQueue<QueueMetadata>) {
-		if (queue.metadata.timeoutId) {
-			clearTimeout(queue.metadata.timeoutId);
-			queue.metadata.timeoutId = null;
+		if (queue.metadata.timeout?.timeoutId) {
+			clearTimeout(queue.metadata.timeout.timeoutId);
+			queue.metadata.timeout = null;
 		}
 	}
 
@@ -189,45 +221,49 @@ export default class MusicPlayer extends Player {
 		timeoutOption: TIMEOUT_OPTIONS = TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE,
 	) {
 		this.clearTimeout(queue);
-		queue.metadata.timeoutOption = timeoutOption;
-		queue.metadata.timeoutId = setTimeout(
-			async () => {
-				try {
-					switch (timeoutOption) {
-						case TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE:
-							await this.fadeOut(queue);
-							queue.delete();
-							break;
-						case TIMEOUT_OPTIONS.FADE_OUT:
-							await this.fadeOut(queue);
-							queue.node.pause();
-							break;
-						case TIMEOUT_OPTIONS.LEAVE:
-							queue.delete();
-							break;
-						case TIMEOUT_OPTIONS.STOP:
-							queue.node.pause();
-							break;
-					}
-				} catch (error) {
-					console.error("[MusicPlayer] Timeout error:", error);
-				}
-			},
-			minutes * 60 * 1000,
-		);
+		queue.metadata.timeout = {
+			minutes,
+			option: timeoutOption,
+			timeoutId: setTimeout(
+				async () => {
+					try {
+						switch (timeoutOption) {
+							case TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE:
+								await this.fadeOut(queue);
+								queue.delete();
+								break;
+							case TIMEOUT_OPTIONS.FADE_OUT:
+								await this.fadeOut(queue);
+								queue.node.pause();
+								break;
+							case TIMEOUT_OPTIONS.LEAVE:
+								queue.delete();
+								break;
+							case TIMEOUT_OPTIONS.STOP:
+								queue.node.pause();
+								break;
+						}
 
-		if (
-			queue.metadata.interaction?.channel &&
-			"send" in queue.metadata.interaction.channel
-		) {
-			const messages = {
-				[PLAYER_TYPE.ASMR_PLAY]: `😴 Sweet dreams! ASMR gently ended after ${minutes} minutes.`,
-				[PLAYER_TYPE.MUSIC]: `The queue will end in ${minutes} minutes.`,
-			};
-			queue.metadata.interaction.channel.send({
-				content: messages[queue.metadata.type],
-			});
-		}
+						if (
+							queue.metadata.interaction?.channel &&
+							"send" in queue.metadata.interaction.channel
+						) {
+							const messages = {
+								[PLAYER_TYPE.ASMR_PLAY]: `😴 Your ASMR session has ended after ${minutes} minutes.`,
+								[PLAYER_TYPE.MUSIC]: `The music queue ended after ${minutes} minutes.`,
+							};
+							queue.metadata.interaction.channel.send({
+								content: messages[queue.metadata.type],
+							});
+						}
+					} catch (error) {
+						console.error("[MusicPlayer] Timeout error:", error);
+					}
+				},
+				minutes * 60 * 1000,
+			),
+			startedAt: Date.now(),
+		};
 	}
 
 	private async fadeOut(queue: GuildQueue<QueueMetadata>) {
@@ -352,13 +388,8 @@ export default class MusicPlayer extends Player {
 			queue.channel?.send("Currently not playing a track");
 			return;
 		}
-		const { title, requestedBy, durationMS, url, thumbnail } = currentTrack;
-		const minutes = milisecondsToReadable(durationMS);
-
-		const gap = {
-			name: "\n",
-			value: "\n",
-		};
+		const { title, requestedBy, url, thumbnail, author } = currentTrack;
+		const progressBar = queue.node.createProgressBar();
 
 		const repeatMode =
 			Object.keys(QueueRepeatMode).find(
@@ -368,38 +399,35 @@ export default class MusicPlayer extends Player {
 			) ?? "Unknown";
 
 		const embed = new EmbedBuilder()
-			.setTitle(`${title}`)
-			.setAuthor({ name: "Now Playing: " })
-			.setDescription("Player Info: ")
-			.setURL(url ?? "")
+
+			.setAuthor({
+				name: "Now Playing",
+				iconURL: "https://www.iconsdb.com/icons/preview/white/music-2-xxl.png",
+			})
+			.setTitle(title)
+			.setURL(url)
+
 			.addFields(
-				gap,
-				{
-					name: "Volume",
-					value: `${queue.node.volume}%`,
-					inline: true,
-				},
-				{
-					name: "Loop mode",
-					value: `${capitalize(repeatMode)}`,
-					inline: true,
-				},
-				gap,
-				{
-					name: `Queue (${queue.tracks.size})`,
-					value: `${
-						queue.tracks
-							.map((track) => `[${track.title}](${track.url})`)
-							.slice(0, 5)
-							.join("\n") || "Empty"
-					}`,
-				},
+				{ name: "Artist", value: author, inline: true },
+				{ name: "Volume", value: `${queue.node.volume}%`, inline: true },
+				{ name: "Loop Mode", value: `${capitalize(repeatMode)}`, inline: true },
+				...(progressBar ? [{ name: "Progress", value: progressBar }] : []),
 			);
+
+		const remainingTime = queue.metadata.timeout
+			? queue.metadata.timeout.minutes -
+				Math.round((Date.now() - queue.metadata.timeout.startedAt) / 60000)
+			: null;
+
 		if (requestedBy) {
 			embed.setFooter({
-				text: `Duration: ${minutes} - Requested by: ${requestedBy.displayName}`,
+				text: `Requested by: ${
+					requestedBy.displayName
+				} ${queue.metadata.timeout ? `• Timeout in ${remainingTime ?? 0} minutes` : ""}`,
+				iconURL: requestedBy.displayAvatarURL(),
 			});
 		}
+
 		if (thumbnail) {
 			embed.setThumbnail(thumbnail);
 
@@ -426,10 +454,9 @@ export default class MusicPlayer extends Player {
 		}
 		const queueMetadata: QueueMetadata = {
 			interaction: interaction,
-			timeoutId: null,
 			guildId: interaction.guild!.id,
 			type,
-			timeoutOption: null,
+			timeout: null,
 			"image-url-cache": {},
 		};
 		const newQueue = this.queues.create(interaction.guild!, {
