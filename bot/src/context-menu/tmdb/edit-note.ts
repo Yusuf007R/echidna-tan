@@ -55,7 +55,7 @@ class EditNoteContextMenu extends ContextMenu<"MESSAGE"> {
 
 		modal.addComponents(row);
 		await interaction.showModal(modal);
-		const res = await this.echidna.modalManager.waitForModalResponse(
+		const res = await this.echidna.interactionManager.waitForModalResponse(
 			modal.data.custom_id!,
 		);
 

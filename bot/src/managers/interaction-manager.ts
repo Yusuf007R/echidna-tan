@@ -1,4 +1,4 @@
-// merge of command and context menu manager
+// merge of command, context menu, and modal manager
 
 import config from "@Configs";
 import type { CmdType, Command } from "@Structures/command";
@@ -13,6 +13,7 @@ import {
 	ContextMenuCommandBuilder,
 	type Interaction,
 	InteractionContextType,
+	type ModalSubmitInteraction,
 	REST,
 	type RESTPostAPIApplicationCommandsJSONBody,
 	type RESTPostAPIContextMenuApplicationCommandsJSONBody,
@@ -24,6 +25,8 @@ import { type InferInsertModel, inArray } from "drizzle-orm";
 import stringify from "safe-stable-stringify";
 import db, { buildConflictUpdateColumns } from "src/drizzle";
 import { commandsTable, contextMenusTable } from "src/drizzle/schema";
+import { EventEmitter } from "tseep";
+import CacheManager from "./cache-manager";
 
 type MapCmds = {
 	command: RESTPostAPIApplicationCommandsJSONBody;
@@ -48,6 +51,9 @@ export default class InteractionManager {
 		string,
 		{ category: string; contextMenu: ContextMenu<"USER" | "MESSAGE"> }
 	>;
+
+	// Modal management
+	private modalEventEmitter = new EventEmitter();
 
 	constructor() {
 		this.commands = new Collection();
@@ -431,6 +437,26 @@ export default class InteractionManager {
 		}
 	}
 
+	// Modal management methods
+	waitForModalResponse(
+		id: string,
+		timeout = CacheManager.TTL.oneMinute,
+	): Promise<ModalSubmitInteraction> {
+		return new Promise((resolve, reject) => {
+			const timer = setTimeout(() => {
+				reject(new Error("Modal response timed out"));
+			}, timeout);
+			this.modalEventEmitter.once(id, (data) => {
+				clearTimeout(timer);
+				resolve(data);
+			});
+		});
+	}
+
+	processModalResponse(data: ModalSubmitInteraction) {
+		this.modalEventEmitter.emit(data.customId, data);
+	}
+
 	async manageInteraction(interaction: Interaction) {
 		if (interaction.isChatInputCommand()) {
 			try {
@@ -492,6 +518,17 @@ export default class InteractionManager {
 					interaction.channel.send(
 						"An error occured while executing the command.",
 					);
+			}
+		}
+
+		if (interaction.isModalSubmit()) {
+			try {
+				this.processModalResponse(interaction);
+			} catch (error) {
+				console.error(
+					`[InteractionManager] [Modal] [${interaction.customId}]`,
+					error,
+				);
 			}
 		}
 	}

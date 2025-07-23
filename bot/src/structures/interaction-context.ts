@@ -245,7 +245,7 @@ export class InteractionContext {
 		await interaction.showModal(modal);
 
 		const res =
-			await EchidnaSingleton.echidna.modalManager.waitForModalResponse(
+			await EchidnaSingleton.echidna.interactionManager.waitForModalResponse(
 				modal.data.custom_id!,
 			);
 

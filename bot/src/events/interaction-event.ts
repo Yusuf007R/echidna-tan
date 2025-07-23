@@ -25,7 +25,7 @@ export default class InteractionEvent extends DiscordEvent<"interactionCreate"> 
 				}
 
 				if (interaction.isModalSubmit()) {
-					this.echidna.modalManager.processModalResponse(interaction);
+					this.echidna.interactionManager.processModalResponse(interaction);
 					return;
 				}
 			});
