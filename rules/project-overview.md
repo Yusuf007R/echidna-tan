@@ -4,7 +4,6 @@
 
 Echidna-tan is a full-stack Discord bot with AI integration:
 
-
 ## Development Commands
 
 ### Bot Development
@@ -12,10 +11,8 @@ Echidna-tan is a full-stack Discord bot with AI integration:
 - `cd bot && pnpm build` - Build for development
 - `cd bot && pnpm build:prod` - Build for production  
 - `cd bot && pnpm start` - Build and run the bot
-- `cd bot && pnpm check` - Run type-check, format, and lint (full validation)
+- `cd bot && pnpm check` - Biome check (Format and lint)
 - `cd bot && pnpm type-check` - TypeScript type checking only
-- `cd bot && pnpm lint` - Biome linter with auto-fix
-- `cd bot && pnpm format` - Biome formatter
 
 ### Frontend Development
 - `cd front && pnpm dev` - Start frontend development server

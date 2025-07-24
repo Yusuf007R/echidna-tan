@@ -37,6 +37,7 @@
       "@Components/*": ["./src/components/*"],
       "@Utils/*": ["./src/utils/*"],
       "@Managers/*": ["./src/managers/*"],
+      "@Loaders/*": ["./src/loaders/*"],
       "@Structures/*": ["./src/structures/*"],
       "@AiStructures/*": ["./src/ai-stuff/structures/*"],
       "@Api/*": ["./src/api/*"]

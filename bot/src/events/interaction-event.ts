@@ -10,24 +10,7 @@ export default class InteractionEvent extends DiscordEvent<"interactionCreate"> 
 	async run(interaction: Interaction<CacheType>): Promise<void> {
 		try {
 			await InteractionContext.run(interaction, async () => {
-				if (
-					interaction.isChatInputCommand() ||
-					interaction.isAutocomplete() ||
-					interaction.isContextMenuCommand()
-				) {
-					await this.echidna.interactionManager.manageInteraction(interaction);
-					return;
-				}
-
-				if (interaction.isButton()) {
-					console.log(interaction);
-					return;
-				}
-
-				if (interaction.isModalSubmit()) {
-					this.echidna.interactionManager.processModalResponse(interaction);
-					return;
-				}
+				await this.echidna.interactionManager.manageInteraction(interaction);
 			});
 		} catch (error: any) {
 			if (interaction.isMessageComponent()) {
