@@ -1,14 +1,14 @@
 // make a command that sends a message to a specific user
 
 import config from "@Configs";
+import db from "@Drizzle/db";
+import { echidnaStatus, echidnaTable } from "@Drizzle/schema";
 import IsAdmin from "@EventsValidators/isAdmin";
 import { Command } from "@Structures/command";
 import getImageAsBuffer from "@Utils/get-image-from-url";
 import { OptionsBuilder } from "@Utils/options-builder";
 import { ActivityType, type ChatInputCommandInteraction } from "discord.js";
 import { eq, type InferInsertModel } from "drizzle-orm";
-import db from "src/drizzle";
-import { echidnaStatus, echidnaTable } from "src/drizzle/schema";
 
 const activityTypeValues = Object.entries(ActivityType)
 	.filter(([_, value]) => typeof value === "number")

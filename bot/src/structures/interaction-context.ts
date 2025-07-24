@@ -293,11 +293,13 @@ export class InteractionContext {
 			throw new Error("Modal can only be shown in interactions");
 
 		await interaction.showModal(modal);
-
+		console.log("Modal shown");
 		const res =
-			await EchidnaSingleton.echidna.interactionManager.waitForModalResponse(
+			await EchidnaSingleton.echidna.interactionManager.awaitInteractionResponse(
 				modal.data.custom_id!,
+				"Modal",
 			);
+		console.log("Modal response received");
 
 		return res;
 	}

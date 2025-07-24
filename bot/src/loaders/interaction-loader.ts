@@ -1,3 +1,5 @@
+import db, { buildConflictUpdateColumns } from "@Drizzle/db";
+import { commandsTable, contextMenusTable } from "@Drizzle/schema";
 import type { CmdType, Command } from "@Structures/command";
 import type ContextMenu from "@Structures/context-menu";
 import { getBaseDir } from "@Utils/get-dir-name";
@@ -16,8 +18,6 @@ import {
 } from "discord.js";
 import { type InferInsertModel, inArray } from "drizzle-orm";
 import stringify from "safe-stable-stringify";
-import db, { buildConflictUpdateColumns } from "src/drizzle";
-import { commandsTable, contextMenusTable } from "src/drizzle/schema";
 
 type MapCmds = {
 	command: RESTPostAPIApplicationCommandsJSONBody;

@@ -44,12 +44,12 @@ export default class DanbooruCommand extends Command<typeof options> {
 					tags: tags.split(" "),
 					nsfw: !!nsfw,
 				});
-				danbooru.sendMessage(interaction, post);
+				await danbooru.sendMessage(interaction, post);
 				return;
 			}
 			if (postId) {
 				const post = await danbooru.getPostById(postId);
-				danbooru.sendMessage(interaction, post);
+				await danbooru.sendMessage(interaction, post);
 				return;
 			}
 		} catch (error: any) {

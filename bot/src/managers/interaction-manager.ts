@@ -4,6 +4,7 @@ import config from "@Configs";
 import InteractionLoader from "@Loaders/interaction-loader";
 import {
 	type Interaction,
+	type MessageComponentInteraction,
 	type ModalSubmitInteraction,
 	REST,
 	Routes,
@@ -16,6 +17,8 @@ export default class InteractionManager {
 
 	// Modal management
 	private modalEventEmitter = new EventEmitter();
+
+	private interactionEventEmitter = new EventEmitter();
 
 	constructor() {
 		this.interactionLoader = new InteractionLoader();
@@ -68,16 +71,22 @@ export default class InteractionManager {
 		}
 	}
 
-	// Modal management methods
-	waitForModalResponse(
+	/**
+	 * Wait for interaction response (Modals, And Components like buttons and select)
+	 */
+	awaitInteractionResponse<Type extends "Modal" | "Component">(
 		id: string,
+		type: Type,
 		timeout = CacheManager.TTL.oneMinute,
-	): Promise<ModalSubmitInteraction> {
+	): Promise<
+		Type extends "Modal" ? ModalSubmitInteraction : MessageComponentInteraction
+	> {
+		const internalId = `${id}-${type}`;
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => {
-				reject(new Error("Modal response timed out"));
+				reject(new Error("Interaction response timed out"));
 			}, timeout);
-			this.modalEventEmitter.once(id, (data) => {
+			this.interactionEventEmitter.once(internalId, (data) => {
 				clearTimeout(timer);
 				resolve(data);
 			});
@@ -87,7 +96,7 @@ export default class InteractionManager {
 	private handleInteractionError(
 		interaction: Interaction,
 		error: unknown,
-		type: "Command" | "ContextMenu" | "Autocomplete" | "Modal",
+		type: "Command" | "ContextMenu" | "Autocomplete" | "Modal" | "Component",
 		identifier: string,
 	) {
 		console.error(`[InteractionManager] [${type}] [${identifier}]`, error);
@@ -174,6 +183,22 @@ export default class InteractionManager {
 					interaction,
 					error,
 					"Modal",
+					interaction.customId,
+				);
+			}
+		}
+
+		if (interaction.isMessageComponent()) {
+			try {
+				this.interactionEventEmitter.emit(
+					`${interaction.customId}-component`,
+					interaction,
+				);
+			} catch (error) {
+				this.handleInteractionError(
+					interaction,
+					error,
+					"Component",
 					interaction.customId,
 				);
 			}

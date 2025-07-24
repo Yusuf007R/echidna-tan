@@ -1,4 +1,5 @@
 import ContextMenu from "@Structures/context-menu";
+import { InteractionContext } from "@Structures/interaction-context";
 import TMDB from "@Structures/tmdb";
 import {
 	ActionRowBuilder,
@@ -54,10 +55,8 @@ class EditNoteContextMenu extends ContextMenu<"MESSAGE"> {
 		const row = new ActionRowBuilder<TextInputBuilder>().addComponents(input);
 
 		modal.addComponents(row);
-		await interaction.showModal(modal);
-		const res = await this.echidna.interactionManager.waitForModalResponse(
-			modal.data.custom_id!,
-		);
+
+		const res = await InteractionContext.showModal(modal);
 
 		const note = res.fields.getTextInputValue("note");
 

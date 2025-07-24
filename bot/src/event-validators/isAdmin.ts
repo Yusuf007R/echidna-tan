@@ -20,7 +20,7 @@ export default class IsAdmin extends CommandValidator {
 	) {
 		const user = await UserManager.getOrCreateUser(interaction.user.id);
 		if (!user?.isAdmin) {
-			this.sendMessage(interaction);
+			await this.sendMessage(interaction);
 			return;
 		}
 		next();

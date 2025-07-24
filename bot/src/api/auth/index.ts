@@ -1,10 +1,9 @@
 import config from "@Configs";
+import db from "@Drizzle/db";
+import { sessionTable, userTable } from "@Drizzle/schema";
 import { encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
 import { Discord } from "arctic";
 import { eq, type InferSelectModel, sql } from "drizzle-orm";
-import db from "src/drizzle";
-
-import { sessionTable, userTable } from "src/drizzle/schema";
 
 export type Session = InferSelectModel<typeof sessionTable>;
 export type User = InferSelectModel<typeof userTable>;

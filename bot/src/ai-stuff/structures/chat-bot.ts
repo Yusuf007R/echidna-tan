@@ -1,3 +1,11 @@
+import db from "@Drizzle/db";
+import {
+	attachmentsTable,
+	type chatsTable,
+	memoriesTable,
+	messagesTable,
+	type userTable,
+} from "@Drizzle/schema";
 import type { AiPrompt } from "@Interfaces/ai-prompts";
 import type { OpenRouterModel } from "@Interfaces/open-router-model";
 import type {
@@ -26,14 +34,6 @@ import type {
 	CompletionUsage,
 } from "openai/resources/index.mjs";
 import sharp from "sharp";
-import db from "src/drizzle";
-import {
-	attachmentsTable,
-	type chatsTable,
-	memoriesTable,
-	messagesTable,
-	type userTable,
-} from "src/drizzle/schema";
 import { AiUtils } from "./ai-utils";
 import MemoriesManager from "./memories";
 export type ChatBotModelConfig = {

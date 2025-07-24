@@ -6,14 +6,14 @@ import {
 } from "@Api/auth";
 import type { HonoEnv } from "@Api/index";
 import config from "@Configs";
+import db from "@Drizzle/db";
+import { sessionTable, userTable } from "@Drizzle/schema";
 import type { DiscordOAuthUser } from "@Interfaces/discord-oauth";
 import { zValidator } from "@hono/zod-validator";
 import { generateState } from "arctic";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
-import db from "src/drizzle";
-import { sessionTable, userTable } from "src/drizzle/schema";
 import { z } from "zod";
 
 export type jwtPayload = {
