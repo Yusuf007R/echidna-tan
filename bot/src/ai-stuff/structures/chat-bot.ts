@@ -18,6 +18,7 @@ import getImageAsBuffer from "@Utils/get-image-from-url";
 import { MessageSplitter, type SplitMessage } from "@Utils/message-splitter";
 import randomNumber from "@Utils/random-number";
 import { openRouterAPI } from "@Utils/request";
+import withInterval from "@Utils/with-interval";
 import dayjs from "dayjs";
 import {
 	AttachmentBuilder,
@@ -65,7 +66,7 @@ export default class ChatBot {
 		cost: 0,
 	};
 
-	private interval: NodeJS.Timeout | null = null;
+	private clearTypingInterval: (() => void) | null = null;
 
 	private constructor(
 		private channel: DMChannel | ThreadChannel,
@@ -132,7 +133,7 @@ export default class ChatBot {
 	async processMessage(message: Message) {
 		this.channel.sendTyping();
 
-		this.interval = setInterval(() => {
+		this.clearTypingInterval = withInterval(() => {
 			this.channel.sendTyping();
 		}, 5000);
 
@@ -177,7 +178,10 @@ export default class ChatBot {
 			splitter.addStreamMessage(chunkMessage, isLastChunk);
 		}
 
-		if (this.interval) clearInterval(this.interval);
+		if (this.clearTypingInterval) {
+			this.clearTypingInterval();
+			this.clearTypingInterval = null;
+		}
 
 		const totalLength = splitter
 			.getMessages()

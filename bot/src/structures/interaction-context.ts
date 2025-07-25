@@ -22,6 +22,7 @@ type InteractionContextType =
 	| {
 			type: "interaction";
 			interaction: BaseInteraction<CacheType>;
+			replyMessage?: Message;
 	  }
 	| {
 			type: "message";
@@ -132,26 +133,14 @@ export class InteractionContext {
 				} else {
 					await interaction.editReply(options);
 				}
+			} else {
+				// For non-repliable interactions, send in channel and store the message
+				const sentMessage = await InteractionContext.sendInChannel(options);
+				context.replyMessage = sentMessage;
 			}
 		} else {
 			// For message context, reply to the message and store the reply
-			const message = context.message;
-			const content =
-				typeof options === "string" ? options : options.content || "";
-
-			let replyMessage: Message;
-			if (typeof options === "object" && options.embeds) {
-				replyMessage = await message.reply({
-					content,
-					embeds: options.embeds,
-					files: options.files,
-				});
-			} else {
-				replyMessage = await message.reply(content);
-			}
-
-			// Store the reply message in the context for future edits
-			context.replyMessage = replyMessage;
+			context.replyMessage = await context.message.reply(options);
 		}
 	}
 
@@ -165,6 +154,11 @@ export class InteractionContext {
 	static async editReply(options: string | messageOptions): Promise<void> {
 		const context = InteractionContext.getInteractionContext();
 
+		if (context.replyMessage) {
+			await context.replyMessage.edit(options);
+			return;
+		}
+
 		if (context.type === "interaction") {
 			const interaction = context.interaction;
 			if (interaction.isRepliable()) {
@@ -173,26 +167,10 @@ export class InteractionContext {
 				} else {
 					await interaction.editReply(options);
 				}
-			}
-		} else {
-			// For messages, edit the stored reply message if it exists
-			if (context.replyMessage) {
-				const content =
-					typeof options === "string" ? options : options.content || "";
-				if (typeof options === "object" && options.embeds) {
-					await context.replyMessage.edit({
-						content,
-						embeds: options.embeds,
-						files: options.files,
-					});
-				} else {
-					await context.replyMessage.edit(content);
-				}
-			} else {
-				// If no reply message exists yet, create one
-				await InteractionContext.reply(options);
+				return;
 			}
 		}
+		await InteractionContext.sendInChannel(options);
 	}
 
 	/**
@@ -254,19 +232,7 @@ export class InteractionContext {
 			}
 		} else {
 			// For messages, followUp should reply to maintain conversation flow
-			const message = context.message;
-			const content =
-				typeof options === "string" ? options : options.content || "";
-
-			if (typeof options === "object" && options.embeds) {
-				await message.reply({
-					content,
-					embeds: options.embeds,
-					files: options.files,
-				});
-			} else {
-				await message.reply(content);
-			}
+			await context.message.reply(options);
 		}
 	}
 
@@ -335,24 +301,6 @@ export class InteractionContext {
 			const interaction = context.interaction;
 			if (interaction.isMessageContextMenuCommand()) {
 				await interaction.targetMessage.edit(options);
-			}
-		}
-	}
-
-	/**
-	 * Safely replies with automatic fallback to channel send if reply fails
-	 * @param options - Message content or options object
-	 * @throws Error if not called within InteractionContext.run() (though errors are caught and logged)
-	 */
-	static async safeReply(options: string | messageOptions): Promise<void> {
-		try {
-			await InteractionContext.reply(options);
-		} catch (error) {
-			// Fallback to channel send if reply fails
-			try {
-				await InteractionContext.sendInChannel(options);
-			} catch (fallbackError) {
-				console.error("Failed to send response:", error, fallbackError);
 			}
 		}
 	}
