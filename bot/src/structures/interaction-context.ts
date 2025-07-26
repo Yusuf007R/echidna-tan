@@ -1,19 +1,26 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
-	type AttachmentBuilder,
 	BaseInteraction,
+	type BaseMessageOptions,
 	type CacheType,
 	type Channel,
-	type EmbedBuilder,
 	type Interaction,
 	type Message,
 	type MessageCreateOptions,
 	type MessageEditOptions,
 	type ModalBuilder,
 	type ModalSubmitInteraction,
+	type OmitPartialGroupDMChannel,
 	type User,
 } from "discord.js";
 import EchidnaSingleton from "./echidna-singleton";
+
+export type ReplyMessage = {
+	id: string;
+	edit: (options: string | BaseMessageOptions) => Promise<Message>;
+	delete: () => Promise<void>;
+	followUp: (options: string | BaseMessageOptions) => Promise<ReplyMessage>;
+};
 
 /**
  * Context type that represents either an interaction or message context
@@ -22,12 +29,16 @@ type InteractionContextType =
 	| {
 			type: "interaction";
 			interaction: BaseInteraction<CacheType>;
-			replyMessage?: Message;
+			replyMessage?: {
+				edit: (options: string | BaseMessageOptions) => Promise<Message>;
+			};
 	  }
 	| {
 			type: "message";
 			message: Message;
-			replyMessage?: Message;
+			replyMessage?: {
+				edit: (options: string | BaseMessageOptions) => Promise<Message>;
+			};
 	  };
 
 /**
@@ -38,12 +49,6 @@ const storage = new AsyncLocalStorage<InteractionContextType>();
 /**
  * Options for sending messages with embeds, files, and ephemeral settings
  */
-type messageOptions = {
-	content?: string;
-	embeds?: EmbedBuilder[];
-	files?: AttachmentBuilder[];
-	ephemeral?: boolean;
-};
 
 /**
  * Universal wrapper around interactions and messages for consistent API across the bot.
@@ -116,61 +121,80 @@ export class InteractionContext {
 	}
 
 	/**
-	 * Replies to the current context (interaction or message)
+	 * Sends a reply to the current context (interaction or message)
 	 * Automatically handles reply vs editReply based on interaction state
+	 * Handles followUp logic
+	 * Handles fallback to sendInChannel if none of the above are possible
 	 * @param options - Message content or options object
 	 * @throws Error if not called within InteractionContext.run()
 	 */
-	static async reply(options: string | messageOptions): Promise<void> {
+	private static async sendReply(
+		options: string | BaseMessageOptions,
+	): Promise<ReplyMessage> {
 		const context = InteractionContext.getInteractionContext();
 
 		if (context.type === "interaction") {
 			const interaction = context.interaction;
-
 			if (interaction.isRepliable()) {
-				if (!interaction.replied && !interaction.deferred) {
-					await interaction.reply(options);
-				} else {
-					await interaction.editReply(options);
+				if (interaction.deferred || interaction.replied) {
+					const edit = await interaction.editReply(options);
+					return {
+						id: edit.id,
+						edit: (options: string | BaseMessageOptions) =>
+							edit.editReply(options),
+						delete: () => edit.deleteReply(),
+						followUp: (options: string | BaseMessageOptions) =>
+							interaction.followUp(options),
+					};
 				}
-			} else {
-				// For non-repliable interactions, send in channel and store the message
-				const sentMessage = await InteractionContext.sendInChannel(options);
-				context.replyMessage = sentMessage;
+				if (!interaction.replied && !interaction.deferred) {
+					const reply = await interaction.reply(options);
+					return {
+						id: reply.id,
+						edit: (options: string | BaseMessageOptions) =>
+							interaction.editReply(options),
+						delete: () => interaction.deleteReply(),
+						followUp: (options: string | BaseMessageOptions) =>
+							interaction.followUp(options),
+					};
+				}
 			}
 		} else {
-			// For message context, reply to the message and store the reply
-			context.replyMessage = await context.message.reply(options);
+			const reply = await context.message.reply(options);
+			return {
+				id: reply.id,
+				edit: (options: string | BaseMessageOptions) => reply.edit(options),
+				delete: async () => {
+					await reply.delete();
+				},
+				followUp: async (options: string | BaseMessageOptions) => {
+					const reply2 = await context.message.reply(options);
+					return {
+						id: reply2.id,
+						edit: (options: string | BaseMessageOptions) =>
+							reply2.edit(options),
+						delete: async () => {
+							await reply2.delete();
+						},
+						followUp: async (options: string | BaseMessageOptions) => {
+							await context.message.reply(options);
+						},
+					};
+				},
+			};
 		}
-	}
 
-	/**
-	 * Edits the reply in the current context
-	 * For interactions: edits the interaction reply
-	 * For messages: edits the stored reply message or creates one if none exists
-	 * @param options - Message content or options object
-	 * @throws Error if not called within InteractionContext.run()
-	 */
-	static async editReply(options: string | messageOptions): Promise<void> {
-		const context = InteractionContext.getInteractionContext();
-
-		if (context.replyMessage) {
-			await context.replyMessage.edit(options);
-			return;
-		}
-
-		if (context.type === "interaction") {
-			const interaction = context.interaction;
-			if (interaction.isRepliable()) {
-				if (!interaction.replied && !interaction.deferred) {
-					await interaction.reply(options);
-				} else {
-					await interaction.editReply(options);
-				}
-				return;
-			}
-		}
-		await InteractionContext.sendInChannel(options);
+		// Fallback for non-repliable or no replyMessage
+		const fallback = await InteractionContext.sendInChannel(options);
+		return {
+			id: fallback.id,
+			edit: (options: string | BaseMessageOptions) => fallback.edit(options),
+			delete: async () => {
+				await fallback.delete();
+			},
+			followUp: (options: string | BaseMessageOptions) =>
+				InteractionContext.sendInChannel(options),
+		};
 	}
 
 	/**
@@ -212,27 +236,6 @@ export class InteractionContext {
 			) {
 				await interaction.deferUpdate();
 			}
-		}
-	}
-
-	/**
-	 * Sends a follow-up message
-	 * For interactions: uses interaction.followUp()
-	 * For messages: replies to the original message
-	 * @param options - Message content or options object
-	 * @throws Error if not called within InteractionContext.run()
-	 */
-	static async followUp(options: string | messageOptions): Promise<void> {
-		const context = InteractionContext.getInteractionContext();
-
-		if (context.type === "interaction") {
-			const interaction = context.interaction;
-			if (interaction.isRepliable()) {
-				await interaction.followUp(options);
-			}
-		} else {
-			// For messages, followUp should reply to maintain conversation flow
-			await context.message.reply(options);
 		}
 	}
 
@@ -390,6 +393,32 @@ export class InteractionContext {
 				: { type: "message", message: context },
 			callback,
 		);
+	}
+
+	/**
+	 * Converts a message to a reply message object
+	 * @param message - The message to convert
+	 * @returns A reply message object with edit, delete, and followUp methods
+	 */
+	private static messageToReplyMessage(
+		message: Message | Interaction,
+	): ReplyMessage {
+		return {
+			id: message.id,
+			edit: (options: string | BaseMessageOptions) => {
+				if (message instanceof Message) {
+					return message.edit(options);
+				}
+				return message.editReply(options);
+			},
+			delete: async () => {
+				await message.delete();
+			},
+			followUp: async (options: string | BaseMessageOptions) => {
+				const reply = await message.reply(options);
+				return InteractionContext.messageToReplyMessage(reply);
+			},
+		};
 	}
 
 	/**
