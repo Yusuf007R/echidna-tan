@@ -10,14 +10,13 @@ import {
 	type MessageEditOptions,
 	type ModalBuilder,
 	type ModalSubmitInteraction,
-	type OmitPartialGroupDMChannel,
 	type User,
 } from "discord.js";
 import EchidnaSingleton from "./echidna-singleton";
 
 export type ReplyMessage = {
 	id: string;
-	edit: (options: string | BaseMessageOptions) => Promise<Message>;
+	edit: (options: string | BaseMessageOptions) => Promise<void>;
 	delete: () => Promise<void>;
 	followUp: (options: string | BaseMessageOptions) => Promise<ReplyMessage>;
 };
@@ -122,13 +121,11 @@ export class InteractionContext {
 
 	/**
 	 * Sends a reply to the current context (interaction or message)
-	 * Automatically handles reply vs editReply based on interaction state
-	 * Handles followUp logic
-	 * Handles fallback to sendInChannel if none of the above are possible
 	 * @param options - Message content or options object
+	 * @returns A reply message object with edit, delete, and followUp methods
 	 * @throws Error if not called within InteractionContext.run()
 	 */
-	private static async sendReply(
+	static async sendReply(
 		options: string | BaseMessageOptions,
 	): Promise<ReplyMessage> {
 		const context = InteractionContext.getInteractionContext();
@@ -138,63 +135,25 @@ export class InteractionContext {
 			if (interaction.isRepliable()) {
 				if (interaction.deferred || interaction.replied) {
 					const edit = await interaction.editReply(options);
-					return {
-						id: edit.id,
-						edit: (options: string | BaseMessageOptions) =>
-							edit.editReply(options),
-						delete: () => edit.deleteReply(),
-						followUp: (options: string | BaseMessageOptions) =>
-							interaction.followUp(options),
-					};
+					return InteractionContext.messageToReplyMessage(edit);
 				}
 				if (!interaction.replied && !interaction.deferred) {
-					const reply = await interaction.reply(options);
-					return {
-						id: reply.id,
-						edit: (options: string | BaseMessageOptions) =>
-							interaction.editReply(options),
-						delete: () => interaction.deleteReply(),
-						followUp: (options: string | BaseMessageOptions) =>
-							interaction.followUp(options),
-					};
+					const interactionResponse = await interaction.reply(
+						typeof options === "string"
+							? { content: options, fetchReply: true }
+							: { ...options, fetchReply: true },
+					);
+					return InteractionContext.messageToReplyMessage(interactionResponse);
 				}
 			}
 		} else {
 			const reply = await context.message.reply(options);
-			return {
-				id: reply.id,
-				edit: (options: string | BaseMessageOptions) => reply.edit(options),
-				delete: async () => {
-					await reply.delete();
-				},
-				followUp: async (options: string | BaseMessageOptions) => {
-					const reply2 = await context.message.reply(options);
-					return {
-						id: reply2.id,
-						edit: (options: string | BaseMessageOptions) =>
-							reply2.edit(options),
-						delete: async () => {
-							await reply2.delete();
-						},
-						followUp: async (options: string | BaseMessageOptions) => {
-							await context.message.reply(options);
-						},
-					};
-				},
-			};
+			return InteractionContext.messageToReplyMessage(reply);
 		}
 
 		// Fallback for non-repliable or no replyMessage
 		const fallback = await InteractionContext.sendInChannel(options);
-		return {
-			id: fallback.id,
-			edit: (options: string | BaseMessageOptions) => fallback.edit(options),
-			delete: async () => {
-				await fallback.delete();
-			},
-			followUp: (options: string | BaseMessageOptions) =>
-				InteractionContext.sendInChannel(options),
-		};
+		return InteractionContext.messageToReplyMessage(fallback);
 	}
 
 	/**
@@ -400,16 +359,11 @@ export class InteractionContext {
 	 * @param message - The message to convert
 	 * @returns A reply message object with edit, delete, and followUp methods
 	 */
-	private static messageToReplyMessage(
-		message: Message | Interaction,
-	): ReplyMessage {
+	private static messageToReplyMessage(message: Message): ReplyMessage {
 		return {
 			id: message.id,
-			edit: (options: string | BaseMessageOptions) => {
-				if (message instanceof Message) {
-					return message.edit(options);
-				}
-				return message.editReply(options);
+			edit: async (options: string | BaseMessageOptions) => {
+				await message.edit(options);
 			},
 			delete: async () => {
 				await message.delete();
