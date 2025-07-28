@@ -7,7 +7,6 @@ import {
 	type Interaction,
 	type Message,
 	type MessageCreateOptions,
-	type MessageEditOptions,
 	type ModalBuilder,
 	type ModalSubmitInteraction,
 	type User,
@@ -28,16 +27,12 @@ type InteractionContextType =
 	| {
 			type: "interaction";
 			interaction: BaseInteraction<CacheType>;
-			replyMessage?: {
-				edit: (options: string | BaseMessageOptions) => Promise<Message>;
-			};
+			replyMessage?: ReplyMessage;
 	  }
 	| {
 			type: "message";
 			message: Message;
-			replyMessage?: {
-				edit: (options: string | BaseMessageOptions) => Promise<Message>;
-			};
+			replyMessage?: ReplyMessage;
 	  };
 
 /**
@@ -152,8 +147,40 @@ export class InteractionContext {
 		}
 
 		// Fallback for non-repliable or no replyMessage
-		const fallback = await InteractionContext.sendInChannel(options);
-		return InteractionContext.messageToReplyMessage(fallback);
+		return await InteractionContext.sendInChannel(options);
+	}
+
+	/**
+	 * Edits the reply message in the current context
+	 * @param options - Message edit options
+	 * @throws Error if not called within InteractionContext.run()
+	 */
+	static async editReply(options: string | BaseMessageOptions) {
+		const context = InteractionContext.getInteractionContext();
+		if (!context.replyMessage) throw new Error("Reply message not found");
+		await context.replyMessage.edit(options);
+	}
+
+	/**
+	 * Follows up with a new message in the current context
+	 * @param options - Message content or options object
+	 * @throws Error if not called within InteractionContext.run()
+	 */
+	static async followUp(options: string | BaseMessageOptions) {
+		const context = InteractionContext.getInteractionContext();
+		if (!context.replyMessage) throw new Error("Reply message not found");
+		await context.replyMessage.followUp(options);
+		return context.replyMessage;
+	}
+
+	/**
+	 * Deletes the reply message in the current context
+	 * @throws Error if not called within InteractionContext.run()
+	 */
+	static async deleteReply() {
+		const context = InteractionContext.getInteractionContext();
+		if (!context.replyMessage) throw new Error("Reply message not found");
+		await context.replyMessage.delete();
 	}
 
 	/**
@@ -240,31 +267,11 @@ export class InteractionContext {
 	 */
 	static async sendInChannel(
 		options: string | MessageCreateOptions,
-	): Promise<Message> {
+	): Promise<ReplyMessage> {
 		const channel = InteractionContext.getTextBasedChannel();
 		if (!channel) throw new Error("Channel not found or not text-based");
-		return await channel.send(options);
-	}
-
-	/**
-	 * Edits a message in the current context
-	 * For messages: edits the message itself
-	 * For message context menu interactions: edits the target message
-	 * @param options - Message edit options
-	 * @throws Error if not called within InteractionContext.run()
-	 */
-	static async editMessage(options: MessageEditOptions): Promise<void> {
-		const context = InteractionContext.getInteractionContext();
-
-		if (context.type === "message") {
-			await context.message.edit(options);
-		} else if (context.type === "interaction") {
-			// For message context menus, edit the target message
-			const interaction = context.interaction;
-			if (interaction.isMessageContextMenuCommand()) {
-				await interaction.targetMessage.edit(options);
-			}
-		}
+		const message = await channel.send(options);
+		return InteractionContext.messageToReplyMessage(message);
 	}
 
 	/**
@@ -360,7 +367,8 @@ export class InteractionContext {
 	 * @returns A reply message object with edit, delete, and followUp methods
 	 */
 	private static messageToReplyMessage(message: Message): ReplyMessage {
-		return {
+		const context = InteractionContext.getInteractionContext();
+		const replyMessage: ReplyMessage = {
 			id: message.id,
 			edit: async (options: string | BaseMessageOptions) => {
 				await message.edit(options);
@@ -373,6 +381,10 @@ export class InteractionContext {
 				return InteractionContext.messageToReplyMessage(reply);
 			},
 		};
+
+		context.replyMessage = replyMessage;
+
+		return replyMessage;
 	}
 
 	/**
