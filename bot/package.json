@@ -11,7 +11,7 @@
 		"dev": "pnpm run build -- watch",
 		"start": "pnpm run build && node ./dist/index.js",
 		"full-check": "pnpm run type-check && pnpm run check",
-		"type-check": "tsgo --noEmit",
+		"type-check": "tsgo ./src --noEmit",
 		"check": "biome check --write src/*",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
