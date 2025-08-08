@@ -1,4 +1,4 @@
-import type { CacheType, CommandInteraction } from "discord.js";
+import { InteractionContext } from "@Structures/interaction-context";
 import { MusicCommand } from "./[wrapper]";
 
 export default class NowPlaying extends MusicCommand {
@@ -9,11 +9,12 @@ export default class NowPlaying extends MusicCommand {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
 		if (!this.player) {
-			interaction.editReply("Nothing currently playing");
+			await InteractionContext.sendReply("Nothing currently playing");
 			return;
 		}
 		await this.echidna.musicPlayer.nowPlaying(this.player);
+		await InteractionContext.deleteReply();
 	}
 }

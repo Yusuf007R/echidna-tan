@@ -1,6 +1,6 @@
 import type { DiscordEvent, eventType } from "@Structures/discord-events";
 import EchidnaSingleton from "@Structures/echidna-singleton";
-import { baseDir } from "@Utils/dir-name";
+import { getBaseDir } from "@Utils/get-dir-name";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { Collection } from "discord.js";
@@ -22,7 +22,7 @@ export default class EventManager extends EchidnaSingleton {
 	}
 
 	async loadEvents() {
-		const eventsRootFolder = join(baseDir, "/events");
+		const eventsRootFolder = join(getBaseDir(), "/events");
 		await Promise.all(
 			readdirSync(eventsRootFolder)
 				.filter(

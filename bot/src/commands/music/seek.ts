@@ -1,5 +1,5 @@
+import { InteractionContext } from "@Structures/interaction-context";
 import { OptionsBuilder } from "@Utils/options-builder";
-import type { CacheType, CommandInteraction } from "discord.js";
 import { MusicCommand } from "./[wrapper]";
 
 const options = new OptionsBuilder()
@@ -21,9 +21,9 @@ export default class Seek extends MusicCommand<typeof options> {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
 		const seekTime = this.options.time;
 		this.player?.node.seek(seekTime);
-		await interaction.reply({ content: `Seeked to \`${seekTime}\`` });
+		await InteractionContext.sendReply(`Seeked to \`${seekTime}\``);
 	}
 }

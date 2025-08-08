@@ -3,7 +3,7 @@ import {
 	type AutocompleteFocusedOption,
 	AutocompleteInteraction,
 	type CacheType,
-	type CommandInteraction,
+	type ChatInputCommandInteraction,
 } from "discord.js";
 import type { Option, OptionsTypeTable } from "./options-builder";
 
@@ -48,7 +48,7 @@ class GetOptions<O extends Option[] | undefined = undefined> {
 
 	loadFromCommandInteraction(
 		interaction:
-			| CommandInteraction<CacheType>
+			| ChatInputCommandInteraction<CacheType>
 			| AutocompleteInteraction<CacheType>,
 	) {
 		if (interaction instanceof AutocompleteInteraction) {

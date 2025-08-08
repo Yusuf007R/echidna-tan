@@ -1,6 +1,6 @@
+import { InteractionContext } from "@Structures/interaction-context";
 import capitalize from "@Utils/capitalize";
 import { OptionsBuilder } from "@Utils/options-builder";
-import type { CacheType, CommandInteraction } from "discord.js";
 import { QueueRepeatMode } from "discord-player";
 import { MusicCommand } from "./[wrapper]";
 
@@ -23,12 +23,12 @@ export default class LoopCommand extends MusicCommand<typeof options> {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
 		const modeOpt = this.options.mode;
 		// ts is being weird 💀
 		const mode =
 			QueueRepeatMode[modeOpt.toUpperCase() as keyof typeof QueueRepeatMode];
 		this.player?.setRepeatMode(mode);
-		await interaction.reply({ content: `Loop mode set to \`${mode}\`` });
+		await InteractionContext.sendReply(`Loop mode set to \`${mode}\``);
 	}
 }

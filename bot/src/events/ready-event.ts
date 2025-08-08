@@ -9,8 +9,8 @@ export default class ReadyEvent extends DiscordEvent<"ready"> {
 		await this.echidna.updateEchidna();
 
 		setInterval(
-			() => {
-				this.echidna.updateEchidna();
+			async () => {
+				await this.echidna.updateEchidna();
 			},
 			1000 * 60 * 10,
 		); // 10 minutes

@@ -1,5 +1,5 @@
+import { InteractionContext } from "@Structures/interaction-context";
 import { OptionsBuilder } from "@Utils/options-builder";
-import type { CacheType, CommandInteraction } from "discord.js";
 import { MusicCommand } from "./[wrapper]";
 
 const options = new OptionsBuilder()
@@ -21,9 +21,9 @@ export default class Volume extends MusicCommand<typeof options> {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
 		const volume = this.options.volume;
 		this.player?.node.setVolume(volume);
-		await interaction.reply({ content: `Volume set to \`${volume}\`` });
+		await InteractionContext.sendReply(`Volume set to \`${volume}\``);
 	}
 }

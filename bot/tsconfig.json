@@ -1,10 +1,19 @@
 {
-  "include": ["src", "db-actions.ts", "drizzle.config.ts"],
-  "exclude": ["node_modules", "dist"],
+  "include": [
+    "src",
+    "db-actions.ts",
+    "drizzle.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
   "ts-node": {
     "transpileOnly": true,
     "files": true,
-    "require": ["tsconfig-paths/register"]
+    "require": [
+      "tsconfig-paths/register"
+    ]
   },
   "compilerOptions": {
     "noEmit": false,
@@ -14,7 +23,9 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "composite": true,
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext"
+    ],
     "declaration": true,
     "declarationMap": false,
     "forceConsistentCasingInFileNames": true,
@@ -26,20 +37,50 @@
     "skipLibCheck": true,
     "strict": true,
     "outDir": "dist/",
-    "typeRoots": ["./node_modules/@types", "src/interfaces"],
-    "baseUrl": ".",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/interfaces"
+    ],
     "paths": {
-      "@Configs": ["./src/config"],
-      "@Interfaces/*": ["./src/interfaces/*"],
-      "@Commands/*": ["./src/commands/*"],
-      "@Events/*": ["./src/events/*"],
-      "@EventsValidators/*": ["./src/event-validators/*"],
-      "@Components/*": ["./src/components/*"],
-      "@Utils/*": ["./src/utils/*"],
-      "@Managers/*": ["./src/managers/*"],
-      "@Structures/*": ["./src/structures/*"],
-      "@AiStructures/*": ["./src/ai-stuff/structures/*"],
-      "@Api/*": ["./src/api/*"]
+      "@Configs": [
+        "./src/config"
+      ],
+      "@Interfaces/*": [
+        "./src/interfaces/*"
+      ],
+      "@Commands/*": [
+        "./src/commands/*"
+      ],
+      "@Events/*": [
+        "./src/events/*"
+      ],
+      "@EventsValidators/*": [
+        "./src/event-validators/*"
+      ],
+      "@Components/*": [
+        "./src/components/*"
+      ],
+      "@Utils/*": [
+        "./src/utils/*"
+      ],
+      "@Managers/*": [
+        "./src/managers/*"
+      ],
+      "@Loaders/*": [
+        "./src/loaders/*"
+      ],
+      "@Structures/*": [
+        "./src/structures/*"
+      ],
+      "@AiStructures/*": [
+        "./src/ai-stuff/structures/*"
+      ],
+      "@Api/*": [
+        "./src/api/*"
+      ],
+      "@Drizzle/*": [
+        "./src/drizzle/*"
+      ]
     }
   }
 }

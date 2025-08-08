@@ -1,6 +1,8 @@
 // make a command that sends a message to a specific user
 
 import config from "@Configs";
+import db from "@Drizzle/db";
+import { echidnaTable } from "@Drizzle/schema";
 import IsAdmin from "@EventsValidators/isAdmin";
 import { Command } from "@Structures/command";
 import getImageAsBuffer from "@Utils/get-image-from-url";
@@ -15,8 +17,6 @@ import {
 } from "discord.js";
 import { eq } from "drizzle-orm";
 import sharp from "sharp";
-import db from "src/drizzle";
-import { echidnaTable } from "src/drizzle/schema";
 
 const options = new OptionsBuilder().build();
 

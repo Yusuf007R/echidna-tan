@@ -1,4 +1,11 @@
 import config from "@Configs";
+import db from "@Drizzle/db";
+import {
+	chatsTable,
+	memoriesTable,
+	messagesTable,
+	type userTable,
+} from "@Drizzle/schema";
 import type { AiPrompt } from "@Interfaces/ai-prompts";
 import type { OpenRouterModel } from "@Interfaces/open-router-model";
 import ChatBotManager from "@Managers/chat-bot-manager";
@@ -6,13 +13,6 @@ import { openAI } from "@Utils/request";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { type CoreMessage, generateText, tool } from "ai";
 import { desc, eq, type InferSelectModel, sql } from "drizzle-orm";
-import db from "src/drizzle";
-import {
-	chatsTable,
-	memoriesTable,
-	messagesTable,
-	type userTable,
-} from "src/drizzle/schema";
 import z from "zod";
 
 const openrouter = createOpenRouter({

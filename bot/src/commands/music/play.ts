@@ -1,5 +1,5 @@
+import { PLAY_MODE, PLAYER_TYPE } from "@Structures/music-player";
 import { OptionsBuilder } from "@Utils/options-builder";
-import type { CacheType, CommandInteraction } from "discord.js";
 import { MusicCommand } from "./[wrapper]";
 
 const options = new OptionsBuilder()
@@ -24,12 +24,17 @@ export default class Play extends MusicCommand<typeof options> {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
-		// await interaction.reply("temporarily disabled");
-		await this.echidna.musicPlayer.playCmd(
-			interaction,
-			this.options.query,
-			this.options["download-play"] ?? true,
+	async run() {
+		const queue = await this.echidna.musicPlayer.getOrCreateQueue(
+			PLAYER_TYPE.MUSIC,
 		);
+
+		await this.echidna.musicPlayer.playCmd({
+			queue,
+			query: this.options.query,
+			playMode: this.options["download-play"]
+				? PLAY_MODE.download
+				: PLAY_MODE.stream,
+		});
 	}
 }
