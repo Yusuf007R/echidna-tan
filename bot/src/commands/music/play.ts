@@ -1,10 +1,5 @@
 import { PLAY_MODE, PLAYER_TYPE } from "@Structures/music-player";
 import { OptionsBuilder } from "@Utils/options-builder";
-import type {
-	CacheType,
-	ChatInputCommandInteraction,
-	CommandInteraction,
-} from "discord.js";
 import { MusicCommand } from "./[wrapper]";
 
 const options = new OptionsBuilder()
@@ -29,9 +24,8 @@ export default class Play extends MusicCommand<typeof options> {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
 		const queue = await this.echidna.musicPlayer.getOrCreateQueue(
-			interaction as ChatInputCommandInteraction<CacheType>,
 			PLAYER_TYPE.MUSIC,
 		);
 

@@ -1,3 +1,4 @@
+import { InteractionContext } from "@Structures/interaction-context";
 import {
 	PLAY_MODE,
 	PLAYER_TYPE,
@@ -59,7 +60,6 @@ export default class AsmrPlay extends MusicCommand<typeof options> {
 			}
 
 			const queue = await this.echidna.musicPlayer.getOrCreateQueue(
-				interaction,
 				PLAYER_TYPE.ASMR_PLAY,
 			);
 
@@ -89,9 +89,9 @@ export default class AsmrPlay extends MusicCommand<typeof options> {
 			});
 		} catch (error) {
 			console.error("[AsmrPlay] Failed to start ASMR playback:", error);
-			await interaction.editReply({
-				content: "Failed to start ASMR playback. Please try again.",
-			});
+			await InteractionContext.sendReply(
+				"Failed to start ASMR playback. Please try again.",
+			);
 		}
 	}
 }

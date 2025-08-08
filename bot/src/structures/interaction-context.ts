@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+
 import {
 	BaseInteraction,
 	type BaseMessageOptions,
@@ -27,12 +28,10 @@ type InteractionContextType =
 	| {
 			type: "interaction";
 			interaction: BaseInteraction<CacheType>;
-			replyMessage?: ReplyMessage;
 	  }
 	| {
 			type: "message";
 			message: Message;
-			replyMessage?: ReplyMessage;
 	  };
 
 /**
@@ -115,20 +114,23 @@ export class InteractionContext {
 	}
 
 	/**
-	 * Sends a reply to the current context (interaction or message)
+	 * Private method to send a reply to the current context
+	 * Sends or edits a reply to the current context (interaction or message)
 	 * @param options - Message content or options object
+	 * @param allowedEdit - Whether to allow editing the reply
 	 * @returns A reply message object with edit, delete, and followUp methods
 	 * @throws Error if not called within InteractionContext.run()
 	 */
-	static async sendReply(
+	private static async _sendReply(
 		options: string | BaseMessageOptions,
+		allowedEdit = false,
 	): Promise<ReplyMessage> {
 		const context = InteractionContext.getInteractionContext();
 
 		if (context.type === "interaction") {
 			const interaction = context.interaction;
 			if (interaction.isRepliable()) {
-				if (interaction.deferred || interaction.replied) {
+				if (interaction.deferred || (interaction.replied && allowedEdit)) {
 					const edit = await interaction.editReply(options);
 					return InteractionContext.messageToReplyMessage(edit);
 				}
@@ -142,6 +144,10 @@ export class InteractionContext {
 				}
 			}
 		} else {
+			if (allowedEdit) {
+				const edit = await context.message.edit(options);
+				return InteractionContext.messageToReplyMessage(edit);
+			}
 			const reply = await context.message.reply(options);
 			return InteractionContext.messageToReplyMessage(reply);
 		}
@@ -151,36 +157,41 @@ export class InteractionContext {
 	}
 
 	/**
-	 * Edits the reply message in the current context
-	 * @param options - Message edit options
+	 * Sends or edits a reply to the current context (interaction or message)
+	 * @param options - Message content or options object
+	 * @param allowedEdit - Whether to allow editing the reply
+	 * @returns A reply message object with edit, delete, and followUp methods
 	 * @throws Error if not called within InteractionContext.run()
 	 */
-	static async editReply(options: string | BaseMessageOptions) {
-		const context = InteractionContext.getInteractionContext();
-		if (!context.replyMessage) throw new Error("Reply message not found");
-		await context.replyMessage.edit(options);
+	static async sendReply(options: string | BaseMessageOptions): Promise<void> {
+		await InteractionContext._sendReply(options);
 	}
 
 	/**
-	 * Follows up with a new message in the current context
-	 * @param options - Message content or options object
+	 * Edits the reply message in the current context (interaction or message)
+	 * @param options - Message content or options object to edit the reply with
 	 * @throws Error if not called within InteractionContext.run()
 	 */
-	static async followUp(options: string | BaseMessageOptions) {
-		const context = InteractionContext.getInteractionContext();
-		if (!context.replyMessage) throw new Error("Reply message not found");
-		await context.replyMessage.followUp(options);
-		return context.replyMessage;
+	static async editReply(options: string | BaseMessageOptions): Promise<void> {
+		await InteractionContext._sendReply(options, true);
 	}
 
 	/**
 	 * Deletes the reply message in the current context
 	 * @throws Error if not called within InteractionContext.run()
 	 */
-	static async deleteReply() {
+	static async deleteReply(): Promise<void> {
 		const context = InteractionContext.getInteractionContext();
-		if (!context.replyMessage) throw new Error("Reply message not found");
-		await context.replyMessage.delete();
+
+		if (context.type === "interaction") {
+			const interaction = context.interaction;
+			if (!interaction.isRepliable()) return;
+			if (!interaction.deferred && !interaction.replied) return;
+			await interaction.deleteReply();
+			return;
+		}
+		await context.message.delete();
+		return;
 	}
 
 	/**
@@ -367,7 +378,6 @@ export class InteractionContext {
 	 * @returns A reply message object with edit, delete, and followUp methods
 	 */
 	private static messageToReplyMessage(message: Message): ReplyMessage {
-		const context = InteractionContext.getInteractionContext();
 		const replyMessage: ReplyMessage = {
 			id: message.id,
 			edit: async (options: string | BaseMessageOptions) => {
@@ -381,8 +391,6 @@ export class InteractionContext {
 				return InteractionContext.messageToReplyMessage(reply);
 			},
 		};
-
-		context.replyMessage = replyMessage;
 
 		return replyMessage;
 	}

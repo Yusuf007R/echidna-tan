@@ -1,4 +1,4 @@
-import type { CacheType, CommandInteraction } from "discord.js";
+import { InteractionContext } from "@Structures/interaction-context";
 import { MusicCommand } from "./[wrapper]";
 
 export default class Shuffle extends MusicCommand {
@@ -9,8 +9,8 @@ export default class Shuffle extends MusicCommand {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
 		this.player?.toggleShuffle();
-		await interaction.reply({ content: "Shuffled the queue." });
+		await InteractionContext.sendReply("Shuffled the queue.");
 	}
 }

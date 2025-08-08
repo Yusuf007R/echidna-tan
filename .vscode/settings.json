@@ -11,8 +11,8 @@
   },
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.organizeImports": "never",
-    "source.organizeImports.biome": "explicit",
+    "source.organizeImports": "always",
+    "source.organizeImports.biome": "never",
     "source.action.useSortedAttributes.biome": "explicit",
     "source.action.useSortedKeys.biome": "explicit",
     "source.fixAll.biome": "explicit"

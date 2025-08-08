@@ -1,4 +1,4 @@
-import type { CacheType, CommandInteraction } from "discord.js";
+import { InteractionContext } from "@Structures/interaction-context";
 import { MusicCommand } from "./[wrapper]";
 
 export default class Resume extends MusicCommand {
@@ -9,8 +9,8 @@ export default class Resume extends MusicCommand {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
 		this.player?.node.resume();
-		await interaction.reply({ content: "Resumed the current song." });
+		await InteractionContext.sendReply("Resumed the current song.");
 	}
 }
