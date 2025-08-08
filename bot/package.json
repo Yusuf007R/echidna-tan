@@ -5,22 +5,18 @@
 	"main": "index.js",
 	"type": "module",
 	"scripts": {
-		"prebuild": "rimraf dist",
-		"predev": "pnpm run check",
-		"dev": "node esbuild.config.js watch",
-		"start": "pnpm run build && node ./dist/index.js ",
 		"build": "node esbuild.config.js",
-		"build:prod": "NODE_ENV=production node esbuild.config.js",
-		"lint": "biome check --write src/*",
-		"format": "biome format --write src/*",
-		"type-check": "tsc --noEmit",
-		"fix": "pnpm run format && pnpm run lint",
-		"check": "pnpm run type-check && pnpm run fix",
+		"prebuild": "rimraf dist && pnpm run full-check",
+		"build:prod": "NODE_ENV=production pnpm run build:prod",
+		"dev": "pnpm run build -- watch",
+		"start": "pnpm run build && node ./dist/index.js",
+		"full-check": "pnpm run type-check && pnpm run check",
+		"type-check": "tsgo --noEmit",
+		"check": "biome check --write src/*",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
-		"db:clear": "tsx db-actions.ts clear",
-		"prepare": "cd .. && husky bot/.husky"
+		"db:clear": "tsx db-actions.ts clear"
 	},
 	"author": "Yusuf Rawat",
 	"license": "ISC",
@@ -36,6 +32,7 @@
 		"@libsql/client": "^0.15.6",
 		"@openrouter/ai-sdk-provider": "^0.4.6",
 		"@oslojs/encoding": "^1.1.0",
+		"@typescript/native-preview": "7.0.0-dev.20250724.1",
 		"ai": "^4.3.15",
 		"apisauce": "^3.1.1",
 		"arctic": "^3.6.1",
@@ -72,8 +69,7 @@
 		"zod-to-json-schema": "^3.24.5"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.0.0-beta.2",
-		"@biomejs/cli-linux-x64": "2.0.0-beta.2",
+		"@biomejs/biome": "2.0.6",
 		"@types/cors": "^2.8.18",
 		"@types/fluent-ffmpeg": "^2.1.27",
 		"@types/gifsicle": "^5.2.2",
@@ -83,14 +79,13 @@
 		"drizzle-kit": "^0.31.1",
 		"esbuild": "^0.25.4",
 		"esbuild-node-externals": "^1.18.0",
-		"husky": "^9.1.7",
 		"rimraf": "^6.0.1",
 		"tsc-alias": "^1.8.16",
 		"typescript": "5.8.3"
 	},
 	"pnpm": {
 		"overrides": {
-			"node-fetch@2.7.0>whatwg-url": "14.0.0"
+			"node-fetch@2.7.0": "3.0.0"
 		},
 		"onlyBuiltDependencies": [
 			"@discordjs/opus",

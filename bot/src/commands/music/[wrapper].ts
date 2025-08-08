@@ -4,7 +4,7 @@ import { Command, type commandConfigs } from "@Structures/command";
 import type { CommandValidator } from "@Structures/command-validator";
 import type { QueueMetadata } from "@Structures/music-player";
 import type { Option } from "@Utils/options-builder";
-import type { CacheType, CommandInteraction } from "discord.js";
+import type { CacheType, ChatInputCommandInteraction } from "discord.js";
 import type { GuildQueue } from "discord-player";
 
 export abstract class MusicCommand<
@@ -21,7 +21,9 @@ export abstract class MusicCommand<
 		super({ ...config, validators, shouldDefer: true });
 	}
 
-	async _run(interaction: CommandInteraction<CacheType>): Promise<void> {
+	async _run(
+		interaction: ChatInputCommandInteraction<CacheType>,
+	): Promise<void> {
 		this.player = this.echidna.musicPlayer.nodes.get(interaction.guild!);
 		await super._run(interaction);
 	}

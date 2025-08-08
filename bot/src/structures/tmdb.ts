@@ -173,7 +173,7 @@ export default class TMDB {
 		const [id, type] = str.replace("TMDB ID: ", "").trim().split(" - ");
 		return {
 			type,
-			id: Number.parseInt(id),
+			id: Number.parseInt(id, 10),
 		};
 	}
 

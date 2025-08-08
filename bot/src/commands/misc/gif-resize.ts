@@ -1,7 +1,7 @@
 import { Command } from "@Structures/command";
 import GifResize from "@Structures/gif-resize";
-import keepTyping from "@Utils/keep-typing";
 import { OptionsBuilder } from "@Utils/options-builder";
+import withInterval from "@Utils/with-interval";
 import {
 	AttachmentBuilder,
 	type CacheType,
@@ -52,7 +52,7 @@ export default class GifResizeCommand extends Command<typeof options> {
 				filter: (m) => m.author.id === interaction.user.id,
 			});
 			const message = collected.first();
-			const stopTyping = keepTyping(() => dmChannel.sendTyping());
+			const stopTyping = withInterval(() => dmChannel.sendTyping());
 			if (!message) throw new Error("Internal error, try again later.");
 
 			const gifs = await gifResized.getGifs(message, 0);

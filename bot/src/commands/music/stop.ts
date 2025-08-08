@@ -1,4 +1,4 @@
-import type { CacheType, CommandInteraction } from "discord.js";
+import { InteractionContext } from "@Structures/interaction-context";
 import { MusicCommand } from "./[wrapper]";
 
 export default class Stop extends MusicCommand {
@@ -9,8 +9,12 @@ export default class Stop extends MusicCommand {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
+		if (!this.player) {
+			await InteractionContext.sendReply("Nothing currently playing");
+			return;
+		}
 		this.player?.delete();
-		await interaction.reply({ content: "Stopped the current song." });
+		await InteractionContext.sendReply("Stopped the current song.");
 	}
 }

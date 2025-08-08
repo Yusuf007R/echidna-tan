@@ -1,4 +1,6 @@
 import ChatBot from "@AiStructures/chat-bot";
+import db from "@Drizzle/db";
+import { chatsTable, messagesTable, userTable } from "@Drizzle/schema";
 import type { AiPrompt } from "@Interfaces/ai-prompts";
 import type { OpenRouterModel } from "@Interfaces/open-router-model";
 import CacheManager from "@Managers/cache-manager";
@@ -7,8 +9,6 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { DMChannel, ThreadChannel } from "discord.js";
 import { desc, eq, type InferSelectModel } from "drizzle-orm";
-import db from "src/drizzle";
-import { chatsTable, messagesTable, userTable } from "src/drizzle/schema";
 
 export type messageAttachmentType = {
 	url: string;

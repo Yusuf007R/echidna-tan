@@ -1,4 +1,5 @@
 import ContextMenu from "@Structures/context-menu";
+import { InteractionContext } from "@Structures/interaction-context";
 import TMDB from "@Structures/tmdb";
 import {
 	ActionRowBuilder,
@@ -7,6 +8,7 @@ import {
 } from "@discordjs/builders";
 import {
 	type MessageContextMenuCommandInteraction,
+	MessageFlags,
 	TextInputStyle,
 } from "discord.js";
 
@@ -25,12 +27,20 @@ class EditNoteContextMenu extends ContextMenu<"MESSAGE"> {
 		if (message.interaction?.commandName !== "tmdb-query") {
 			await interaction.reply({
 				content: "This command can only be used in the TMDB query command",
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 			return;
 		}
 
 		const embedData = message.embeds[0].data;
+		if (!embedData) {
+			await interaction.reply({
+				content: "No TMDB data found in this message",
+				flags: MessageFlags.Ephemeral,
+			});
+			return;
+		}
+
 		const oldNote = this.tmdb.extractNote(embedData);
 
 		const modal = new ModalBuilder()
@@ -45,17 +55,15 @@ class EditNoteContextMenu extends ContextMenu<"MESSAGE"> {
 		const row = new ActionRowBuilder<TextInputBuilder>().addComponents(input);
 
 		modal.addComponents(row);
-		await interaction.showModal(modal);
-		const res = await this.echidna.modalManager.waitForModalResponse(
-			modal.data.custom_id!,
-		);
+
+		const res = await InteractionContext.showModal(modal);
 
 		const note = res.fields.getTextInputValue("note");
 
 		const embed = this.tmdb.updateNote(embedData, note);
 		await message.edit({ embeds: [embed] });
 
-		await res.reply({ ephemeral: true, content: "Note edited" });
+		await res.deferUpdate();
 	}
 }
 

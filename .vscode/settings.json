@@ -11,17 +11,18 @@
   },
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.organizeImports": "never",
-    "source.sortImports": "never",
+    "source.organizeImports": "always",
+    "source.organizeImports.biome": "never",
+    "source.action.useSortedAttributes.biome": "explicit",
+    "source.action.useSortedKeys.biome": "explicit",
     "source.fixAll.biome": "explicit"
   },
   "[javascript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
-  "[dockerfile]": {
-    "editor.defaultFormatter": "ms-azuretools.vscode-docker",
-  },
-  "biome.lsp.bin": "/home/yusuf/code/echidna-tan/bot/node_modules/@biomejs/cli-linux-x64/biome",
+  "biome.lsp.bin": "./bot/node_modules/.bin/biome",
+  "biome.suggestInstallingGlobally": true,
+  // "biome.configurationPath": "./bot/biome.json",
   "[json]": {
     "editor.defaultFormatter": "biomejs.biome"
   }

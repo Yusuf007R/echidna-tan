@@ -1,4 +1,5 @@
 import { DiscordEvent } from "@Structures/discord-events";
+import { InteractionContext } from "@Structures/interaction-context";
 import type { CacheType, Interaction } from "discord.js";
 
 export default class InteractionEvent extends DiscordEvent<"interactionCreate"> {
@@ -8,24 +9,9 @@ export default class InteractionEvent extends DiscordEvent<"interactionCreate"> 
 
 	async run(interaction: Interaction<CacheType>): Promise<void> {
 		try {
-			if (
-				interaction.isChatInputCommand() ||
-				interaction.isAutocomplete() ||
-				interaction.isContextMenuCommand()
-			) {
+			await InteractionContext.run(interaction, async () => {
 				await this.echidna.interactionManager.manageInteraction(interaction);
-				return;
-			}
-
-			if (interaction.isButton()) {
-				console.log(interaction);
-				return;
-			}
-
-			if (interaction.isModalSubmit()) {
-				this.echidna.modalManager.processModalResponse(interaction);
-				return;
-			}
+			});
 		} catch (error: any) {
 			if (interaction.isMessageComponent()) {
 				interaction.message.reply({

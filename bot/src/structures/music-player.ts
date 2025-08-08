@@ -1,25 +1,17 @@
 import { mapTrack } from "@Api/utils/map-track";
 import StringSelectComponent from "@Components/string-select";
-import capitalize from "@Utils/capitalize";
-import { baseDir } from "@Utils/dir-name";
-import getImageColor from "@Utils/get-image-color";
-import milisecondsToReadable from "@Utils/seconds-to-minutes";
-import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, readdir, rm } from "node:fs/promises";
-import path from "node:path";
 import {
 	ActionRowBuilder,
 	EmbedBuilder,
 	type StringSelectMenuBuilder,
 } from "@discordjs/builders";
 import {
-	type BaseInteraction,
-	type CacheType,
-	Collection,
-	type CommandInteraction,
-	type GuildMember,
-	type StringSelectMenuInteraction,
-} from "discord.js";
+	InteractionContext,
+	type ReplyMessage,
+} from "@Structures/interaction-context";
+import capitalize from "@Utils/capitalize";
+import { getBaseDir } from "@Utils/get-dir-name";
+import getImageColor from "@Utils/get-image-color";
 import {
 	type GuildQueue,
 	GuildQueueEvent,
@@ -29,16 +21,61 @@ import {
 	type Track,
 } from "discord-player";
 import { YoutubeiExtractor } from "discord-player-youtubei";
+import {
+	type CacheType,
+	Collection,
+	type GuildMember,
+	type StringSelectMenuInteraction,
+} from "discord.js";
+import { createReadStream, createWriteStream } from "node:fs";
+import { mkdir, readdir, rmdir, unlink } from "node:fs/promises";
+import path from "node:path";
 import { EventEmitter } from "tseep";
 import { YtDlp } from "ytdlp-nodejs";
 
-const TEMP_DIR = path.join(baseDir, "temp", "ytdlp");
+const TEMP_DIR = path.join(getBaseDir(), "temp", "ytdlp");
 
 const ytdlp = new YtDlp();
+
+export const TIMEOUT_OPTIONS = {
+	FADE_OUT: "fade-out",
+	FADE_OUT_AND_LEAVE: "fade-out-and-leave",
+	LEAVE: "leave",
+	STOP: "stop",
+} as const;
+
+export type TIMEOUT_OPTIONS =
+	(typeof TIMEOUT_OPTIONS)[keyof typeof TIMEOUT_OPTIONS];
+
+export const PLAYER_TYPE = {
+	MUSIC: "music",
+	ASMR_PLAY: "asmr-play",
+} as const;
+
+export type PLAYER_TYPE = (typeof PLAYER_TYPE)[keyof typeof PLAYER_TYPE];
+
+export const PLAY_MODE = {
+	stream: "stream",
+	download: "download",
+} as const;
+
+export type PLAY_MODE = (typeof PLAY_MODE)[keyof typeof PLAY_MODE];
+
 export type QueueMetadata = {
-	interaction: BaseInteraction<CacheType>;
 	guildId: string;
 	"image-url-cache": Record<string, any>;
+	type: PLAYER_TYPE;
+	nowPlayingMessage: ReplyMessage | null;
+	timeout: {
+		minutes: number;
+		option: TIMEOUT_OPTIONS;
+		timeoutId: NodeJS.Timeout;
+		startedAt: number;
+	} | null;
+};
+
+export type TrackMetadata = {
+	playMode: PLAY_MODE;
 };
 
 const guildEvents = [
@@ -61,13 +98,11 @@ type GuildEmitter = {
 };
 
 export default class MusicPlayer extends Player {
-	DOWNLOAD_PLAY = true;
 	static guildEmiters = new Collection<string, EventEmitter<GuildEmitter>>();
 
 	async init() {
 		await this.loadExtractors();
 		this.initEvents();
-		this.cleanUpDownloadedStream();
 	}
 
 	async loadExtractors() {
@@ -87,42 +122,68 @@ export default class MusicPlayer extends Player {
 		const filePath = path.join(dir, `${q.id}.opus`);
 		await mkdir(dir, { recursive: true });
 		const stream = createWriteStream(filePath);
+
 		const ytdlpStream = ytdlp.stream(q.url, {
 			format: {
 				filter: "audioonly",
 				quality: 10,
 				type: "opus",
 			},
-			onProgress: (progress) => {
-				if (progress.status === "finished") {
-					console.log("Stream finished", {
-						...progress,
-						track: q,
-					});
-				}
-			},
+
+			onProgress: (() => {
+				// Closure to keep track of last milestone
+				let lastMilestone = -1;
+				const milestones = [0, 15, 25, 35, 50, 65, 75, 100];
+				let message: ReplyMessage | null = null;
+				return async (progress) => {
+					if (progress.status === "downloading" && progress.percentage) {
+						const percent = Number.parseInt(progress.percentage.toString(), 10);
+						const nextMilestone = milestones.find(
+							(m) => percent === m && lastMilestone < m,
+						);
+						if (nextMilestone !== undefined) {
+							lastMilestone = nextMilestone;
+							const text = `Downloading stream... ${nextMilestone}% - ${progress.downloaded_str} / ${progress.total_str} - ${progress.eta_str}`;
+							if (message) {
+								await message.edit({ content: text });
+							} else {
+								try {
+									message = await InteractionContext.sendInChannel(text);
+								} catch (error) {
+									// Ignore if we can't send to channel (context might not be available)
+									console.warn(
+										"Could not send download progress message:",
+										error,
+									);
+								}
+							}
+						}
+					}
+					if (progress.status === "finished") {
+						if (message) {
+							await message.delete();
+						}
+					}
+				};
+			})(),
 		});
 		await ytdlpStream.pipeAsync(stream);
-		console.log("Stream created", filePath);
 		return createReadStream(filePath);
 	}
 
-	private cleanUpDownloadedStream() {
+	private async cleanUpDownloand(queue: GuildQueue<QueueMetadata>) {
+		const guildId = queue.guild.id;
 		try {
-			setInterval(
-			async () => {
-				const folders = await readdir(TEMP_DIR);
-				for (const folder of folders) {
-					const queue = this.queues.get(folder);
-					if (!queue || !queue.isPlaying()) {
-						await rm(path.join(TEMP_DIR, folder), { recursive: true });
-					}
-				}
-			},
-			1000 * 60 * 60 * 24,
-		); // 24 hour
-		} catch (_) {
-			
+			const folders = await readdir(TEMP_DIR);
+			if (!folders.includes(guildId)) return;
+			if (queue.isPlaying()) return;
+			const files = await readdir(path.join(TEMP_DIR, guildId));
+			for (const file of files) {
+				await unlink(path.join(TEMP_DIR, guildId, file));
+			}
+			await rmdir(path.join(TEMP_DIR, guildId));
+		} catch (error) {
+			console.log("Failed to clean up downloaded stream", error);
 		}
 	}
 
@@ -132,6 +193,9 @@ export default class MusicPlayer extends Player {
 		);
 		this.events.on(GuildQueueEvent.PlayerFinish, (queue) => {
 			console.log("playerFinish", queue);
+		});
+		this.events.on(GuildQueueEvent.PlayerError, (queue, error) => {
+			console.log("playerError", queue, error);
 		});
 
 		for (const event of guildEvents) {
@@ -144,6 +208,78 @@ export default class MusicPlayer extends Player {
 		}
 	}
 
+	clearTimeout(queue: GuildQueue<QueueMetadata>) {
+		if (queue.metadata.timeout?.timeoutId) {
+			clearTimeout(queue.metadata.timeout.timeoutId);
+			queue.metadata.timeout = null;
+		}
+	}
+
+	setupTimeout(
+		queue: GuildQueue<QueueMetadata>,
+		minutes: number,
+		timeoutOption: TIMEOUT_OPTIONS = TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE,
+	) {
+		this.clearTimeout(queue);
+		queue.metadata.timeout = {
+			minutes,
+			option: timeoutOption,
+			timeoutId: setTimeout(
+				async () => {
+					try {
+						switch (timeoutOption) {
+							case TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE:
+								await this.fadeOut(queue);
+								queue.delete();
+								break;
+							case TIMEOUT_OPTIONS.FADE_OUT:
+								await this.fadeOut(queue);
+								queue.node.pause();
+								break;
+							case TIMEOUT_OPTIONS.LEAVE:
+								queue.delete();
+								break;
+							case TIMEOUT_OPTIONS.STOP:
+								queue.node.pause();
+								break;
+						}
+
+						try {
+							const messages = {
+								[PLAYER_TYPE.ASMR_PLAY]: `😴 Your ASMR session has ended after ${minutes} minutes.`,
+								[PLAYER_TYPE.MUSIC]: `The music queue ended after ${minutes} minutes.`,
+							};
+							await InteractionContext.sendInChannel({
+								content: messages[queue.metadata.type],
+							});
+						} catch (error) {
+							// Ignore if we can't send to channel (context might not be available)
+							console.warn("Could not send timeout message:", error);
+						}
+					} catch (error) {
+						console.error("[MusicPlayer] Timeout error:", error);
+					}
+				},
+				minutes * 60 * 1000,
+			),
+			startedAt: Date.now(),
+		};
+	}
+
+	private async fadeOut(queue: GuildQueue<QueueMetadata>) {
+		const originalVolume = queue.node.volume;
+		const fadeSteps = 10;
+		const fadeInterval = 2000; // 1 second per step = 10 second fade
+		// Gentle fade out to prevent jarring wake-up
+		for (let i = fadeSteps; i > 0; i--) {
+			if (queue.deleted) return; // Exit if queue was manually stopped
+
+			const newVolume = Math.floor((originalVolume * i) / fadeSteps);
+			queue.node.setVolume(Math.max(newVolume, 1)); // Never go to 0 to avoid audio issues
+			await new Promise((resolve) => setTimeout(resolve, fadeInterval));
+		}
+	}
+
 	static getGuildEmitter(guildId: string) {
 		if (!MusicPlayer.guildEmiters.has(guildId)) {
 			MusicPlayer.guildEmiters.set(guildId, new EventEmitter<GuildEmitter>());
@@ -151,31 +287,38 @@ export default class MusicPlayer extends Player {
 		return MusicPlayer.guildEmiters.get(guildId)!;
 	}
 
-	async playCmd(
-		interaction: CommandInteraction<CacheType>,
-		query: string,
-		downloadPlay = false,
-	) {
-		this.DOWNLOAD_PLAY = downloadPlay;
+	async playCmd({
+		queue,
+		query,
+		playMode = PLAY_MODE.download,
+	}: {
+		queue: GuildQueue<QueueMetadata>;
+		query: string;
+		playMode?: PLAY_MODE;
+	}) {
+		// we need to ensure the queue exist this might be redundant but just in case
+		if (!queue) return;
+		await this.cleanUpDownloand(queue);
 		await this.loadExtractors();
-		if (!this.getVoiceChannel(interaction)) {
-			await interaction.editReply("You are not connected to a voice channel!");
-			return;
-		}
 
 		const searchResult = await this.search(query, {
-			requestedBy: interaction.user,
+			requestedBy: InteractionContext.user,
 		});
 
+		const interaction = InteractionContext.interaction;
+
+		if (!interaction?.isCommand()) {
+			return;
+		}
 		if (!searchResult.hasTracks()) {
-			await interaction.editReply("No tracks found");
+			await InteractionContext.sendReply("No tracks found");
 			return;
 		}
 
 		if (searchResult.tracks.length === 1) {
 			const track = searchResult.tracks[0];
-			this.addTrack(track, interaction, downloadPlay);
-			await interaction.editReply({
+			this.addTrack(track, playMode);
+			await InteractionContext.editReply({
 				content: `Added ${track.title} to the queue.`,
 				components: [],
 			});
@@ -197,12 +340,12 @@ export default class MusicPlayer extends Player {
 			.onFilter((inter) => {
 				return StringSelectComponent.filterByCustomID(inter, customId);
 			})
-			.onAction(async (interaction) => {
-				await this.selectMusic(interaction, firstFiveTracks, downloadPlay);
+			.onAction(async (selectInteraction) => {
+				await this.selectMusic(selectInteraction, firstFiveTracks, playMode);
 			})
-			.onError((error) => {
+			.onError(async (error) => {
 				console.log(error);
-				interaction.editReply({
+				await InteractionContext.editReply({
 					content: "No song was selected.",
 					components: [],
 				});
@@ -213,7 +356,7 @@ export default class MusicPlayer extends Player {
 			stringSelectComponent,
 		);
 
-		await interaction.editReply({
+		await InteractionContext.sendReply({
 			content: "Select a song!",
 			components: [row],
 		});
@@ -245,16 +388,15 @@ export default class MusicPlayer extends Player {
 	async nowPlaying(queue: GuildQueue<QueueMetadata>): Promise<void> {
 		const currentTrack = queue.currentTrack;
 		if (!currentTrack) {
-			queue.channel?.send("Currently not playing a track");
+			try {
+				await InteractionContext.sendInChannel("Currently not playing a track");
+			} catch (error) {
+				console.warn("Could not send 'not playing' message:", error);
+			}
 			return;
 		}
-		const { title, requestedBy, durationMS, url, thumbnail } = currentTrack;
-		const minutes = milisecondsToReadable(durationMS);
-
-		const gap = {
-			name: "\n",
-			value: "\n",
-		};
+		const { title, requestedBy, url, thumbnail, author } = currentTrack;
+		const progressBar = queue.node.createProgressBar({ length: 8 });
 
 		const repeatMode =
 			Object.keys(QueueRepeatMode).find(
@@ -262,57 +404,97 @@ export default class MusicPlayer extends Player {
 					QueueRepeatMode[key as keyof typeof QueueRepeatMode] ===
 					queue.repeatMode,
 			) ?? "Unknown";
-
+		const endTime = queue.metadata.timeout?.minutes
+			? Math.floor(
+					(Date.now() + queue.metadata.timeout.minutes * 60 * 1000) / 1000,
+				)
+			: null;
 		const embed = new EmbedBuilder()
-			.setTitle(`${title}`)
-			.setAuthor({ name: "Now Playing: " })
-			.setDescription("Player Info: ")
-			.setURL(url ?? "")
+
+			.setAuthor({
+				name: "Now Playing",
+				iconURL: "https://www.iconsdb.com/icons/preview/white/music-2-xxl.png",
+			})
+			.setTitle(title)
+			.setURL(url)
+
 			.addFields(
-				gap,
-				{
-					name: "Volume",
-					value: `${queue.node.volume}%`,
-					inline: true,
-				},
-				{
-					name: "Loop mode",
-					value: `${capitalize(repeatMode)}`,
-					inline: true,
-				},
-				gap,
-				{
-					name: `Queue (${queue.tracks.size})`,
-					value: `${
-						queue.tracks
-							.map((track) => `[${track.title}](${track.url})`)
-							.slice(0, 5)
-							.join("\n") || "Empty"
-					}`,
-				},
+				{ name: "Artist", value: author, inline: true },
+				{ name: "Volume", value: `${queue.node.volume}%`, inline: true },
+				{ name: "Loop Mode", value: `${capitalize(repeatMode)}`, inline: true },
+				...(endTime
+					? [{ name: "Timeouts at", value: `<t:${endTime}:t>` }]
+					: []),
+				...(progressBar ? [{ name: "Progress", value: progressBar }] : []),
 			);
+
 		if (requestedBy) {
 			embed.setFooter({
-				text: `Duration: ${minutes} - Requested by: ${requestedBy.displayName}`,
+				text: `Requested by: ${requestedBy.displayName}`,
+				iconURL: requestedBy.displayAvatarURL(),
 			});
 		}
+
 		if (thumbnail) {
 			embed.setThumbnail(thumbnail);
 
 			embed.setColor(await this.getTrackDominantColor(queue));
 		}
 
-		const interaction = queue.metadata.interaction;
-
-		if (interaction.inGuild() && interaction.channel?.isTextBased()) {
-			interaction.channel?.send({ embeds: [embed] });
+		try {
+			if (queue.metadata.nowPlayingMessage) {
+				await queue.metadata.nowPlayingMessage.delete();
+			}
+			queue.metadata.nowPlayingMessage = await InteractionContext.sendInChannel(
+				{ embeds: [embed] },
+			);
+		} catch (error) {
+			console.warn("Could not send now playing message:", error);
 		}
+	}
+
+	async getOrCreateQueue(
+		type: PLAYER_TYPE,
+	): Promise<GuildQueue<QueueMetadata>> {
+		const guild = InteractionContext.guild;
+		if (!guild) {
+			throw new Error("Guild not found");
+		}
+		const queue = this.queues.get<QueueMetadata>(guild.id);
+		if (queue) return queue;
+		const voiceChannel = this.getVoiceChannel();
+		if (!voiceChannel) {
+			await InteractionContext.sendReply(
+				"You are not connected to a voice channel!",
+			);
+			throw new Error("User is not connected to a voice channel");
+		}
+		const queueMetadata: QueueMetadata = {
+			guildId: guild.id,
+			type,
+			timeout: null,
+			nowPlayingMessage: null,
+			"image-url-cache": {},
+		};
+		const newQueue = this.queues.create(guild, {
+			metadata: queueMetadata,
+			onBeforeCreateStream: async (q) => {
+				if (
+					(q as Track<TrackMetadata>).metadata?.playMode === PLAY_MODE.download
+				) {
+					return await this.createDownloadStream(q, guild.id);
+				}
+				return null;
+			},
+		});
+		await newQueue.connect(voiceChannel!);
+		return newQueue as GuildQueue<QueueMetadata>;
 	}
 
 	async selectMusic(
 		interaction: StringSelectMenuInteraction<CacheType>,
 		tracks: Track<unknown>[],
-		downloadPlay = false,
+		playMode: PLAY_MODE = PLAY_MODE.download,
 	) {
 		await interaction.deferUpdate();
 		if (!interaction.values.length)
@@ -322,7 +504,7 @@ export default class MusicPlayer extends Player {
 			const index = Number(interaction.values[0]);
 			const track = tracks[index];
 
-			this.addTrack(track, interaction, downloadPlay);
+			this.addTrack(track, playMode);
 			interaction.editReply({
 				content: `${track.title} added to the queue.`,
 				components: [],
@@ -333,7 +515,8 @@ export default class MusicPlayer extends Player {
 		}
 	}
 
-	getVoiceChannel(interaction: BaseInteraction<CacheType>) {
+	getVoiceChannel() {
+		const interaction = InteractionContext.interaction;
 		const guildMember = interaction?.member as GuildMember;
 		return guildMember?.voice?.channel;
 	}
@@ -368,36 +551,21 @@ export default class MusicPlayer extends Player {
 
 	addTrack(
 		track: Track | Track[] | Playlist,
-		interaction: BaseInteraction<CacheType>,
-		downloadPlay = false,
+		playMode: PLAY_MODE = PLAY_MODE.download,
 	) {
 		// we can assume guild is not null because music command can only be use from guilds
-		if (downloadPlay) {
-			this.appendMetadata(track, { downloadPlay });
+		const guild = InteractionContext.guild;
+		if (!guild) {
+			throw new Error("Guild not found");
 		}
-		const queue = this.queues.get(interaction.guild!);
+
+		const queue = this.queues.get<QueueMetadata>(guild.id);
 		if (!queue) {
-			const voiceChannel = this.getVoiceChannel(interaction);
-			this.play(voiceChannel!, track, {
-				nodeOptions: {
-					onBeforeCreateStream: async (q) => {
-						console.log("Creating stream", q.url, q.metadata);
-						// @ts-expect-error metadata is not typed
-						if (q.metadata?.downloadPlay) {
-							return await this.createDownloadStream(q, interaction.guild!.id);
-						}
-						return null;
-					},
-
-					metadata: {
-						interaction: interaction,
-						guildId: interaction.guild?.id,
-					},
-				},
-			});
-			return;
+			throw new Error("Queue not found");
 		}
-
+		this.appendMetadata(track, {
+			playMode: playMode,
+		});
 		if (!queue.isPlaying()) return queue.play(track);
 		queue.addTrack(track);
 	}

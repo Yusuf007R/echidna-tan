@@ -206,7 +206,7 @@ export default class GifResize {
 		try {
 			fs.unlink(optimizedPath);
 			fs.unlink(inputPath);
-		} catch (error) {}
+		} catch (_error) {}
 		return optimizedBuffer;
 	}
 }

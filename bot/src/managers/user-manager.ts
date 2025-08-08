@@ -1,8 +1,8 @@
 import config from "@Configs";
+import db from "@Drizzle/db";
+import { userTable } from "@Drizzle/schema";
 import EchidnaSingleton from "@Structures/echidna-singleton";
 import { eq } from "drizzle-orm";
-import db from "../drizzle";
-import { userTable } from "../drizzle/schema";
 
 export class UserManager {
 	/**

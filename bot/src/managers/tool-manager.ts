@@ -1,5 +1,5 @@
 import type { Tool } from "@Structures/tool";
-import { baseDir } from "@Utils/dir-name";
+import { getBaseDir } from "@Utils/get-dir-name";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { Collection } from "discord.js";
@@ -12,7 +12,7 @@ export default class ToolManager {
 	}
 
 	async loadTools() {
-		const toolsRootFolder = join(baseDir, "../ai-stuff/tools");
+		const toolsRootFolder = join(getBaseDir(), "../ai-stuff/tools");
 		await Promise.all(
 			readdirSync(toolsRootFolder)
 				.filter(
