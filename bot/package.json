@@ -7,7 +7,7 @@
 	"scripts": {
 		"build": "node esbuild.config.js",
 		"prebuild": "rimraf dist && pnpm run full-check",
-		"build:prod": "NODE_ENV=production pnpm run build:prod",
+		"build:prod": "NODE_ENV=production pnpm run build",
 		"dev": "pnpm run build -- watch",
 		"start": "pnpm run build && node ./dist/index.js",
 		"full-check": "pnpm run type-check && pnpm run check",

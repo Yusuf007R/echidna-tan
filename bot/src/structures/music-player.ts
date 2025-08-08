@@ -1,17 +1,26 @@
 import { mapTrack } from "@Api/utils/map-track";
 import StringSelectComponent from "@Components/string-select";
 import {
-	ActionRowBuilder,
-	EmbedBuilder,
-	type StringSelectMenuBuilder,
-} from "@discordjs/builders";
-import {
 	InteractionContext,
 	type ReplyMessage,
 } from "@Structures/interaction-context";
 import capitalize from "@Utils/capitalize";
 import { getBaseDir } from "@Utils/get-dir-name";
 import getImageColor from "@Utils/get-image-color";
+import { createReadStream, createWriteStream } from "node:fs";
+import { mkdir, readdir, rmdir, unlink } from "node:fs/promises";
+import path from "node:path";
+import {
+	ActionRowBuilder,
+	EmbedBuilder,
+	type StringSelectMenuBuilder,
+} from "@discordjs/builders";
+import {
+	type CacheType,
+	Collection,
+	type GuildMember,
+	type StringSelectMenuInteraction,
+} from "discord.js";
 import {
 	type GuildQueue,
 	GuildQueueEvent,
@@ -21,15 +30,6 @@ import {
 	type Track,
 } from "discord-player";
 import { YoutubeiExtractor } from "discord-player-youtubei";
-import {
-	type CacheType,
-	Collection,
-	type GuildMember,
-	type StringSelectMenuInteraction,
-} from "discord.js";
-import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, readdir, rmdir, unlink } from "node:fs/promises";
-import path from "node:path";
 import { EventEmitter } from "tseep";
 import { YtDlp } from "ytdlp-nodejs";
 
