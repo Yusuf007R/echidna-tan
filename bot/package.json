@@ -104,8 +104,8 @@
 			"zlib-sync"
 		],
 		"patchedDependencies": {
-			"ytdlp-nodejs@2.3.0": "/home/yusuf/code/echidna-tan/bot/patches/ytdlp-nodejs@2.3.0.patch",
-			"fluent-ffmpeg@2.1.3": "patches/fluent-ffmpeg@2.1.3.patch"
+			"fluent-ffmpeg@2.1.3": "patches/fluent-ffmpeg@2.1.3.patch",
+			"ytdlp-nodejs@2.3.0": "patches/ytdlp-nodejs@2.3.0.patch"
 		}
 	}
 }
