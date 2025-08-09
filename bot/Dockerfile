@@ -4,7 +4,7 @@ FROM node:23 AS builder
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y build-essential
+    && apt-get install -y build-essential autotools-dev automake libtool pkg-config gifsicle
 
 COPY package.json pnpm-lock.yaml ./
 COPY patches ./patches
@@ -12,6 +12,8 @@ COPY patches ./patches
 RUN corepack enable pnpm && pnpm install 
 
 COPY . .
+
+RUN ls
 
 RUN pnpm run build:prod
 
