@@ -4,6 +4,7 @@
 	"description": "",
 	"main": "index.js",
 	"type": "module",
+	"packageManager": "pnpm@10.14.0",
 	"scripts": {
 		"build": "node esbuild.config.js",
 		"prebuild": "rimraf dist && pnpm run full-check",
@@ -12,7 +13,7 @@
 		"start": "pnpm run build && node ./dist/index.js",
 		"full-check": "pnpm run type-check && pnpm run check",
 		"type-check": "tsgo ./src --noEmit",
-		"check": "biome check --write src/*",
+		"check": "biome check --write src",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
