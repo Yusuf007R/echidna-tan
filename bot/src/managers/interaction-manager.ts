@@ -15,9 +15,6 @@ import CacheManager from "./cache-manager";
 export default class InteractionManager {
 	private interactionLoader: InteractionLoader;
 
-	// Modal management
-	private modalEventEmitter = new EventEmitter();
-
 	private interactionEventEmitter = new EventEmitter();
 
 	constructor() {
@@ -41,6 +38,10 @@ export default class InteractionManager {
 	}
 
 	async init() {
+		// const guilds = await EchidnaSingleton.echidna.guildsManager.getGuilds()
+		// for (const [_, guild] of guilds) {
+		// 	await guild.guild.commands.set([]);
+		// }
 		await Promise.all([
 			this.interactionLoader.loadInteractions("command"),
 			this.interactionLoader.loadInteractions("contextMenu"),
@@ -76,17 +77,16 @@ export default class InteractionManager {
 	 */
 	awaitInteractionResponse<Type extends "Modal" | "Component">(
 		id: string,
-		type: Type,
+		_type: Type,
 		timeout = CacheManager.TTL.oneMinute,
 	): Promise<
 		Type extends "Modal" ? ModalSubmitInteraction : MessageComponentInteraction
 	> {
-		const internalId = `${id}-${type}`;
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => {
 				reject(new Error("Interaction response timed out"));
 			}, timeout);
-			this.interactionEventEmitter.once(internalId, (data) => {
+			this.interactionEventEmitter.once(id, (data) => {
 				clearTimeout(timer);
 				resolve(data);
 			});
@@ -177,7 +177,7 @@ export default class InteractionManager {
 
 		if (interaction.isModalSubmit()) {
 			try {
-				this.modalEventEmitter.emit(interaction.customId, interaction);
+				this.interactionEventEmitter.emit(interaction.customId, interaction);
 			} catch (error) {
 				this.handleInteractionError(
 					interaction,

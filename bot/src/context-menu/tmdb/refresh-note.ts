@@ -1,6 +1,6 @@
 import ContextMenu from "@Structures/context-menu";
+import { InteractionContext } from "@Structures/interaction-context";
 import TMDB from "@Structures/tmdb";
-import type { MessageContextMenuCommandInteraction } from "discord.js";
 
 class RefreshNoteContextMenu extends ContextMenu<"MESSAGE"> {
 	tmdb = new TMDB();
@@ -12,10 +12,10 @@ class RefreshNoteContextMenu extends ContextMenu<"MESSAGE"> {
 		});
 	}
 
-	async run(interaction: MessageContextMenuCommandInteraction) {
+	async run() {
 		const message = this.target;
 		if (message.interaction?.commandName !== "tmdb-query") {
-			await interaction.reply({
+			await InteractionContext.sendReply({
 				content: "This command can only be used in the TMDB query command",
 				ephemeral: true,
 			});
@@ -26,13 +26,19 @@ class RefreshNoteContextMenu extends ContextMenu<"MESSAGE"> {
 
 		const embed = await this.tmdb.refreshEmbed(embedData);
 		if (!embed) {
-			await interaction.reply({ ephemeral: true, content: "No note found" });
+			await InteractionContext.sendReply({
+				ephemeral: true,
+				content: "No note found",
+			});
 			return;
 		}
 
 		await message.edit({ embeds: [embed] });
 
-		await interaction.reply({ ephemeral: true, content: "Note refreshed" });
+		await InteractionContext.sendReply({
+			ephemeral: true,
+			content: "Note refreshed",
+		});
 	}
 }
 

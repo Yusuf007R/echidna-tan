@@ -2,23 +2,39 @@ import { AsyncLocalStorage } from "node:async_hooks";
 
 import {
 	BaseInteraction,
+	// Components v2 builders for detection
+	ContainerBuilder,
+	FileBuilder,
+	MediaGalleryBuilder,
+	MessageFlags,
+	SectionBuilder,
+	SeparatorBuilder,
+	TextDisplayBuilder,
 	type BaseMessageOptions,
 	type CacheType,
 	type Channel,
 	type Interaction,
+	type InteractionReplyOptions,
 	type Message,
-	type MessageCreateOptions,
 	type ModalBuilder,
 	type ModalSubmitInteraction,
 	type User,
 } from "discord.js";
 import EchidnaSingleton from "./echidna-singleton";
 
+/**
+ * Extended message options that includes ephemeral flag for our internal processing
+ */
+export type ExtendedMessageOptions = BaseMessageOptions & {
+	ephemeral?: boolean;
+	flags?: number;
+};
+
 export type ReplyMessage = {
 	id: string;
-	edit: (options: string | BaseMessageOptions) => Promise<void>;
+	edit: (options: string | ExtendedMessageOptions) => Promise<void>;
 	delete: () => Promise<void>;
-	followUp: (options: string | BaseMessageOptions) => Promise<ReplyMessage>;
+	followUp: (options: string | ExtendedMessageOptions) => Promise<ReplyMessage>;
 };
 
 /**
@@ -122,7 +138,7 @@ export class InteractionContext {
 	 * @throws Error if not called within InteractionContext.run()
 	 */
 	private static async _sendReply(
-		options: string | BaseMessageOptions,
+		options: string | ExtendedMessageOptions,
 		allowedEdit = false,
 	): Promise<ReplyMessage> {
 		const context = InteractionContext.getInteractionContext();
@@ -131,24 +147,41 @@ export class InteractionContext {
 			const interaction = context.interaction;
 			if (interaction.isRepliable()) {
 				if (interaction.deferred || (interaction.replied && allowedEdit)) {
-					const edit = await interaction.editReply(options);
+					// For edits, ephemeral is not allowed
+					const processedOptions = InteractionContext.processMessageOptions(
+						options,
+						false,
+					);
+					const edit = await interaction.editReply(processedOptions);
 					return InteractionContext.messageToReplyMessage(edit);
 				}
 				if (!interaction.replied && !interaction.deferred) {
-					const interactionResponse = await interaction.reply(
-						typeof options === "string"
-							? { content: options, fetchReply: true }
-							: { ...options, fetchReply: true },
+					// For initial replies, ephemeral is allowed
+					const processedOptions = InteractionContext.processMessageOptions(
+						options,
+						true,
 					);
-					return InteractionContext.messageToReplyMessage(interactionResponse);
+
+					// First send the reply without fetchReply
+					await interaction.reply(processedOptions as InteractionReplyOptions);
+
+					// Then fetch the reply to get the message object
+					const message = await interaction.fetchReply();
+					return InteractionContext.messageToReplyMessage(message);
 				}
 			}
 		} else {
+			// For message context, ephemeral is not supported
+			const processedOptions = InteractionContext.processMessageOptions(
+				options,
+				false,
+			);
+
 			if (allowedEdit) {
-				const edit = await context.message.edit(options);
+				const edit = await context.message.edit(processedOptions);
 				return InteractionContext.messageToReplyMessage(edit);
 			}
-			const reply = await context.message.reply(options);
+			const reply = await context.message.reply(processedOptions);
 			return InteractionContext.messageToReplyMessage(reply);
 		}
 
@@ -163,7 +196,9 @@ export class InteractionContext {
 	 * @returns A reply message object with edit, delete, and followUp methods
 	 * @throws Error if not called within InteractionContext.run()
 	 */
-	static async sendReply(options: string | BaseMessageOptions): Promise<void> {
+	static async sendReply(
+		options: string | ExtendedMessageOptions,
+	): Promise<void> {
 		await InteractionContext._sendReply(options);
 	}
 
@@ -172,7 +207,9 @@ export class InteractionContext {
 	 * @param options - Message content or options object to edit the reply with
 	 * @throws Error if not called within InteractionContext.run()
 	 */
-	static async editReply(options: string | BaseMessageOptions): Promise<void> {
+	static async editReply(
+		options: string | ExtendedMessageOptions,
+	): Promise<void> {
 		await InteractionContext._sendReply(options, true);
 	}
 
@@ -277,11 +314,17 @@ export class InteractionContext {
 	 * @throws Error if not called within InteractionContext.run() or channel is not text-based
 	 */
 	static async sendInChannel(
-		options: string | MessageCreateOptions,
+		options: string | ExtendedMessageOptions,
 	): Promise<ReplyMessage> {
 		const channel = InteractionContext.getTextBasedChannel();
 		if (!channel) throw new Error("Channel not found or not text-based");
-		const message = await channel.send(options);
+
+		// Process options for Components v2 but no ephemeral (not supported in channel messages)
+		const processedOptions = InteractionContext.processMessageOptions(
+			options,
+			false,
+		);
+		const message = await channel.send(processedOptions);
 		return InteractionContext.messageToReplyMessage(message);
 	}
 
@@ -380,19 +423,94 @@ export class InteractionContext {
 	private static messageToReplyMessage(message: Message): ReplyMessage {
 		const replyMessage: ReplyMessage = {
 			id: message.id,
-			edit: async (options: string | BaseMessageOptions) => {
-				await message.edit(options);
+			edit: async (options: string | ExtendedMessageOptions) => {
+				// Process options for Components v2 but no ephemeral (not supported in edits)
+				const processedOptions = InteractionContext.processMessageOptions(
+					options,
+					false,
+				);
+				await message.edit(processedOptions);
 			},
 			delete: async () => {
 				await message.delete();
 			},
-			followUp: async (options: string | BaseMessageOptions) => {
-				const reply = await message.reply(options);
+			followUp: async (options: string | ExtendedMessageOptions) => {
+				// Process options for Components v2 but no ephemeral (not supported in message replies)
+				const processedOptions = InteractionContext.processMessageOptions(
+					options,
+					false,
+				);
+				const reply = await message.reply(processedOptions);
 				return InteractionContext.messageToReplyMessage(reply);
 			},
 		};
 
 		return replyMessage;
+	}
+
+	/**
+	 * Detects if message options contain Components v2 builders
+	 * @param options - Message options to check
+	 * @returns True if Components v2 are detected
+	 */
+	private static hasComponentsV2(options: ExtendedMessageOptions): boolean {
+		if (!options.components || !Array.isArray(options.components)) {
+			return false;
+		}
+
+		return options.components.some((component) => {
+			return (
+				component instanceof ContainerBuilder ||
+				component instanceof SectionBuilder ||
+				component instanceof TextDisplayBuilder ||
+				component instanceof MediaGalleryBuilder ||
+				component instanceof FileBuilder ||
+				component instanceof SeparatorBuilder
+			);
+		});
+	}
+
+	/**
+	 * Processes message options to set appropriate flags automatically
+	 * @param options - Original message options
+	 * @param allowEphemeral - Whether ephemeral messages are allowed in this context
+	 * @returns Processed options with proper flags set
+	 */
+	private static processMessageOptions(
+		options: string | ExtendedMessageOptions,
+		allowEphemeral = true,
+	): BaseMessageOptions & { flags?: number } {
+		// Handle string content
+		if (typeof options === "string") {
+			return { content: options };
+		}
+
+		// Clone options to avoid modifying original
+		const processedOptions = { ...options };
+		let flags = processedOptions.flags || 0;
+
+		// Auto-detect and set Components v2 flag
+		if (InteractionContext.hasComponentsV2(processedOptions)) {
+			flags |= MessageFlags.IsComponentsV2;
+		}
+
+		// Handle ephemeral flag - only for interaction replies
+		if (processedOptions.ephemeral && allowEphemeral) {
+			// Keep ephemeral property for interaction replies, also set flag
+			flags |= MessageFlags.Ephemeral;
+		} else if (processedOptions.ephemeral && !allowEphemeral) {
+			// Log warning if ephemeral is requested but not allowed
+			console.warn(
+				"Ephemeral flag ignored - not supported in this context (edit or message reply)",
+			);
+		}
+
+		// Set flags if any were added
+		if (flags > 0) {
+			processedOptions.flags = flags;
+		}
+		delete processedOptions.ephemeral;
+		return processedOptions;
 	}
 
 	/**

@@ -1,6 +1,6 @@
 import ContextMenu from "@Structures/context-menu";
+import { InteractionContext } from "@Structures/interaction-context";
 import TMDB from "@Structures/tmdb";
-import type { MessageContextMenuCommandInteraction } from "discord.js";
 
 class DeleteNoteContextMenu extends ContextMenu<"MESSAGE"> {
 	tmdb = new TMDB();
@@ -12,10 +12,10 @@ class DeleteNoteContextMenu extends ContextMenu<"MESSAGE"> {
 		});
 	}
 
-	async run(interaction: MessageContextMenuCommandInteraction) {
+	async run() {
 		const message = this.target;
 		if (message.interaction?.commandName !== "tmdb-query") {
-			await interaction.reply({
+			await InteractionContext.sendReply({
 				content: "This command can only be used in the TMDB query command",
 				ephemeral: true,
 			});
@@ -27,7 +27,10 @@ class DeleteNoteContextMenu extends ContextMenu<"MESSAGE"> {
 		const embed = this.tmdb.updateNote(embedData, undefined);
 		await message.edit({ embeds: [embed] });
 
-		await interaction.reply({ ephemeral: true, content: "Note deleted" });
+		await InteractionContext.sendReply({
+			ephemeral: true,
+			content: "Note deleted",
+		});
 	}
 }
 

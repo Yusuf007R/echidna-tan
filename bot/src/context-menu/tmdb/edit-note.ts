@@ -6,11 +6,7 @@ import {
 	ModalBuilder,
 	TextInputBuilder,
 } from "@discordjs/builders";
-import {
-	type MessageContextMenuCommandInteraction,
-	MessageFlags,
-	TextInputStyle,
-} from "discord.js";
+import { TextInputStyle } from "discord.js";
 
 class EditNoteContextMenu extends ContextMenu<"MESSAGE"> {
 	tmdb = new TMDB();
@@ -22,21 +18,21 @@ class EditNoteContextMenu extends ContextMenu<"MESSAGE"> {
 		});
 	}
 
-	async run(interaction: MessageContextMenuCommandInteraction) {
+	async run() {
 		const message = this.target;
 		if (message.interaction?.commandName !== "tmdb-query") {
-			await interaction.reply({
+			await InteractionContext.sendReply({
 				content: "This command can only be used in the TMDB query command",
-				flags: MessageFlags.Ephemeral,
+				ephemeral: true,
 			});
 			return;
 		}
 
 		const embedData = message.embeds[0].data;
 		if (!embedData) {
-			await interaction.reply({
+			await InteractionContext.sendReply({
 				content: "No TMDB data found in this message",
-				flags: MessageFlags.Ephemeral,
+				ephemeral: true,
 			});
 			return;
 		}

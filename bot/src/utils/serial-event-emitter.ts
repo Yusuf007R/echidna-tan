@@ -30,7 +30,7 @@ class SerialEventEmitter<
 		this.processing.add(eventName);
 
 		while (this.queue.get(eventName)?.length) {
-			const args = this.queue.get(eventName)?.shift()!;
+			const args = this.queue.get(eventName)?.shift() ?? [];
 			const listeners = this.listeners(eventName);
 
 			for (const listener of listeners) {

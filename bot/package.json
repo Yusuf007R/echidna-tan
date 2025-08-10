@@ -70,7 +70,7 @@
 		"zod-to-json-schema": "^3.24.5"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.0.6",
+		"@biomejs/biome": "2.1.4",
 		"@types/cors": "^2.8.18",
 		"@types/fluent-ffmpeg": "^2.1.27",
 		"@types/gifsicle": "^5.2.2",

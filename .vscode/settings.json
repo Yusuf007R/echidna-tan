@@ -12,16 +12,14 @@
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.organizeImports": "always",
-    "source.organizeImports.biome": "never",
-    "source.action.useSortedAttributes.biome": "explicit",
-    "source.action.useSortedKeys.biome": "explicit",
+    "source.sortImports": "always",
     "source.fixAll.biome": "explicit"
   },
   "[javascript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
   "biome.lsp.bin": "./bot/node_modules/.bin/biome",
-  "biome.suggestInstallingGlobally": true,
+  "biome.configurationPath": ".bot/biome.json",
   // "biome.configurationPath": "./bot/biome.json",
   "[json]": {
     "editor.defaultFormatter": "biomejs.biome"
