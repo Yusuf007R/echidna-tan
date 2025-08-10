@@ -38,10 +38,6 @@ export default class InteractionManager {
 	}
 
 	async init() {
-		// const guilds = await EchidnaSingleton.echidna.guildsManager.getGuilds()
-		// for (const [_, guild] of guilds) {
-		// 	await guild.guild.commands.set([]);
-		// }
 		await Promise.all([
 			this.interactionLoader.loadInteractions("command"),
 			this.interactionLoader.loadInteractions("contextMenu"),
