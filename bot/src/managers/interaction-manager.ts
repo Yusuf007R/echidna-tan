@@ -89,6 +89,19 @@ export default class InteractionManager {
 		});
 	}
 
+	/**
+	 * Handles an error that occurs when executing an interaction.
+	 * This includes commands, context menus, autocompletes, modals, and components.
+	 * The error will be logged to the console, and then an appropriate error message
+	 * will be sent to the user.
+	 * The error message will be sent either as a reply to the interaction,
+	 * or as a follow-up message if the interaction has already been replied to.
+	 * If the interaction is a modal, no error message will be sent.
+	 * @param interaction The interaction that caused the error
+	 * @param error The error that occurred
+	 * @param type The type of interaction
+	 * @param identifier The identifier of the interaction
+	 */
 	private handleInteractionError(
 		interaction: Interaction,
 		error: unknown,
