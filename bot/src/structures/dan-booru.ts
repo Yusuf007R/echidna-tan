@@ -1,6 +1,7 @@
 import { danBooruAPI } from "@Utils/request";
 import { EmbedBuilder } from "@discordjs/builders";
-import type { CacheType, CommandInteraction, TextChannel } from "discord.js";
+import { InteractionContext } from "@Structures/interaction-context";
+import type { TextChannel } from "discord.js";
 import type { DanBooruError, DanBooruPost } from "../interfaces/dan-booru";
 
 export type getImageProps = {
@@ -46,22 +47,20 @@ export default class DanBooru {
 			.setFooter({ text: `Artist:${post.tag_string_artist}` });
 	}
 
-	async sendMessage(
-		interaction: CommandInteraction<CacheType>,
-		post: DanBooruPost,
-	) {
-		if (post.rating !== "s" && !this.isNsfwAlowed(interaction)) {
-			interaction.editReply("NSFW is not allowed in this channel.");
+	async sendMessage(post: DanBooruPost) {
+		if (post.rating !== "s" && !this.isNsfwAlowed()) {
+			await InteractionContext.editReply("NSFW is not allowed in this channel.");
 			return;
 		}
 		const embed = this.makeEmbed(post);
-		await interaction.editReply({ embeds: [embed] });
+		await InteractionContext.editReply({ embeds: [embed] });
 	}
 
-	isNsfwAlowed(interaction: CommandInteraction<CacheType>) {
-		if (interaction.channel?.isTextBased() && interaction.inGuild()) {
-			const channel = interaction.channel as TextChannel;
+	isNsfwAlowed() {
+		if (InteractionContext.channel?.isTextBased() && InteractionContext.guild) {
+			const channel = InteractionContext.channel as TextChannel;
 			return channel.nsfw;
 		}
+		return false;
 	}
 }

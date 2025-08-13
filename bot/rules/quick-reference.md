@@ -22,6 +22,7 @@
 import { Command } from "@Structures/command";
 import { OptionsBuilder } from "@Utils/options-builder";
 import IsAdmin from "@EventsValidators/isAdmin";
+import { InteractionContext } from "@Structures/interaction-context";
 
 // Context menu imports
 import ContextMenu from "@Structures/context-menu";
@@ -37,8 +38,8 @@ import type { AiRpPrompt } from "@Interfaces/ai-prompts";
 import { db } from "@Drizzle/index";
 import { users, guilds } from "@Drizzle/schema";
 
-// Discord.js imports
-import type { CommandInteraction, CacheType } from "discord.js";
+// Discord.js imports (only when needed for specific types)
+import type { Message, EmbedBuilder } from "discord.js";
 ```
 
 ### Quick Class Signatures
@@ -56,8 +57,16 @@ export default class MyCommand extends Command<typeof options> {
     });
   }
   
-  async run(interaction: CommandInteraction<CacheType>): Promise<void> {
-    // Implementation
+  async run(): Promise<void> {
+    // Use InteractionContext methods directly
+    await InteractionContext.deferReply(); // If needed
+    await InteractionContext.editReply("Response message");
+    
+    // Access user info
+    const user = InteractionContext.user;
+    
+    // Access options
+    const value = this.options.optionName;
   }
 }
 
@@ -91,4 +100,31 @@ export default class MyEvent extends DiscordEvent<"messageCreate"> {
   }
 }
 ```
+
+## InteractionContext Usage
+
+### Key Methods
+```typescript
+// Defer the reply (use when command takes time)
+await InteractionContext.deferReply();
+
+// Send or edit replies
+await InteractionContext.sendReply("Message");
+await InteractionContext.editReply("Updated message");
+await InteractionContext.editReply({ embeds: [embed] });
+
+// Access user information
+const user = InteractionContext.user;
+const userId = InteractionContext.user.id;
+
+// Send follow-up messages
+await InteractionContext.followUp("Follow-up message");
+```
+
+### Important Notes
+- InteractionContext is automatically initialized by the interaction manager
+- No need to wrap commands in `InteractionContext.run()`
+- Commands should NOT have interaction parameters in their `run()` methods
+- Use InteractionContext methods directly instead of interaction.reply()
+- The interaction parameter is handled internally by the framework
 

@@ -1,6 +1,6 @@
 import Anime from "@Structures/anime";
 import { Command } from "@Structures/command";
-import type { CacheType, CommandInteraction } from "discord.js";
+import { InteractionContext } from "@Structures/interaction-context";
 
 export default class RandomAnimeCommand extends Command {
 	constructor() {
@@ -11,17 +11,17 @@ export default class RandomAnimeCommand extends Command {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
-		await interaction.deferReply();
+	async run() {
+		await InteractionContext.deferReply();
 
 		try {
 			const anime = await Anime.getRandomAnime();
 			const embed = Anime.getAnimeEmbed(anime);
 
-			await interaction.editReply({ embeds: [embed] });
+			await InteractionContext.editReply({ embeds: [embed] });
 		} catch (error: any) {
 			console.error("Error fetching random anime:", error);
-			await interaction.editReply(
+			await InteractionContext.editReply(
 				"An error occurred while fetching a random anime. Please try again later.",
 			);
 		}

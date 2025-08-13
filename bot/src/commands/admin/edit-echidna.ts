@@ -5,9 +5,10 @@ import db from "@Drizzle/db";
 import { echidnaStatus, echidnaTable } from "@Drizzle/schema";
 import IsAdmin from "@EventsValidators/isAdmin";
 import { Command } from "@Structures/command";
+import { InteractionContext } from "@Structures/interaction-context";
 import getImageAsBuffer from "@Utils/get-image-from-url";
 import { OptionsBuilder } from "@Utils/options-builder";
-import { ActivityType, type ChatInputCommandInteraction } from "discord.js";
+import { ActivityType } from "discord.js";
 import { eq, type InferInsertModel } from "drizzle-orm";
 
 const activityTypeValues = Object.entries(ActivityType)
@@ -57,8 +58,8 @@ export default class EditEchidnaCommand extends Command<typeof options> {
 		});
 	}
 
-	async run(interaction: ChatInputCommandInteraction) {
-		await interaction.deferReply();
+	async run() {
+		await InteractionContext.deferReply();
 		const name = this.options.name;
 		const activityType = this.options["activity-type"];
 		const activityMessage = this.options["activity-message"];
@@ -74,7 +75,7 @@ export default class EditEchidnaCommand extends Command<typeof options> {
 					avatar.contentType ?? "",
 				)
 			) {
-				interaction.editReply("Invalid image type");
+				await InteractionContext.editReply("Invalid image type");
 				return;
 			}
 			const res = await getImageAsBuffer(avatar.url);
@@ -101,6 +102,6 @@ export default class EditEchidnaCommand extends Command<typeof options> {
 		}
 
 		await this.echidna.updateEchidna();
-		interaction.editReply("Echidna updated");
+		await InteractionContext.editReply("Echidna updated");
 	}
 }

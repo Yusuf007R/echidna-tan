@@ -1,11 +1,11 @@
 import { Command } from "@Structures/command";
+import { InteractionContext } from "@Structures/interaction-context";
 import TMDB from "@Structures/tmdb";
 import { OptionsBuilder } from "@Utils/options-builder";
 import type {
 	ApplicationCommandOptionChoiceData,
 	AutocompleteInteraction,
 	CacheType,
-	CommandInteraction,
 } from "discord.js";
 
 const options = new OptionsBuilder()
@@ -60,14 +60,16 @@ export default class TMDBQueryCommand extends Command<typeof options> {
 		}
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
-		await interaction.deferReply();
+	async run() {
+		await InteractionContext.deferReply();
 
 		try {
 			const [type, id] = this.options["tmdb-query"].split(":");
 
 			if (!type || !id) {
-				await interaction.editReply("Invalid selection. Please try again.");
+				await InteractionContext.editReply(
+					"Invalid selection. Please try again.",
+				);
 				return;
 			}
 
@@ -80,10 +82,10 @@ export default class TMDBQueryCommand extends Command<typeof options> {
 
 			const embed = await this.tmdb.generateEmbed(info);
 
-			await interaction.editReply({ embeds: [embed] });
+			await InteractionContext.editReply({ embeds: [embed] });
 		} catch (error) {
 			console.error("[tmdb-query] Error fetching details:", error);
-			await interaction.editReply(
+			await InteractionContext.editReply(
 				"An error occurred while fetching the details. Please try again later.",
 			);
 		}

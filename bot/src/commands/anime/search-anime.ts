@@ -1,11 +1,11 @@
 import Anime from "@Structures/anime";
 
 import { Command } from "@Structures/command";
+import { InteractionContext } from "@Structures/interaction-context";
 import { OptionsBuilder } from "@Utils/options-builder";
 import type {
 	AutocompleteInteraction,
 	CacheType,
-	CommandInteraction,
 } from "discord.js";
 
 const options = new OptionsBuilder()
@@ -40,8 +40,8 @@ export default class SearchAnimeCommand extends Command<typeof options> {
 		);
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
-		await interaction.deferReply();
+	async run() {
+		await InteractionContext.deferReply();
 
 		try {
 			const animeID = this.options["anime-name"];
@@ -53,11 +53,11 @@ export default class SearchAnimeCommand extends Command<typeof options> {
 			}
 			const embed = Anime.getAnimeEmbed(anime);
 
-			await interaction.editReply({ embeds: [embed] });
+			await InteractionContext.editReply({ embeds: [embed] });
 		} catch (error: any) {
-			console.error("Error fetching random anime:", error);
-			await interaction.editReply(
-				"An error occurred while fetching a random anime. Please try again later.",
+			console.error("Error fetching anime:", error);
+			await InteractionContext.editReply(
+				"An error occurred while fetching the anime. Please try again later.",
 			);
 		}
 	}

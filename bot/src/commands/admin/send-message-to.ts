@@ -2,8 +2,8 @@
 
 import IsAdmin from "@EventsValidators/isAdmin";
 import { Command } from "@Structures/command";
+import { InteractionContext } from "@Structures/interaction-context";
 import { OptionsBuilder } from "@Utils/options-builder";
-import type { CacheType, CommandInteraction } from "discord.js";
 
 const options = new OptionsBuilder()
 	.addStringOption({
@@ -29,19 +29,26 @@ export default class SendMessageToCommand extends Command<typeof options> {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
+		const userId = this.options["user-id"];
+		const message = this.options.message;
+
 		try {
-			await interaction.deferReply();
-			const userId = this.options["user-id"];
-			const message = this.options.message;
+			const user = await this.echidna.users.fetch(userId);
+			if (!user) {
+				await InteractionContext.editReply("User not found.");
+				return;
+			}
 
-			const user = await interaction.client.users.fetch(userId);
 			await user.send(message);
-
-			interaction.editReply("Message sent");
+			await InteractionContext.editReply(
+				`Message sent to ${user.tag}: "${message}"`,
+			);
 		} catch (error) {
-			console.error("[send-message-to] Failed to send message", error);
-			interaction.editReply("Failed to send message");
+			console.error("Error sending message:", error);
+			await InteractionContext.editReply(
+				"Failed to send message. The user might have DMs disabled or blocked the bot.",
+			);
 		}
 	}
 }

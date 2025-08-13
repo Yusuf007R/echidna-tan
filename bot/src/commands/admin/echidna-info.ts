@@ -5,16 +5,13 @@ import db from "@Drizzle/db";
 import { echidnaTable } from "@Drizzle/schema";
 import IsAdmin from "@EventsValidators/isAdmin";
 import { Command } from "@Structures/command";
+import { InteractionContext } from "@Structures/interaction-context";
 import getImageAsBuffer from "@Utils/get-image-from-url";
 import { OptionsBuilder } from "@Utils/options-builder";
 import { baseAPI } from "@Utils/request";
 import { EmbedBuilder, type RGBTuple } from "@discordjs/builders";
 import dayjs from "dayjs";
-import {
-	ActivityType,
-	type CacheType,
-	type CommandInteraction,
-} from "discord.js";
+import { ActivityType } from "discord.js";
 import { eq } from "drizzle-orm";
 import sharp from "sharp";
 
@@ -31,14 +28,14 @@ export default class EchidnaInfoCommand extends Command<typeof options> {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
 		try {
-			await interaction.deferReply();
+			await InteractionContext.deferReply();
 			const echidna = await db.query.echidnaTable.findFirst({
 				where: eq(echidnaTable.id, config.DISCORD_DB_PROFILE),
 			});
 			if (!echidna) {
-				interaction.editReply("Echidna not found");
+				await InteractionContext.editReply("Echidna not found");
 				return;
 			}
 
@@ -107,10 +104,10 @@ export default class EchidnaInfoCommand extends Command<typeof options> {
 					},
 				]);
 
-			interaction.editReply({ embeds: [embed] });
+			await InteractionContext.editReply({ embeds: [embed] });
 		} catch (error) {
 			console.error("[echidna-info] Failed to get echidna info", error);
-			interaction.editReply("Failed to get echidna info");
+			await InteractionContext.editReply("Failed to get echidna info");
 		}
 	}
 }

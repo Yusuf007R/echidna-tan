@@ -4,7 +4,6 @@ import type {
 	AutocompleteInteraction,
 	CacheType,
 	ChatInputCommandInteraction,
-	CommandInteraction,
 } from "discord.js";
 import type { CommandValidator } from "./command-validator";
 import EchidnaSingleton from "./echidna-singleton";
@@ -63,10 +62,7 @@ export abstract class Command<
 		this._getOptionsInstance = new GetOptions(this._optionsArray ?? []);
 	}
 
-	abstract run(
-		_interaction: CommandInteraction<CacheType>,
-		..._rest: unknown[]
-	): Promise<void>;
+	abstract run(..._rest: unknown[]): Promise<void>;
 
 	// biome-ignore lint/suspicious/useAwait: this is an unimplemented method
 	async handleAutocomplete(

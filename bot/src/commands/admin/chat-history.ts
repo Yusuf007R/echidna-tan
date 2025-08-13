@@ -2,13 +2,9 @@
 
 import IsAdmin from "@EventsValidators/isAdmin";
 import { Command } from "@Structures/command";
+import { InteractionContext } from "@Structures/interaction-context";
 import { OptionsBuilder } from "@Utils/options-builder";
-import {
-	AttachmentBuilder,
-	type CacheType,
-	type CommandInteraction,
-	type TextBasedChannel,
-} from "discord.js";
+import { AttachmentBuilder, type TextBasedChannel } from "discord.js";
 
 const options = new OptionsBuilder()
 	.addStringOption({
@@ -32,34 +28,34 @@ export default class ChatHistoryCommand extends Command<typeof options> {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
 		try {
-			await interaction.deferReply();
+			await InteractionContext.deferReply();
 			const channelId = this.options["channel-id"];
 			const userId = this.options["user-id"];
 
 			let channel: TextBasedChannel | null = null;
 
 			if (channelId) {
-				const channel = await interaction.client.channels.fetch(channelId);
+				const channel = await this.echidna.channels.fetch(channelId);
 				console.log("channel", channel);
 				if (!channel || !channel.isDMBased()) {
-					interaction.editReply("Invalid channel");
+					await InteractionContext.editReply("Invalid channel");
 					return;
 				}
 			}
 
 			if (userId) {
-				const user = await interaction.client.users.fetch(userId);
+				const user = await this.echidna.users.fetch(userId);
 				if (!user) {
-					interaction.editReply("Invalid user");
+					await InteractionContext.editReply("Invalid user");
 					return;
 				}
 
 				const dmChannel = await user.dmChannel?.fetch();
 
 				if (!dmChannel || !dmChannel.isDMBased()) {
-					interaction.editReply("Invalid channel");
+					await InteractionContext.editReply("Invalid channel");
 					return;
 				}
 
@@ -67,7 +63,7 @@ export default class ChatHistoryCommand extends Command<typeof options> {
 			}
 
 			if (!channel) {
-				interaction.editReply("Invalid channel");
+				await InteractionContext.editReply("Invalid channel");
 				return;
 			}
 
@@ -85,10 +81,10 @@ export default class ChatHistoryCommand extends Command<typeof options> {
 					name: "chat-history.txt",
 				},
 			);
-			await interaction.editReply({ files: [attachment] });
+			await InteractionContext.editReply({ files: [attachment] });
 		} catch (error) {
-			console.error("[send-message-to] Failed to send message", error);
-			interaction.editReply("Failed to send message");
+			console.error("[chat-history] Failed to get chat history", error);
+			await InteractionContext.editReply("Failed to get chat history");
 		}
 	}
 }

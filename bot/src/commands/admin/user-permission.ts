@@ -3,8 +3,8 @@
 import IsAdmin from "@EventsValidators/isAdmin";
 import { UserManager } from "@Managers/user-manager";
 import { Command } from "@Structures/command";
+import { InteractionContext } from "@Structures/interaction-context";
 import { OptionsBuilder } from "@Utils/options-builder";
-import type { CacheType, CommandInteraction } from "discord.js";
 
 const options = new OptionsBuilder()
 	.addStringOption({
@@ -30,14 +30,16 @@ export default class SendMessageToCommand extends Command<typeof options> {
 		});
 	}
 
-	async run(interaction: CommandInteraction<CacheType>) {
+	async run() {
 		try {
-			await interaction.deferReply();
+			await InteractionContext.deferReply();
 			const userId = this.options["user-id"];
 			const isAdmin = this.options.admin;
 
-			if (userId === interaction.user.id) {
-				interaction.editReply("You cannot update your own permission, silly");
+			if (userId === InteractionContext.user.id) {
+				await InteractionContext.editReply(
+					"You cannot update your own permission, silly",
+				);
 				return;
 			}
 
@@ -45,13 +47,13 @@ export default class SendMessageToCommand extends Command<typeof options> {
 				isAdmin,
 			});
 
-			interaction.editReply("User permission updated");
+			await InteractionContext.editReply("User permission updated");
 		} catch (error) {
 			console.error(
 				"[user-permission] Failed to update user permission",
 				error,
 			);
-			interaction.editReply("Failed to update user permission");
+			await InteractionContext.editReply("Failed to update user permission");
 		}
 	}
 }
