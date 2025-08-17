@@ -3,10 +3,7 @@ import Anime from "@Structures/anime";
 import { Command } from "@Structures/command";
 import { InteractionContext } from "@Structures/interaction-context";
 import { OptionsBuilder } from "@Utils/options-builder";
-import type {
-	AutocompleteInteraction,
-	CacheType,
-} from "discord.js";
+import type { AutocompleteInteraction, CacheType } from "discord.js";
 
 const options = new OptionsBuilder()
 	.addStringOption({

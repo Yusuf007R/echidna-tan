@@ -7,8 +7,8 @@ import {
 } from "@Structures/music-player";
 import capitalize from "@Utils/capitalize";
 import { OptionsBuilder } from "@Utils/options-builder";
-import type { CacheType, ChatInputCommandInteraction } from "discord.js";
 import { type GuildQueue, QueueRepeatMode } from "discord-player";
+import type { CacheType, ChatInputCommandInteraction } from "discord.js";
 import { MusicCommand } from "./[wrapper]";
 
 const options = new OptionsBuilder()

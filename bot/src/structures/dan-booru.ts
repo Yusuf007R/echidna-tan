@@ -49,7 +49,9 @@ export default class DanBooru {
 
 	async sendMessage(post: DanBooruPost) {
 		if (post.rating !== "s" && !this.isNsfwAlowed()) {
-			await InteractionContext.editReply("NSFW is not allowed in this channel.");
+			await InteractionContext.editReply(
+				"NSFW is not allowed in this channel.",
+			);
 			return;
 		}
 		const embed = this.makeEmbed(post);

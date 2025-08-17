@@ -35,7 +35,9 @@ export default class DanbooruCommand extends Command<typeof options> {
 		const postId = this.options["post-id"];
 		const nsfw = this.options.nsfw;
 		if (nsfw && !danbooru.isNsfwAlowed()) {
-			await InteractionContext.editReply("NSFW is not allowed in this channel.");
+			await InteractionContext.editReply(
+				"NSFW is not allowed in this channel.",
+			);
 			return;
 		}
 		try {
