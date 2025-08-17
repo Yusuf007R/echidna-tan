@@ -13,10 +13,10 @@ services:
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "https://one.one.one.one"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 45s
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
   echidna:
     build: .
     depends_on:
