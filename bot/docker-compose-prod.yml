@@ -19,6 +19,7 @@ services:
       start_period: 10s
   echidna:
     build: .
+    stop_grace_period: 5s
     depends_on:
       gluetun:
         condition: service_healthy
