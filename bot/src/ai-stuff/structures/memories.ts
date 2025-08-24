@@ -11,7 +11,7 @@ import type { OpenRouterModel } from "@Interfaces/open-router-model";
 import ChatBotManager from "@Managers/chat-bot-manager";
 import { openAI } from "@Utils/request";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { type CoreMessage, generateText, tool } from "ai";
+import { type CoreMessage, generateText, stepCountIs, tool } from "ai";
 import { desc, eq, type InferSelectModel, sql } from "drizzle-orm";
 import z from "zod";
 
@@ -135,7 +135,7 @@ export default class MemoriesManager {
 			] as CoreMessage[];
 			const response = await generateText({
 				model: openrouter(this.MODEL_NAME),
-				maxSteps: 10,
+				stopWhen: stepCountIs(10),
 				toolChoice: "auto",
 				messages,
 				tools: {
@@ -144,7 +144,7 @@ export default class MemoriesManager {
 							Use this tool to save an important piece of information as a memory.
 							be saving a memory, check if it is a duplicate or if it is a new memory.
 						`,
-						parameters: z.object({
+						inputSchema: z.object({
 							memory: z.string().describe("The memory to save"),
 						}),
 						execute: async ({ memory }) => {
@@ -158,7 +158,7 @@ export default class MemoriesManager {
 							Use this tool to search for a memory.
 							use it to search for duplicate memories.
 						`,
-						parameters: z.object({
+						inputSchema: z.object({
 							query: z.string().describe("The query to search for."),
 						}),
 						execute: async ({ query }) => {
@@ -182,7 +182,7 @@ export default class MemoriesManager {
 						Use this tool to update a memory.
 						use it to update an old memory with new information.
 						`,
-						parameters: z.object({
+						inputSchema: z.object({
 							memoryId: z.number().describe("The id of the memory to update."),
 							newMemory: z.string().describe("The new memory."),
 						}),

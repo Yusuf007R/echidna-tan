@@ -1,12 +1,6 @@
-import ChatBotManager from "@Managers/chat-bot-manager";
 import { Command } from "@Structures/command";
 import { OptionsBuilder } from "@Utils/options-builder";
-import { EmbedBuilder } from "@discordjs/builders";
-import {
-	type CacheType,
-	ChannelType,
-	type CommandInteraction,
-} from "discord.js";
+import type { CacheType, CommandInteraction } from "discord.js";
 
 const options = new OptionsBuilder().build();
 
@@ -22,60 +16,62 @@ export default class ChatInfoCommand extends Command<typeof options> {
 	}
 
 	async run(interaction: CommandInteraction<CacheType>) {
-		if (
-			interaction.channel?.type !== ChannelType.PrivateThread &&
-			(interaction.channel?.type !== ChannelType.DM ||
-				interaction.channel?.partial)
-		) {
-			await interaction.editReply({
-				content: "This command can only be used in a thread or a DM",
-			});
-			return;
-		}
+		await interaction.reply("This command is not available yet");
 
-		const chatBot = await ChatBotManager.getChatBot(interaction.channel);
-		if (!chatBot) {
-			await interaction.editReply({
-				content: "This channel is not a chat bot",
-			});
-			return;
-		}
+		// if (
+		// 	interaction.channel?.type !== ChannelType.PrivateThread &&
+		// 	(interaction.channel?.type !== ChannelType.DM ||
+		// 		interaction.channel?.partial)
+		// ) {
+		// 	await interaction.editReply({
+		// 		content: "This command can only be used in a thread or a DM",
+		// 	});
+		// 	return;
+		// }
 
-		const info = await chatBot.getChatBotInfo();
-		const cost =
-			info.info.cost !== null ? Number.parseFloat(info.info.cost) : 0;
+		// const chatBot = await ChatBotManager.getChatBot(interaction.channel);
+		// if (!chatBot) {
+		// 	await interaction.editReply({
+		// 		content: "This channel is not a chat bot",
+		// 	});
+		// 	return;
+		// }
 
-		const embed = new EmbedBuilder().setTitle("Chat Info").addFields(
-			{
-				name: "Chat ID",
-				value: info.chat.id.toString(),
-			},
-			{
-				name: "Model",
-				value: info.chat.modelId,
-			},
-			{
-				name: "Prompt",
-				value: info.chat.promptTemplate,
-			},
-			{
-				name: "Number of Messages",
-				value: info.info.count.toString(),
-			},
-			{
-				name: "Number of Memories",
-				value: info.numMemories.toString(),
-			},
-			{
-				name: "Cost",
-				value: `$${cost.toFixed(5)}`,
-			},
-			{
-				name: "Total Tokens",
-				value: info.info.total_tokens?.toString() ?? "0",
-			},
-		);
+		// const info = await chatBot.getChatBotInfo();
+		// const cost =
+		// 	info.info.cost !== null ? Number.parseFloat(info.info.cost) : 0;
 
-		await interaction.editReply({ embeds: [embed] });
+		// const embed = new EmbedBuilder().setTitle("Chat Info").addFields(
+		// 	{
+		// 		name: "Chat ID",
+		// 		value: info.chat.id.toString(),
+		// 	},
+		// 	{
+		// 		name: "Model",
+		// 		value: info.chat.modelId,
+		// 	},
+		// 	{
+		// 		name: "Prompt",
+		// 		value: info.chat.promptTemplate,
+		// 	},
+		// 	{
+		// 		name: "Number of Messages",
+		// 		value: info.info.count.toString(),
+		// 	},
+		// 	{
+		// 		name: "Number of Memories",
+		// 		value: info.numMemories.toString(),
+		// 	},
+		// 	{
+		// 		name: "Cost",
+		// 		value: `$${cost.toFixed(5)}`,
+		// 	},
+		// 	{
+		// 		name: "Total Tokens",
+		// 		value: info.info.total_tokens?.toString() ?? "0",
+		// 	},
+		// );
+
+		// await interaction.editReply({ embeds: [embed] });
 	}
 }
