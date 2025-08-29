@@ -3,11 +3,13 @@ import { chatsTable, messagesTable, userTable } from "@Drizzle/schema";
 import type { AiPrompt } from "@Interfaces/ai-prompts";
 
 import ChatBot from "@AiStructures/chat-bot";
+import { getBaseDir } from "@Utils/get-dir-name";
 import type { ModelMessage } from "ai";
 import type { DMChannel, ThreadChannel } from "discord.js";
 import { desc, eq, type InferSelectModel } from "drizzle-orm";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
+import assistantPrompt from "../ai-stuff/templates/assistant-prompt";
 
 export type OpenRouterModel = {
 	id: string;
@@ -61,9 +63,21 @@ export default class ChatBotManager {
 		return filtered;
 	}
 
-	static async getModel(id: string) {
-		return (await ChatBotManager.getModelList()).find(
-			(model) => model.id === id,
+	static getModel(id: string) {
+		return ChatBotManager.getModelList().find((model) => model.id === id);
+	}
+
+	static async getOrCreateChatBot(
+		channel: DMChannel | ThreadChannel,
+		user: InferSelectModel<typeof userTable>,
+	) {
+		const chatBot = await ChatBotManager.getChatBot(channel);
+		if (chatBot) return chatBot;
+		return ChatBotManager.createChatBot(
+			channel,
+			user,
+			assistantPrompt,
+			openRouterModels[0].id,
 		);
 	}
 
@@ -73,25 +87,27 @@ export default class ChatBotManager {
 		promptTemplate: AiPrompt,
 		modelId: string,
 	) {
-		const model = await ChatBotManager.getModel(modelId);
-		if (!model) return null;
+		const model = ChatBotManager.getModel(modelId);
+		if (!model) throw new Error("Model not found");
 
-		// const [chat] = await db
-		// 	.insert(chatsTable)
-		// 	.values({
-		// 		channelId: channel.id,
-		// 		userId: user.id,
-		// 		modelId,
-		// 		name: promptTemplate.name,
-		// 		promptTemplate: promptTemplate.name,
-		// 	})
-		// 	.returning();
+		const [chat] = await db
+			.insert(chatsTable)
+			.values({
+				channelId: channel.id,
+				userId: user.id,
+				modelId,
+				name: promptTemplate.name,
+				promptTemplate: promptTemplate.name,
+			})
+			.returning();
 
 		// if (!chat) return null;
 		const chatBot = ChatBot.init({
 			channel,
 			model,
 			user,
+			chat,
+			messageHistory: [],
 			prompt: promptTemplate,
 		});
 
@@ -111,20 +127,20 @@ export default class ChatBotManager {
 
 		const messageHistory = await ChatBotManager.loadChats(chat);
 
-		const model = await ChatBotManager.getModel(chat.modelId);
-		if (!model) return null;
+		const model = ChatBotManager.getModel(chat.modelId);
+		if (!model) throw new Error("Model not found");
 
 		const promptTemplate = await ChatBotManager.getPromptTemplate(
 			chat.promptTemplate,
 		);
-		if (!promptTemplate) return null;
+		if (!promptTemplate) throw new Error("Prompt template not found");
 
 		const user = await db.query.userTable.findFirst({
 			where: eq(userTable.id, chat.userId),
 		});
 		if (!user) return null;
 
-		const chatBot = await ChatBot.init({
+		const chatBot = ChatBot.init({
 			channel,
 			model,
 			user,
@@ -161,7 +177,7 @@ export default class ChatBotManager {
 		if (ChatBotManager.promptsTemplates.length)
 			return ChatBotManager.promptsTemplates;
 
-		const templatesPath = join(__dirname, "/ai-stuff/templates");
+		const templatesPath = join(getBaseDir(), "/ai-stuff/templates");
 		const templateFiles = readdirSync(templatesPath).filter((file) =>
 			file.endsWith(".js"),
 		);

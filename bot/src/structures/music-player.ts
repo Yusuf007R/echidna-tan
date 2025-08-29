@@ -225,7 +225,7 @@ export default class MusicPlayer extends Player {
 		timeoutOption: TIMEOUT_OPTIONS = TIMEOUT_OPTIONS.FADE_OUT_AND_LEAVE,
 	) {
 		this.clearTimeout(queue);
-	
+
 		queue.metadata.timeout = {
 			minutes,
 			option: timeoutOption,
@@ -262,7 +262,10 @@ export default class MusicPlayer extends Player {
 							console.warn("Could not send timeout message:", error);
 						}
 					} catch (error) {
-						console.error(`[MusicPlayer] Timeout error ${timeoutOption} option ${minutes} minutes:`, error);
+						console.error(
+							`[MusicPlayer] Timeout error ${timeoutOption} option ${minutes} minutes:`,
+							error,
+						);
 					}
 				},
 				minutes * 60 * 1000,

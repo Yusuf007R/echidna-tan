@@ -19,31 +19,18 @@ export default class MessageCreate extends DiscordEvent<"messageCreate"> {
 
 		if (isDM) {
 			if (message.channel.partial) return;
-			const chatBot = await ChatBotManager.getChatBot(message.channel);
-			if (!chatBot) {
-				const user = await UserManager.getOrCreateUser(message.author.id);
-				if (!user) return;
-				const promptTemplate =
-					await ChatBotManager.getPromptTemplate("Assistant");
-				if (!promptTemplate) return;
-
-				await ChatBotManager.createChatBot(
-					message.channel,
-					user,
-					promptTemplate.promptTemplate,
-					"google/gemini-2.5-flash-preview",
-				);
-
-				return;
-			}
-
-			if (!chatBot) return;
+			const chatBot = await ChatBotManager.getOrCreateChatBot(
+				message.channel,
+				user,
+			);
 			await chatBot.processMessage(message);
 		}
 
 		if (isThread) {
-			const chatBot = await ChatBotManager.getChatBot(message.channel);
-			if (!chatBot) return;
+			const chatBot = await ChatBotManager.getOrCreateChatBot(
+				message.channel,
+				user,
+			);
 			await chatBot.processMessage(message);
 		}
 	}
