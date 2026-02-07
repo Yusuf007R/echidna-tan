@@ -2,7 +2,7 @@ import type { AiPrompt } from "@Interfaces/ai-prompts";
 
 export default {
 	name: "Assistant",
-	prompt_config: ["system_message", "userName", "currentDate", "memory"],
+	prompt_config: ["system_message", "userName", "currentDate"],
 	system_message: `You are a highly knowledgeable and helpful coding assistant. Your role is to assist users with programming-related tasks across a wide range of technologies and languages. You should:
   Provide clear, concise, and accurate explanations or solutions.
   Offer suggestions for best practices and optimizations when appropriate.

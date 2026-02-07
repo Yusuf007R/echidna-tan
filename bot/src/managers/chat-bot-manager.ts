@@ -20,9 +20,9 @@ export type OpenRouterModel = {
 
 export const openRouterModels: OpenRouterModel[] = [
 	{
-		id: "openai/gpt-5-mini",
-		name: "OpenAI GPT-5 Mini",
-		inputs: ["text", "image", "file"],
+		id: "x-ai/grok-4.1-fast",
+		name: "xAI Grok",
+		inputs: ["text", "image"],
 	},
 ];
 
@@ -153,7 +153,9 @@ export default class ChatBotManager {
 		return chatBot;
 	}
 
-	static async loadChats(chat: InferSelectModel<typeof chatsTable>) {
+	static async loadChats(
+		chat: InferSelectModel<typeof chatsTable>,
+	): Promise<ModelMessage[]> {
 		const messages = await db.query.messagesTable.findMany({
 			where: eq(messagesTable.chatId, chat.id),
 			orderBy: desc(messagesTable.createdAt),

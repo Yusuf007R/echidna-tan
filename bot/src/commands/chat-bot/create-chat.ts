@@ -96,7 +96,7 @@ export default class CreateChatCommand extends Command<typeof options> {
 			return;
 		}
 
-		const modelId = this.options.model || "google/gemini-flash-1.5";
+		const modelId = this.options.model || "x-ai/grok-4.1-fast";
 		const model = await ChatBotManager.getModel(modelId);
 
 		if (!model) throw new Error("model not found");
